@@ -232,6 +232,7 @@ tr:hover td{background:var(--bg3)}
   <div class="nt"    id="nt-usuarios"  onclick="go('usuarios')">👥 Usuários</div>
   <div class="nt"    id="nt-historico" onclick="go('historico')">🗂 Histórico</div>
   <div class="nt"    id="nt-engenharia" onclick="go('engenharia')">⚙️ Engenharia</div>
+  <div class="nt" id="nt-painel" onclick="go('painel')">🏭 Painel OPs</div>
   <div class="nav-r">
     <span id="fb-status" style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(255,255,255,.1);cursor:pointer" onclick="go('config')" title="Status Firebase">🟡 Conectando...</span>
     <span id="usr-chip" class="chip c-blue"></span>
@@ -467,11 +468,11 @@ tr:hover td{background:var(--bg3)}
         <div class="tw ts"><table>
           <thead><tr>
             <th><input type="checkbox" id="pck-all" onchange="pcpCkAll(this)"></th>
-            <th>Prio</th><th>Pedido</th><th>Cliente</th><th>Produto</th><th>Cód.</th>
-            <th>Grp</th><th>Seção</th><th>Prev.Fat</th>
-            <th class="num">Pend.(m)</th><th class="num">Orig.(m)</th>
+            <th>Prio.Prod</th><th>Prio</th><th>Pedido</th><th>Cliente</th><th>Produto</th><th>Cód.</th>
+            <th>Grp</th><th>Seção</th><th>Prev.Fat</th><th>Dt.Entrega</th>
+            <th class="num">Pend.(m)</th>
             <th class="num" style="color:var(--orange)">Qt.Ajust.(m)</th>
-            <th>Buncher</th><th>Etapa</th><th>Tipo</th>
+            <th>Buncher</th><th>Obs.</th>
           </tr></thead>
           <tbody id="pcp-tb"></tbody>
         </table></div>
@@ -1290,6 +1291,133 @@ function exportarListaOPsPDF(){
   doc.save('OPs_MAXFIO_'+hoje.replace(/\//g,'-')+'.pdf');
 }
 
+
+// ═══════════ PAINEL OPs ═══════════
+function renderPainel(){
+  const turnoFil=document.getElementById('pan-turno')?.value||'';
+  const operFil =document.getElementById('pan-oper') ?.value||'';
+  const stFil   =document.getElementById('pan-st')   ?.value||'';
+  const q       =(document.getElementById('pan-q')   ?.value||'').toLowerCase();
+
+  // Populate operador select
+  const operSel=document.getElementById('pan-oper');
+  if(operSel&&operSel.options.length<=1){
+    const opers=[...new Set(ORDENS.map(o=>o.operador).filter(Boolean))];
+    opers.forEach(op=>{
+      const opt=document.createElement('option');
+      opt.value=op;opt.textContent=op;
+      operSel.appendChild(opt);
+    });
+  }
+
+  const hoje=new Date().toISOString().slice(0,10);
+  let rows=ORDENS.filter(o=>{
+    if(turnoFil&&o.turno!==turnoFil)return false;
+    if(operFil&&o.operador!==operFil)return false;
+    if(stFil&&o.status!==stFil)return false;
+    if(q){const txt=(o.id||'')+(o.produto||'')+(o.pedido||'')+(o.cliente||'');if(!txt.toLowerCase().includes(q))return false;}
+    return true;
+  });
+
+  // KPIs
+  const nAnd=ORDENS.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento').length;
+  const nPend=ORDENS.filter(o=>o.status==='Pendente').length;
+  const mTot=rows.reduce((a,o)=>a+(o.metros||0),0);
+  const nHoje=ORDENS.filter(o=>o.dt_criacao===hoje).length;
+  const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setEl('pan-nand',nAnd);setEl('pan-npend',nPend);
+  setEl('pan-mtot',fm(mTot)+'m');setEl('pan-nop',nHoje);
+  setEl('pan-cnt',rows.length);
+
+  // Cards by turno+operador
+  const cards=document.getElementById('painel-cards');
+  const emAndamento=rows.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento');
+  if(cards){
+    if(emAndamento.length===0){
+      cards.innerHTML='<div style="color:var(--text3);font-size:12px;padding:12px">Nenhuma OP em andamento com os filtros selecionados.</div>';
+    }else{
+      const grupos={};
+      emAndamento.forEach(o=>{
+        const k=(o.turno||'Sem turno')+'||'+(o.operador||'Sem operador');
+        if(!grupos[k])grupos[k]={turno:o.turno||'Sem turno',oper:o.operador||'Sem operador',ops:[],metros:0};
+        grupos[k].ops.push(o);grupos[k].metros+=o.metros||0;
+      });
+      cards.innerHTML=Object.values(grupos).sort((a,b)=>b.ops.length-a.ops.length).map(g=>`
+        <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="background:var(--navy);color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700;font-size:13px">${g.turno}</div>
+              <div style="font-size:11px;opacity:.85">👤 ${g.oper}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:16px;font-weight:700">${g.ops.length} OPs</div>
+              <div style="font-size:11px;opacity:.85">${fm(g.metros)}m</div>
+            </div>
+          </div>
+          <div style="padding:8px;max-height:260px;overflow-y:auto">
+            ${g.ops.map(o=>{
+              const tipoCls=o.tipo==='buncher'?'c-purple':'c-orange';
+              const subl=o.subordem?` <span style="font-size:9px;opacity:.7">_${o.subordem}</span>`:'';
+              const prioStyle=o.prio_prod==='Urgente'?'border-left:3px solid var(--red)':o.prio_prod==='Alta'?'border-left:3px solid var(--orange)':'';
+              return`<div style="display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px solid var(--border);font-size:11px;${prioStyle}">
+                <span class="chip ${tipoCls}" style="font-size:9px;flex-shrink:0">${(o.tipo||'OP').toUpperCase()}</span>
+                <span class="mono" style="font-weight:700;font-size:10px">${o.id}${subl}</span>
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.produto||''}">${shortProd(o.produto)}</span>
+                <span style="color:var(--orange);font-weight:600;flex-shrink:0">${fm(o.metros)}m</span>
+                <button class="btn bgho bsm" style="padding:2px 5px;flex-shrink:0" onclick="reabrirOP('${o.id}')" title="Reabrir OP">↩</button>
+                <button class="btn bgrn bsm" style="padding:2px 5px;flex-shrink:0" onclick="concluirOP('${o.id}')" title="Concluir OP">✓</button>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  // Full table
+  const list=document.getElementById('painel-list');
+  if(list){
+    if(rows.length===0){list.innerHTML='<p style="color:var(--text3);font-size:11px;padding:10px">Nenhuma OP encontrada.</p>';return;}
+    list.innerHTML=`<table style="width:100%">
+      <thead><tr>
+        <th>OP</th><th>Sub</th><th>Tipo</th><th>Pedido(s)</th><th>Produto</th>
+        <th>Seção</th><th class="num">Metros</th><th>Prio.</th>
+        <th>Operador</th><th>Turno</th><th>Status</th><th>Entrega</th><th>Ações</th>
+      </tr></thead>
+      <tbody>${rows.map(o=>{
+        const dtEnt=o.dt_entrega?o.dt_entrega.slice(0,10).split('-').reverse().join('/'):'—';
+        const sc=o.status==='Concluída'?'c-teal':o.status==='Em andamento'||o.status==='Em Andamento'?'c-blue':'c-gray';
+        const pc=o.prio_prod==='Urgente'?'c-red':o.prio_prod==='Alta'?'c-orange':'c-gray';
+        const pedidos=(o.pedidos||[o.pedido]).filter(Boolean).join(', ');
+        return`<tr>
+          <td class="mono" style="font-size:10px;font-weight:700">${o.num_base||o.id}</td>
+          <td><span class="chip ${o.subordem==='A'?'c-purple':'c-orange'}" style="font-size:9px">${o.subordem||'—'}</span></td>
+          <td style="font-size:10px">${o.tipo||'OP'}</td>
+          <td class="mono" style="font-size:10px">${pedidos}</td>
+          <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">${shortProd(o.produto)}</td>
+          <td class="mono" style="font-size:10px;font-weight:600">${o.secao||'—'}</td>
+          <td class="num" style="color:var(--orange);font-weight:600">${fm(o.metros||0)}m</td>
+          <td><span class="chip ${pc}" style="font-size:9px">${o.prio_prod||'Normal'}</span></td>
+          <td style="font-size:10px">${o.operador||'—'}</td>
+          <td style="font-size:10px">${o.turno||'—'}</td>
+          <td><span class="chip ${sc}" style="font-size:9px">${o.status||'Pendente'}</span></td>
+          <td style="font-size:10px">${dtEnt}</td>
+          <td style="white-space:nowrap">
+            <button class="btn bgho bsm" onclick="editOrdem('${o.id}')">✏️</button>
+            <button class="btn bgrn bsm" onclick="concluirOP('${o.id}')">✓</button>
+            <button class="btn bgho bsm" onclick="reabrirOP('${o.id}')">↩</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+}
+function concluirOP(id){
+  const o=ORDENS.find(x=>x.id===id);
+  if(!o)return;
+  o.status='Concluída';o.dt_conclusao=new Date().toISOString().slice(0,10);
+  saveSingle(LS.ORDENS,ORDENS);
+  renderPainel();renderOrdens();
+}
 // ═══════════ ENGENHARIA ═══════════
 function renderEngenharia(){
   const q=(document.getElementById('eng-q')?.value||'').toLowerCase();
@@ -1348,6 +1476,69 @@ function renderEngenharia(){
       </tr>`;
     }).join('');
   }
+}
+
+function exportarOPsGeradasPDF(ops){
+  if(!ops||ops.length===0){alert('Nenhuma OP para exportar.');return;}
+  if(typeof window.jspdf==='undefined'){alert('Biblioteca PDF não carregada.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',format:'a4'});
+  const hoje=new Date().toLocaleDateString('pt-BR');
+
+  // Header
+  doc.setFillColor(26,46,90);
+  doc.rect(0,0,297,18,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text('MAXFIO — Ordens de Produção',10,12);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('Gerado em: '+hoje+' | '+ops.length+' OPs',250,12,'right');
+  doc.setTextColor(0,0,0);
+
+  // Group by base number for visual grouping
+  const body=ops.map(o=>{
+    const pedidos=(o.pedidos||[o.pedido]).filter(Boolean).join(', ').slice(0,25);
+    const dtEnt=o.dt_entrega?o.dt_entrega.slice(0,10).split('-').reverse().join('/'):'—';
+    const prioLabel=o.prio_prod||'Normal';
+    return[
+      o.id,
+      o.tipo==='buncher'?'BUNCHER _A':'EXTRUS. _B',
+      pedidos,
+      String(o.cliente||'').split('(')[0].trim().slice(0,22),
+      shortProd(o.produto).slice(0,30),
+      o.codigo||'—',
+      o.secao||'—',
+      fm(o.metros||0)+'m',
+      o.buncher_origem||'—',
+      prioLabel,
+      o.obs||'',
+      dtEnt,
+      o.status||'Pendente'
+    ];
+  });
+
+  doc.autoTable({
+    startY:22,
+    head:[['OP','Tipo','Pedido(s)','Cliente','Produto','Cód.','Seção','Metros','Buncher Orig.','Prio.','Obs.','Entrega','Status']],
+    body,
+    styles:{fontSize:7,cellPadding:2},
+    headStyles:{fillColor:[26,46,90],textColor:255,fontStyle:'bold',fontSize:7},
+    alternateRowStyles:{fillColor:[245,247,250]},
+    didParseCell(data){
+      // Color buncher rows purple-ish
+      if(data.row.raw&&String(data.row.raw[1]).includes('BUNCHER')){
+        data.cell.styles.fillColor=[237,233,254];
+      }
+    },
+    columnStyles:{
+      0:{cellWidth:24,fontStyle:'bold'},1:{cellWidth:18},2:{cellWidth:22},
+      3:{cellWidth:25},4:{cellWidth:35},5:{cellWidth:14},6:{cellWidth:14},
+      7:{cellWidth:14},8:{cellWidth:22},9:{cellWidth:14},
+      10:{cellWidth:22},11:{cellWidth:16},12:{cellWidth:16}
+    }
+  });
+
+  doc.save('OPs_'+new Date().toISOString().slice(0,10)+'.pdf');
 }
 // ═══════════ DASHBOARD ═══════════
 function renderDash(){
@@ -1438,7 +1629,8 @@ function go(id){
       }catch(e){}
     },
     historico:renderHistorico,
-    engenharia:renderEngenharia
+    engenharia:renderEngenharia,
+    painel:renderPainel
   };
   if(renderers[id])renderers[id]();
 }
@@ -2267,7 +2459,6 @@ function updatePCPHcnt(){
 }
 function renderPCPPage(){
   const el=document.getElementById('pcp-tb');if(!el)return;
-  // KPIs
   const p12=PCP_ITEMS.filter(r=>{const p=getPrio(r);return p==='P1'||p==='P2';}).length;
   const p34=PCP_ITEMS.filter(r=>{const p=getPrio(r);return p==='P3'||p==='P4';}).length;
   const totProd=PCP_ITEMS.reduce((a,r)=>a+(r[11]||0),0);
@@ -2282,44 +2473,65 @@ function renderPCPPage(){
   }
   el.innerHTML=PCP_ITEMS.map((it,i)=>{
     const dtFat=it[8]?it[8].slice(0,10).split('-').reverse().join('/'):(it[7]?it[7].slice(0,10).split('-').reverse().join('/'):'—');
-    const imp=it[16]?'<span class="chip c-imp" style="font-size:9px">IMP</span>':'<span class="chip c-blue" style="font-size:9px">MAX</span>';
+    const dtEnt=it._dt_entrega||(it[7]?it[7].slice(0,10):'');
+    const dtEntFmt=dtEnt?dtEnt.split('-').reverse().join('/'):'';
+    const obs=it._obs||'';
+    const prioProd=it._prio_prod||'Normal';
+    const prioCls=prioProd==='Urgente'?'c-red':prioProd==='Alta'?'c-orange':prioProd==='Baixa'?'c-gray':'c-blue';
+    const imp=it[16]?'<span class="chip c-imp" style="font-size:9px">IMP</span>':'';
     const [fd,ff]=getFil(it[12],it[13]);
     const buncher=fd?`Ø${fd}/${ff}f`:'—';
     return`<tr>
       <td><input type="checkbox" class="ck-pcp" data-idx="${i}" onchange="togglePCPSel(${i},this.checked)"></td>
+      <td>
+        <select style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:3px;width:72px"
+          onchange="setPCPPrio(${i},this.value)">
+          <option value="Normal" ${prioProd==='Normal'?'selected':''}>Normal</option>
+          <option value="Alta"   ${prioProd==='Alta'?'selected':''}>Alta</option>
+          <option value="Urgente"${prioProd==='Urgente'?'selected':''}>Urgente</option>
+          <option value="Baixa"  ${prioProd==='Baixa'?'selected':''}>Baixa</option>
+        </select>
+      </td>
       <td>${prioChip(it)}</td>
       <td class="mono" style="font-size:10px">${getPedidoDisplay(it[2])}</td>
-      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">${String(it[1]||'').split('(')[0].trim()}</td>
-      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${it[3]}">${shortProd(it[3])}</td>
-      <td class="mono"><span class="chip c-blue" style="font-size:9px">${it[4]}</span></td>
+      <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">${String(it[1]||'').split('(')[0].trim()}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${it[3]}">${shortProd(it[3])}${imp}</td>
+      <td><span class="chip c-blue" style="font-size:9px">${it[4]}</span></td>
       <td style="font-size:10px">${it[12]||''}</td>
       <td style="font-size:10px">${it[13]||''}</td>
       <td style="font-size:10px;color:var(--text2)">${dtFat}</td>
+      <td>
+        <input type="date" value="${dtEnt}" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:3px;width:112px"
+          onchange="setPCPDtEntrega(${i},this.value)">
+      </td>
       <td class="num">${fm(it[9])}</td>
-      <td class="num">${fm(it[11])}</td>
       <td class="num" style="color:var(--orange);font-weight:600">
         <input type="number" value="${it[11]||0}" min="0" step="0.1"
           style="width:70px;text-align:right;font-size:11px;padding:2px 4px;border:1px solid var(--border);border-radius:3px"
           onchange="ajustarQtPCP(${i},this.value)">
       </td>
       <td style="font-size:10px;color:var(--text2)">${buncher}</td>
-      <td style="font-size:10px">Extrusora</td>
-      <td>${imp}</td>
+      <td>
+        <input type="text" value="${obs}" placeholder="Obs..." style="font-size:10px;padding:2px 6px;border:1px solid var(--border);border-radius:3px;width:120px"
+          onchange="setPCPObs(${i},this.value)">
+      </td>
     </tr>`;
   }).join('');
 }
-function ajustarQtPCP(i,v){
-  if(PCP_ITEMS[i])PCP_ITEMS[i][11]=Math.max(0,parseFloat(v)||0);
-}
+function setPCPObs(i,v){if(PCP_ITEMS[i])PCP_ITEMS[i]._obs=v;}
+function setPCPDtEntrega(i,v){if(PCP_ITEMS[i])PCP_ITEMS[i]._dt_entrega=v;}
+function setPCPPrio(i,v){if(PCP_ITEMS[i])PCP_ITEMS[i]._prio_prod=v;}
+function ajustarQtPCP(i,v){if(PCP_ITEMS[i])PCP_ITEMS[i][11]=Math.max(0,parseFloat(v)||0);}
 function pcpCkAll(el){
-  document.querySelectorAll('.ck-pcp').forEach(c=>c.checked=el.checked);
-  document.querySelectorAll('.ck-pcp').forEach((c,i)=>{if(el.checked)pcpSel.add(i);else pcpSel.delete(i);});
+  document.querySelectorAll('.ck-pcp').forEach((c,i)=>{c.checked=el.checked;if(el.checked)pcpSel.add(i);else pcpSel.delete(i);});
 }
 function salvarPrevia(){
-  const nome=document.getElementById('pcp-nome')?.value||('Prévia '+new Date().toLocaleString('pt-BR'));
   saveSingle(LS.PREVIAS,PCP_ITEMS);
-  alert('Prévia "'+nome+'" salva com '+PCP_ITEMS.length+' itens.');
+  alert('Prévia salva com '+PCP_ITEMS.length+' itens.');
 }
+
+
+
 function abrirPreviewPCP(){
   // Backwards compat - gera de todos filtrados com necessidade de produção
   const rows=pedFilt().filter(r=>(r[11]||0)>0);
@@ -2395,29 +2607,26 @@ function confirmarModalGerarOPs(){
 }
 
 function gerarOPsComOpcoes(modo, tipoAgrup){
-  // Seleciona quais itens processar
   let items;
   if(modo==='selecionados'){
     const idxs=[...pcpSel];
     if(idxs.length===0){alert('Selecione itens na prévia primeiro.');return;}
     items=idxs.map(i=>PCP_ITEMS[i]).filter(it=>it&&(it[11]||0)>0);
-  } else if(modo==='individual'){
-    items=PCP_ITEMS.filter(it=>(it[11]||0)>0);
-  } else {
+  }else{
     items=PCP_ITEMS.filter(it=>(it[11]||0)>0);
   }
   if(items.length===0){alert('Nenhum item com quantidade a produzir.');return;}
 
   const hoje=new Date().toISOString().slice(0,10);
-  let criadas=0;
   const opsGeradas=[];
 
-  if(modo==='individual'){
-    // Uma OP por pedido/produto
+  if(modo==='individual'||tipoAgrup==='individual'){
+    // Uma OP única por item — sem subordens
     items.forEach(it=>{
       const [fd,ff]=getFil(it[12],it[13]);
+      const num=gerarNumOP();
       const op={
-        id:gerarNumOP(),
+        id:num, num_base:num,
         pedido:it[2], pedidos:[it[2]],
         cliente:String(it[1]||'').slice(0,50),
         produto:it[3], codigo:it[4],
@@ -2425,61 +2634,76 @@ function gerarOPsComOpcoes(modo, tipoAgrup){
         fil_diam:fd, fil_fios:ff,
         metros:Math.round((it[11]||0)*10)/10,
         status:'Pendente', dt_criacao:hoje,
-        operador:'', obs:'', tipo:'extrusora',
-        is_imperium:it[16]||0, dt_entrega:it[7]||it[8]||''
+        operador:'', turno:'',
+        obs:it._obs||'', tipo:'individual',
+        etapa:'EXTRUSÃO',
+        prio_prod:it._prio_prod||'Normal',
+        dt_entrega:it._dt_entrega||it[7]||it[8]||'',
+        is_imperium:it[16]||0
       };
-      ORDENS.unshift(op); opsGeradas.push(op); criadas++;
+      ORDENS.unshift(op); opsGeradas.push(op);
     });
-  } else {
-    // Agrupa por buncher (mesma formação diam+fios) → soma metros
-    // Extrusora: separado por produto, mas referencia buncher origem
-
-    // BUNCHER OPs — agrupa por formação filamentar
+  }else{
+    // Agrupado: NUMEROOP_A = Buncher, NUMEROOP_B = Extrusora
     const buncherGrupos={};
     items.forEach(it=>{
       const [fd,ff]=getFil(it[12],it[13]);
       if(!fd||!ff)return;
       const k=`${fd}_${ff}`;
       if(!buncherGrupos[k]){
-        buncherGrupos[k]={diam:fd,fios:ff,metros:0,
-          pedidos:[],clientes:new Set(),produtos:[],itens:[]};
+        buncherGrupos[k]={diam:fd,fios:ff,metros:0,pedidos:[],
+          clientes:new Set(),produtos:[],itens:[]};
       }
       buncherGrupos[k].metros+=it[11]||0;
       buncherGrupos[k].pedidos.push(it[2]);
-      buncherGrupos[k].clientes.add(String(it[1]||'').split('(')[0].trim());
-      buncherGrupos[k].produtos.push(it[3]);
+      buncherGrupos[k].clientes.add(String(it[1]||'').split('(')[0].trim().slice(0,30));
+      buncherGrupos[k].produtos.push(shortProd(it[3]));
       buncherGrupos[k].itens.push(it);
     });
 
-    const buncherOPMap={}; // k → OP id
+    const buncherOPMap={}; // filament key → num_base
     Object.entries(buncherGrupos).forEach(([k,g])=>{
-      const opId=gerarNumOP();
-      buncherOPMap[k]=opId;
+      const numBase=gerarNumOP();
+      const idA=numBase+'_A';
+      buncherOPMap[k]={id:idA, num_base:numBase};
+      const pedidos=[...new Set(g.pedidos)];
+      const prioMax=g.itens.reduce((a,it)=>{
+        const p=it._prio_prod||'Normal';
+        const rank={Urgente:3,Alta:2,Normal:1,Baixa:0};
+        return rank[p]>(rank[a]||0)?p:a;
+      },'Normal');
+      const obsAll=g.itens.map(it=>it._obs).filter(Boolean).join(' | ');
+      const dtMin=g.itens.map(it=>it._dt_entrega||it[7]||it[8]||'').filter(Boolean).sort()[0]||'';
       const op={
-        id:opId,
-        pedidos:g.pedidos,
-        pedido:g.pedidos.join(', '),
-        cliente:[...g.clientes].slice(0,3).join(' / '),
+        id:idA, num_base:numBase, subordem:'A',
+        pedido:pedidos.join(', '), pedidos,
+        cliente:[...g.clientes].slice(0,2).join(' / '),
         produto:`BUNCHER Ø${g.diam}mm / ${g.fios} fios`,
+        produto_destino:g.produtos.slice(0,3).join(', ')+(g.produtos.length>3?' ...':''),
         codigo:`BUNC-${g.diam}-${g.fios}`,
         grupo:'BUNCHER', secao:`Ø${g.diam}/${g.fios}f`,
         fil_diam:g.diam, fil_fios:g.fios,
         metros:Math.round(g.metros*10)/10,
         n_produtos:g.produtos.length,
         status:'Pendente', dt_criacao:hoje,
-        operador:'', obs:'', tipo:'buncher',
-        etapa:'BUNCHER (ENCORDOAMENTO)'
+        operador:'', turno:'',
+        obs:obsAll, tipo:'buncher',
+        etapa:'BUNCHER (ENCORDOAMENTO)',
+        prio_prod:prioMax,
+        dt_entrega:dtMin
       };
-      ORDENS.unshift(op); opsGeradas.push(op); criadas++;
+      ORDENS.unshift(op); opsGeradas.push(op);
     });
 
-    // EXTRUSORA OPs — uma por produto (mantém separado), referencia buncher
+    // Extrusora: NUMEROOP_B — referencia buncher _A
     items.forEach(it=>{
       const [fd,ff]=getFil(it[12],it[13]);
       const bKey=`${fd}_${ff}`;
-      const buncherId=buncherOPMap[bKey]||'';
+      const bInfo=buncherOPMap[bKey]||{};
+      const numBase=bInfo.num_base||gerarNumOP();
+      const idB=numBase+'_B';
       const op={
-        id:gerarNumOP(),
+        id:idB, num_base:numBase, subordem:'B',
         pedido:it[2], pedidos:[it[2]],
         cliente:String(it[1]||'').slice(0,50),
         produto:it[3], codigo:it[4],
@@ -2487,20 +2711,29 @@ function gerarOPsComOpcoes(modo, tipoAgrup){
         fil_diam:fd, fil_fios:ff,
         metros:Math.round((it[11]||0)*10)/10,
         status:'Pendente', dt_criacao:hoje,
-        operador:'', obs:'',
-        tipo:'extrusora', etapa:'EXTRUSÃO',
-        buncher_origem:buncherId,
-        buncher_desc:buncherId?`Ø${fd}/${ff}f`:'',
-        is_imperium:it[16]||0,
-        dt_entrega:it[7]||it[8]||''
+        operador:'', turno:'',
+        obs:it._obs||'', tipo:'extrusora',
+        etapa:'EXTRUSÃO',
+        buncher_origem:bInfo.id||'',
+        buncher_desc:bInfo.id?`Ø${fd}/${ff}f`:'',
+        prio_prod:it._prio_prod||'Normal',
+        dt_entrega:it._dt_entrega||it[7]||it[8]||'',
+        is_imperium:it[16]||0
       };
-      ORDENS.unshift(op); opsGeradas.push(op); criadas++;
+      ORDENS.unshift(op); opsGeradas.push(op);
     });
   }
 
   saveSingle(LS.ORDENS,ORDENS);
-  alert('✅ '+criadas+' Ordens de Produção criadas!\n('+opsGeradas.filter(o=>o.tipo==='buncher').length+' Buncher + '+opsGeradas.filter(o=>o.tipo==='extrusora'||o.tipo==='pcp'||o.tipo==='individual').length+' Extrusora/Individual)');
-  go('ordens');
+
+  const nBunch=opsGeradas.filter(o=>o.tipo==='buncher').length;
+  const nExt=opsGeradas.filter(o=>o.tipo==='extrusora'||o.tipo==='individual').length;
+  const msg=`✅ ${opsGeradas.length} OPs criadas!\n${nBunch} Buncher (_A) + ${nExt} Extrusora (_B)\n\nDeseja salvar a lista em PDF?`;
+
+  if(confirm(msg)){
+    exportarOPsGeradasPDF(opsGeradas);
+  }
+  go('painel');
 }
 
 function gerarOPsDaPrevia(){ mostrarModalGerarOPs('todos'); }
@@ -2642,6 +2875,50 @@ function exportarHistorico(){exportHistorico();}
       <button class="btn bgho" onclick="sgqCancel()">Cancelar</button>
     </div>
     <div class="login-err" id="sgq-err" style="margin-top:8px"></div>
+  </div>
+</div>
+
+
+<!-- ══ PAINEL OPs ══ -->
+<div id="pg-painel" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">🏭 Painel de OPs em Andamento</span>
+    <button class="btn bgho bsm" onclick="renderPainel()">🔄 Atualizar</button>
+    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
+  </div>
+  <!-- KPIs -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="kcard"><div class="kv" id="pan-nand">0</div><div class="kl">Em Andamento</div></div>
+    <div class="kcard"><div class="kv" id="pan-npend">0</div><div class="kl">Pendentes</div></div>
+    <div class="kcard"><div class="kv c-orange" id="pan-mtot">0m</div><div class="kl">Total Metros</div></div>
+    <div class="kcard"><div class="kv" id="pan-nop">0</div><div class="kl">Total OPs Hoje</div></div>
+  </div>
+  <!-- Filtros -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+    <select id="pan-turno" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos os turnos</option>
+      <option value="T1">T1 (06h-14h)</option>
+      <option value="T2">T2 (14h-22h)</option>
+      <option value="T3">T3 (22h-06h)</option>
+    </select>
+    <select id="pan-oper" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos os operadores</option>
+    </select>
+    <select id="pan-st" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos os status</option>
+      <option value="Em andamento">Em andamento</option>
+      <option value="Pendente">Pendente</option>
+      <option value="Concluída">Concluída</option>
+    </select>
+    <input id="pan-q" placeholder="Buscar OP / produto..." oninput="renderPainel()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:200px">
+  </div>
+  <!-- Cards por turno/operador -->
+  <div id="painel-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px"></div>
+  <!-- Tabela completa -->
+  <div class="sec" style="margin-top:14px">
+    <div class="sec-hd"><span class="sec-tt">Lista Completa</span><span class="chip c-blue" id="pan-cnt">0</span></div>
+    <div id="painel-list" class="sec-bd tw ts"></div>
   </div>
 </div>
 
