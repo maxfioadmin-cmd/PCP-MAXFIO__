@@ -1505,10 +1505,10 @@ let editingUserId=null;
 
 // ═══════════ DEFAULTS ═══════════
 const DEFAULT_USERS=[
-  {id:1,nome:'Administrador',login:'admin',pwd:'admin123',perfil:'admin',turno:'',abas:['import','pedidos','pcp','ordens','buncher','extrusora','lotes','turnos','reserva','usuarios']},
-  {id:2,nome:'Gestor PCP',login:'gestor',pwd:'gestor123',perfil:'gestor',turno:'',abas:['pedidos','pcp','ordens','buncher','extrusora','lotes','turnos','reserva']},
-  {id:3,nome:'Operador T1',login:'op1',pwd:'op1234',perfil:'operador',turno:'T1',abas:['lotes','turnos']},
-  {id:4,nome:'SGQ Qualidade',login:'sgq',pwd:'sgq2024',perfil:'sgq',turno:'',abas:['lotes']},
+  {id:1,nome:'Administrador',login:'admin',    pwd:'admin123', perfil:'admin',      turno:'',  setor:'TI'},
+  {id:2,nome:'Gestor PCP',   login:'gestor',   pwd:'gestor123',perfil:'gestor',     turno:'',  setor:'PCP'},
+  {id:3,nome:'Operador T1',  login:'op1',      pwd:'op1234',   perfil:'operacional',turno:'T1',setor:'Produção'},
+  {id:4,nome:'SGQ Qualidade',login:'sgq',      pwd:'sgq2024',  perfil:'producao',   turno:'',  setor:'Qualidade'},
 ];
 const OPERADORES=['PEDRO KUROVISKI JUNIOR','EMERSON JASKIU DE OLIVEIRA','LUIZ ADRIANO TOMCZAK FERNANDES','JOSUE FERREIRA DE OLIVEIRA','IARLEY DA SILVA MARTINS','THIAGO TEIXEIRA GODINHO','TIAGO ANSELMO DE OLIVEIRA','CLAUDIO ADÃO DE OLIVEIRA'];
 const ALL_ABAS=['import','pedidos','pcp','ordens','buncher','extrusora','lotes','turnos','reserva','usuarios'];
@@ -1802,10 +1802,14 @@ function doLogin(){
     document.getElementById('li-err').textContent='Usuário ou senha incorretos (admin/admin123)';
     return;
   }
+  // Normalize legacy perfil names
+  const perfilMap={'op1':'operacional','sgq':'producao','operador':'operacional','admin':'admin','gestor':'gestor','logistica':'logistica','comercial':'comercial','producao':'producao','operacional':'operacional'};
+  user.perfil = perfilMap[user.perfil]||user.perfil||'operacional';
   CUSER=user;
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('main-nav').style.display='flex';
-  document.getElementById('usr-chip').textContent=user.nome+' ['+user.perfil+']';
+  const perfDef=(typeof PERFIS_DEF!=='undefined'&&PERFIS_DEF[user.perfil])||{icon:'👤',label:user.perfil};
+  document.getElementById('usr-chip').textContent=perfDef.icon+' '+user.nome;
   applyPermissions();
   populateOperSelects();
   populateClienteSelect();
@@ -3727,6 +3731,33 @@ function getBuncherConfig(secao){
   const s = parseFloat(String(secao).replace(',','.').split('x')[0]) || 0;
   return BUNCHER_BASE.find(r => r.b === s) || null;
 }
+
+// ═══════════ PERFIS E PERMISSÕES ═══════════
+const PERFIS_DEF = {
+  admin:       {label:'Administrador',    icon:'👑', cor:'c-red'},
+  gestor:      {label:'Gestor PCP',       icon:'⚙️', cor:'c-blue'},
+  logistica:   {label:'Logística',        icon:'📦', cor:'c-teal'},
+  comercial:   {label:'Comercial',        icon:'🤝', cor:'c-purple'},
+  producao:    {label:'Gestão Produção',  icon:'🏭', cor:'c-orange'},
+  operacional: {label:'Operacional',      icon:'👷', cor:'c-gray'},
+};
+const ABAS_PERFIL = {
+  admin:       'todas',
+  gestor:      ['dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','reserva','engenharia','usuarios','historico','comercial','import'],
+  logistica:   ['dash','reserva','painel','ordens'],
+  comercial:   ['dash','pedidos','comercial'],
+  producao:    ['dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','engenharia','historico','import'],
+  operacional: ['dash','painel','trefila','buncherfixo','buncherredir','extrusora','lotes'],
+};
+const WRITE_PERFIL = {
+  admin:      'tudo',
+  gestor:     'tudo',
+  logistica:  ['reserva'],
+  comercial:  ['comercial'],
+  producao:   ['ordens','painel','trefila','buncherfixo','buncherredir','extrusora','lotes','import'],
+  operacional:'proprias_ops',
+};
+
 // ═══════════ FLUXO DE PRODUÇÃO ═══════════
 // Ordem: Trefila → Buncher Fixo → [Buncher Redir se ≤10mm Flex] → Torcedeira → Extrusora
 
