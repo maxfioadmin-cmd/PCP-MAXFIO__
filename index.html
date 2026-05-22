@@ -953,49 +953,531 @@ tr:hover td{background:var(--bg3)}
 
 <!-- ══ USUÁRIOS ══ -->
 <div id="pg-usuarios" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">👥 Cadastro de Usuários</span>
+    <span class="chip c-blue" id="usr-cnt">0</span>
+  </div>
   <div class="g2">
-    <div class="sec"><div class="sec-hd"><span class="sec-tt">👥 Cadastro de Usuários</span>
-      <span class="chip c-blue" id="usr-cnt">0</span></div>
+    <!-- FORM NOVO/EDITAR USUARIO -->
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-tt" id="usr-form-ttl">Novo Usuário</span>
+      </div>
       <div class="sec-bd">
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
-          <div style="font-weight:600;font-size:12px;margin-bottom:10px" id="usr-form-ttl">Novo Usuário</div>
-          <div class="frow">
-            <div class="fg"><label>Nome</label><input id="uf-nome" placeholder="Nome completo"></div>
-            <div class="fg"><label>Login</label><input id="uf-login" placeholder="usuario" autocomplete="off"></div>
-            <div class="fg"><label>Senha</label><input type="password" id="uf-pwd" placeholder="••••••" autocomplete="new-password"></div>
+        <!-- Nome, Login, Senha -->
+        <div class="frow" style="margin-bottom:10px">
+          <div class="fg">
+            <label>Nome completo</label>
+            <input id="uf-nome" placeholder="Ex: Michelle Costa" autocomplete="off">
           </div>
-          <div class="frow">
-            <div class="fg"><label>Perfil</label><select id="uf-perfil" onchange="updatePerfilPerms()">
-              <option value="admin">Administrador</option>
-              <option value="gestor">Gestor</option>
-              <option value="operador">Operador</option>
-            </select></div>
-            <div class="fg"><label>Turno Padrão</label><select id="uf-turno">
-              <option value="">Todos</option>
-              <option value="T1">Turno 1</option><option value="T2">Turno 2</option>
-              <option value="T3">Turno 3</option><option value="TX">Extra</option>
-            </select></div>
+          <div class="fg">
+            <label>Login</label>
+            <input id="uf-login" placeholder="michelle" autocomplete="off">
           </div>
-          <div class="fg"><label>Abas Visíveis (além do Dashboard)</label>
-            <div id="uf-abas" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:10px">
-            <button class="btn bgrn" onclick="salvarUsuario()">✅ Salvar</button>
-            <button class="btn bdng" onclick="cancelarEdUsuario()">Cancelar</button>
+          <div class="fg">
+            <label>Senha</label>
+            <input type="password" id="uf-pwd" placeholder="••••••" autocomplete="new-password">
           </div>
         </div>
-        <div id="usr-list"></div>
+        <!-- Perfil + Turno + Setor -->
+        <div class="frow" style="margin-bottom:10px">
+          <div class="fg">
+            <label>Perfil / Permissão</label>
+            <select id="uf-perfil" onchange="updatePerfilPerms()" style="font-size:13px">
+              <option value="admin">👑 Administrador</option>
+              <option value="gestor">⚙️ Gestor PCP</option>
+              <option value="logistica">📦 Logística</option>
+              <option value="comercial">🤝 Comercial</option>
+              <option value="producao">🏭 Gestão Produção</option>
+              <option value="operacional" selected>👷 Operacional</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Setor</label>
+            <input id="uf-setor" placeholder="Ex: Extrusão, Torcedeira...">
+          </div>
+          <div class="fg">
+            <label>Turno Padrão</label>
+            <select id="uf-turno">
+              <option value="">Todos</option>
+              <option value="T1">T1 (06h-14h)</option>
+              <option value="T2">T2 (14h-22h)</option>
+              <option value="T3">T3 (22h-06h)</option>
+              <option value="TX">Extra</option>
+            </select>
+          </div>
+        </div>
+        <!-- Permissões do perfil selecionado (preview) -->
+        <div id="uf-perm-preview" style="background:var(--bg2);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-size:11px">
+          <!-- populated by updatePerfilPerms() -->
+        </div>
+        <!-- Botões -->
+        <div style="display:flex;gap:8px">
+          <button class="btn bsuc" onclick="salvarUsuario()">✅ Salvar</button>
+          <button class="btn bdng" onclick="cancelarEdUsuario()">Cancelar</button>
+        </div>
       </div>
     </div>
-    <div class="sec"><div class="sec-hd"><span class="sec-tt">Permissões por Perfil</span></div>
-      <div class="sec-bd" id="perm-info"></div>
+    <!-- LISTA DE USUARIOS -->
+    <div class="sec">
+      <div class="sec-hd"><span class="sec-tt">Usuários Cadastrados</span></div>
+      <div class="sec-bd" id="usr-list"></div>
     </div>
+  </div>
+  <!-- TABELA DE PERMISSÕES POR PERFIL -->
+  <div class="sec" style="margin-top:14px">
+    <div class="sec-hd"><span class="sec-tt">🔑 Permissões por Perfil</span></div>
+    <div class="sec-bd">
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:var(--navy);color:#fff">
+          <th style="padding:8px;text-align:left">Perfil</th>
+          <th style="padding:8px">Pedidos</th><th style="padding:8px">PCP/OPs</th>
+          <th style="padding:8px">Produção</th><th style="padding:8px">Reserva</th>
+          <th style="padding:8px">Comercial</th><th style="padding:8px">Usuários</th>
+          <th style="padding:8px">Descrição</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:6px;font-weight:600">👑 Admin</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="padding:6px;color:var(--text2)">Acesso total</td></tr>
+          <tr style="background:var(--bg2)"><td style="padding:6px;font-weight:600">⚙️ Gestor PCP</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="padding:6px;color:var(--text2)">Tudo exceto config. sistema</td></tr>
+          <tr><td style="padding:6px;font-weight:600">📦 Logística</td><td style="text-align:center">👁</td><td style="text-align:center">👁</td><td style="text-align:center">👁</td><td style="text-align:center">✅</td><td style="text-align:center">—</td><td style="text-align:center">—</td><td style="padding:6px;color:var(--text2)">Edita reservas, visualiza demais</td></tr>
+          <tr style="background:var(--bg2)"><td style="padding:6px;font-weight:600">🤝 Comercial</td><td style="text-align:center">👁</td><td style="text-align:center">—</td><td style="text-align:center">—</td><td style="text-align:center">—</td><td style="text-align:center">✅</td><td style="text-align:center">—</td><td style="padding:6px;color:var(--text2)">Aba comercial + status pedidos</td></tr>
+          <tr><td style="padding:6px;font-weight:600">🏭 Gestão Prod.</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="text-align:center">👁</td><td style="text-align:center">—</td><td style="text-align:center">—</td><td style="padding:6px;color:var(--text2)">Toda a produção e dashboards</td></tr>
+          <tr style="background:var(--bg2)"><td style="padding:6px;font-weight:600">👷 Operacional</td><td style="text-align:center">—</td><td style="text-align:center">👁</td><td style="text-align:center">✅*</td><td style="text-align:center">—</td><td style="text-align:center">—</td><td style="text-align:center">—</td><td style="padding:6px;color:var(--text2)">Aponta só suas OPs · *restrição</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:10px;color:var(--text3);margin-top:6px">✅ = editar · 👁 = visualizar · — = sem acesso · * = somente OPs atribuídas ao usuário</p>
+    </div>
+  </div>
+
+<!-- ══ HISTÓRICO COMPLETO ══ -->
+<div id="pg-historico" class="pg">
+  <div class="kpis" style="grid-template-columns:repeat(5,1fr)">
+    <div class="kpi blue"><div class="kpi-l">Pedidos</div><div class="kpi-v" id="hc-ped">0</div></div>
+    <div class="kpi green"><div class="kpi-l">Ordens de Prod.</div><div class="kpi-v" id="hc-ord">0</div></div>
+    <div class="kpi orange"><div class="kpi-l">Lotes Produzidos</div><div class="kpi-v" id="hc-lot">0</div></div>
+    <div class="kpi purple"><div class="kpi-l">Prévias PCP</div><div class="kpi-v" id="hc-prv">0</div></div>
+    <div class="kpi gray"><div class="kpi-l">Reservas</div><div class="kpi-v" id="hc-rsv">0</div></div>
+  </div>
+
+  <div class="subtabs" style="margin-bottom:14px">
+    <div class="stab on" id="hct-pedidos" onclick="hcSub('pedidos')">📋 Pedidos</div>
+    <div class="stab" id="hct-ordens"   onclick="hcSub('ordens')">📝 Ordens OP</div>
+    <div class="stab" id="hct-lotes"    onclick="hcSub('lotes')">✅ Lotes</div>
+    <div class="stab" id="hct-previas"  onclick="hcSub('previas')">📊 Prévias PCP</div>
+    <div class="stab" id="hct-reservas" onclick="hcSub('reservas')">📦 Reservas</div>
+    <div class="stab" id="hct-import"   onclick="hcSub('import')">📥 Importações</div>
+  </div>
+
+  <!-- Filtros globais do histórico -->
+  <div class="sec" style="margin-bottom:10px">
+    <div class="sec-hd">
+      <span class="sec-tt">🔍 Filtros</span>
+      <input id="hc-q" placeholder="Buscar em qualquer campo…" style="width:260px" oninput="renderHistorico()">
+      <input type="date" id="hc-de" onchange="renderHistorico()" style="width:140px">
+      <span style="font-size:10px;color:var(--text3)">até</span>
+      <input type="date" id="hc-ate" onchange="renderHistorico()" style="width:140px">
+      <button class="btn bgho bsm" onclick="limparFiltrosHC()">✕ Limpar</button>
+      <button class="btn bgho bsm" style="margin-left:auto" onclick="exportarHistorico()">⬇ Exportar CSV</button>
+      <button class="btn bred bsm" onclick="limparDadosHC()" title="Apagar todos os dados desta aba">🗑 Limpar Tudo</button>
+    </div>
+  </div>
+
+  <div id="hc-content"></div>
+</div>
+<!-- SGQ NC MODAL -->
+<div id="sgq-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:2px solid var(--red);border-radius:var(--r2);padding:24px;width:420px;max-width:95vw">
+    <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:var(--red)">⚠ Não Conformidade — Análise SGQ</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:14px" id="sgq-desc"></div>
+    <div class="fg"><label>Descrição da NC</label><textarea id="sgq-nc-desc" style="width:100%;min-height:60px;font-size:11px" placeholder="Descreva o problema…"></textarea></div>
+    <div class="fg"><label>Senha da SGQ</label><input type="password" id="sgq-pwd" placeholder="••••••" autocomplete="new-password"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn bgrn" style="flex:1;justify-content:center" onclick="sgqApprove()">✅ Aprovar Lote</button>
+      <button class="btn bred" style="flex:1;justify-content:center" onclick="sgqReject()">❌ Reprovar → Nova Ordem Urgente</button>
+      <button class="btn bdng" onclick="sgqCancel()">Cancelar</button>
+    </div>
+    <div class="login-err" id="sgq-err" style="margin-top:8px"></div>
   </div>
 </div>
 
 
+<!-- ══ PAINEL OPs ══ -->
+<div id="pg-painel" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">🏭 Painel de OPs em Andamento</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn bgho bsm" onclick="go('trefila')"     style="background:rgba(251,146,60,.15);color:#ea580c">🔧 Trefila</button>
+      <button class="btn bgho bsm" onclick="go('buncherfixo')" style="background:rgba(168,85,247,.15);color:#9333ea">🔩 Buncher</button>
+      <button class="btn bgho bsm" onclick="go('buncherredir')" style="background:rgba(14,165,233,.15);color:#0284c7">🌀 Torcedeira</button>
+      <button class="btn bgho bsm" onclick="go('extrusora')"   style="background:rgba(34,197,94,.15);color:#16a34a">🏭 Extrusora</button>
+    </div>
+    <button class="btn bgho bsm" onclick="renderPainel()">🔄 Atualizar</button>
+    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
+  </div>
+  <!-- KPIs -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="kcard"><div class="kv" id="pan-nand">0</div><div class="kl">Em Andamento</div></div>
+    <div class="kcard"><div class="kv" id="pan-npend">0</div><div class="kl">Pendentes</div></div>
+    <div class="kcard"><div class="kv c-orange" id="pan-mtot">0m</div><div class="kl">Total Metros</div></div>
+    <div class="kcard"><div class="kv" id="pan-nop">0</div><div class="kl">Total OPs Hoje</div></div>
+    <div class="kcard" style="border:2px solid #f59e0b;display:none"><div class="kv" id="pan-nreab" style="color:#92400e">0</div><div class="kl">⚠ Reabertas</div></div>
+  </div>
+  <!-- Filtros -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+    <input id="pan-op-q" placeholder="🔍 Número da OP..." oninput="renderPainel()"
+      style="padding:6px 10px;border:2px solid var(--navy);border-radius:var(--r);font-size:11px;width:170px;font-family:monospace">
+    <select id="pan-turno" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos os turnos</option>
+      <option value="T1">T1 (06h-14h)</option>
+      <option value="T2">T2 (14h-22h)</option>
+      <option value="T3">T3 (22h-06h)</option>
+    </select>
+    <select id="pan-oper" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos os operadores</option>
+    </select>
+    <select id="pan-st" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos os status</option>
+      <option value="Em andamento">Em andamento</option>
+      <option value="Pendente">Pendente</option>
+      <option value="Reaberta">Reaberta</option>
+      <option value="Concluída">Concluída</option>
+    </select>
+    <input id="pan-q" placeholder="Produto / pedido..." oninput="renderPainel()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:180px">
+  </div>
+  <!-- Cards por turno/operador -->
+  <div id="painel-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px"></div>
+  <!-- Tabela completa -->
+  <div class="sec" style="margin-top:14px">
+    <div class="sec-hd"><span class="sec-tt">Lista Completa</span><span class="chip c-blue" id="pan-cnt">0</span></div>
+    <div id="painel-list" class="sec-bd tw ts"></div>
+  </div>
+</div>
 
+
+<!-- ══ TREFILA ══ -->
+<div id="pg-trefila" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">🔧 Trefila — Bobinas de Filamento</span>
+    <button class="btn bpri bsm" onclick="abrirNovaOPTrefila()">+ Nova OP Trefila</button>
+    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
+  </div>
+  <!-- KPIs consumo de filamentos -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="kcard"><div class="kv c-orange" id="tref-need28">0m</div><div class="kl">Necessidade Ø0,28</div></div>
+    <div class="kcard"><div class="kv c-orange" id="tref-need36">0m</div><div class="kl">Necessidade Ø0,36</div></div>
+    <div class="kcard"><div class="kv" id="tref-nops">0</div><div class="kl">OPs Trefila</div></div>
+  </div>
+  <!-- Form nova OP -->
+  <div class="sec" id="form-trefila" style="display:none;margin-bottom:14px">
+    <div class="sec-hd"><span class="sec-tt">Nova OP Trefila</span>
+      <button class="btn bdng bsm" onclick="fecharFormTrefila()">✕</button>
+    </div>
+    <div class="sec-bd" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="fg"><label>Ø Fio</label>
+        <select id="tref-diam" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+          <option value="0.28">Ø 0,28mm</option>
+          <option value="0.36">Ø 0,36mm</option>
+        </select>
+      </div>
+      <div class="fg"><label>Metros bobina</label>
+        <input id="tref-metros" type="number" min="100" step="100" value="5000"
+          style="width:120px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+      </div>
+      <div class="fg"><label>Qtd. bobinas</label>
+        <input id="tref-qtd" type="number" min="1" value="1"
+          style="width:80px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+      </div>
+      <div class="fg"><label>Operador</label>
+        <select id="tref-oper" style="padding:6px;border:1px solid var(--border);border-radius:var(--r);min-width:120px">
+          <option value="">Selecionar</option>
+        </select>
+      </div>
+      <div class="fg"><label>Turno</label>
+        <select id="tref-turno" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+          <option value="">—</option>
+          <option value="T1">T1</option><option value="T2">T2</option><option value="T3">T3</option>
+        </select>
+      </div>
+      <div class="fg"><label>Obs.</label>
+        <input id="tref-obs" placeholder="Observação..." style="width:180px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+      </div>
+      <button class="btn bsuc" onclick="criarOPTrefila()">✅ Criar OP</button>
+    </div>
+  </div>
+  <!-- Lista OPs Trefila -->
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-tt">OPs de Trefila</span>
+      <span class="chip c-blue" id="tref-cnt">0</span>
+    </div>
+    <div id="tref-list" class="sec-bd tw ts"></div>
+  </div>
+</div>
+
+<!-- ══ BUNCHER ══ -->
+<div id="pg-buncherfixo" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">🔩 Buncher — 4 Máquinas</span>
+    <button class="btn bpri bsm" onclick="abrirNovaOPBuncherFixo()">+ Nova OP</button>
+    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
+  </div>
+
+  <!-- Machine utilization panel -->
+  <div id="bf-maq-panel" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+
+  <!-- KPIs -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="kcard"><div class="kv" id="bf-nops">0</div><div class="kl">OPs Ativas</div></div>
+    <div class="kcard"><div class="kv c-orange" id="bf-tot">0m</div><div class="kl">Total em Produção</div></div>
+    <div class="kcard"><div class="kv" id="bf-cnt">0</div><div class="kl">Total OPs</div></div>
+  </div>
+
+  <!-- Form nova OP -->
+  <div class="sec" id="form-bfixo" style="display:none;margin-bottom:14px">
+    <div class="sec-hd">
+      <span class="sec-tt">Nova OP Buncher</span>
+      <button class="btn bdng bsm" onclick="fecharFormBFixed()">✕</button>
+    </div>
+    <div class="sec-bd">
+      <!-- Linha 1: seleção da bitola -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+        <div class="fg">
+          <label>Bitola (mm²)</label>
+          <select id="bf-bitola" onchange="onBuncherBitolaChange()"
+            style="padding:6px;border:1px solid var(--border);border-radius:var(--r);min-width:120px">
+            <option value="">Selecionar</option>
+            <option value="16">16 mm²</option>
+            <option value="25">25 mm²</option>
+            <option value="35">35 mm²</option>
+            <option value="50">50 mm²</option>
+            <option value="70">70 mm²</option>
+            <option value="95">95 mm²</option>
+            <option value="120">120 mm²</option>
+            <option value="150">150 mm²</option>
+            <option value="185">185 mm²</option>
+            <option value="240">240 mm²</option>
+            <option value="300">300 mm²</option>
+            <option value="custom">Outra / Manual</option>
+          </select>
+        </div>
+        <div id="bf-config-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;font-size:11px;min-width:260px;display:none">
+          <!-- populated by JS -->
+        </div>
+      </div>
+      <!-- Linha 2: configuração manual (se custom ou override) -->
+      <div id="bf-manual-row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+        <div class="fg">
+          <label>Ø Fio (mm)</label>
+          <select id="bf-diam" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+            <option value="0.28">Ø 0,28mm</option>
+            <option value="0.36" selected>Ø 0,36mm</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Nº Bobinas</label>
+          <input id="bf-fios" type="number" min="1" value="12"
+            style="width:80px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+        </div>
+        <div class="fg">
+          <label>Cordas/Bobina</label>
+          <input id="bf-cordas" type="number" min="1" value="84"
+            style="width:80px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+        </div>
+        <div class="fg">
+          <label>Alma (fios)</label>
+          <input id="bf-alma" type="number" min="0" value="0"
+            style="width:70px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+        </div>
+        <div class="fg">
+          <label>Passada</label>
+          <select id="bf-passada" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+            <option value="1">1ª passada</option>
+            <option value="2">2ª passada</option>
+          </select>
+        </div>
+      </div>
+      <!-- Linha 3: máquina, metros, operador, turno -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+        <div class="fg">
+          <label>Máquina</label>
+          <select id="bf-maq" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+            <option value="Buncher 1">Buncher 1</option>
+            <option value="Buncher 2">Buncher 2</option>
+            <option value="Buncher 3">Buncher 3</option>
+            <option value="Buncher 4">Buncher 4</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Metros</label>
+          <input id="bf-metros" type="number" min="100" step="100" value="10000"
+            style="width:110px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+        </div>
+        <div class="fg">
+          <label>Operador</label>
+          <select id="bf-oper" style="padding:6px;border:1px solid var(--border);border-radius:var(--r);min-width:130px">
+            <option value="">Selecionar</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Turno</label>
+          <select id="bf-turno" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+            <option value="">—</option>
+            <option value="T1">T1 (06h-14h)</option>
+            <option value="T2">T2 (14h-22h)</option>
+            <option value="T3">T3 (22h-06h)</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Obs.</label>
+          <input id="bf-obs" placeholder="Observação..."
+            style="width:200px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+        </div>
+        <button class="btn bsuc" onclick="criarOPBuncherFixo()">✅ Criar OP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista OPs -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-tt">OPs de Buncher</span>
+      <span class="chip c-purple" id="bf-cnt-list">0</span>
+      <select id="bf-st-fil" onchange="renderBuncherFixo()"
+        style="padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;margin-left:auto">
+        <option value="">Todos</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Em andamento">Em andamento</option>
+        <option value="Concluída">Concluída</option>
+      </select>
+    </div>
+    <div id="bf-list" class="sec-bd tw ts"></div>
+  </div>
+</div>
+
+<!-- ══ TORCEDEIRA ══ -->
+<div id="pg-buncherredir" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">🌀 Torcedeira — Cabos Finos ≤ 10mm² (Buncher Redirecionado)</span>
+    <span style="font-size:11px;color:var(--text2)">Gerado automaticamente pelos pedidos de cabo Flexível até 10mm²</span>
+    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
+  </div>
+  <!-- Explicação do fluxo -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--text2)">
+    <strong style="color:var(--navy)">Fluxo para cabos Flex ≤ 10mm²:</strong>
+    &nbsp;<span style="background:#6366f1;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px">TREFILA</span> →
+    <span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px">BUNCHER (4 máq.)</span> →
+    <span style="background:#a855f7;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px">TORCEDEIRA</span> →
+    <span style="background:#f97316;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px">EXTRUSORA</span>
+    &nbsp;&nbsp;As OPs são criadas automaticamente ao gerar a prévia PCP.
+  </div>
+  <!-- KPIs -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="kcard"><div class="kv" id="br-nops">0</div><div class="kl">OPs Torcedeira</div></div>
+    <div class="kcard"><div class="kv c-orange" id="br-mtot">0m</div><div class="kl">Total Metros</div></div>
+    <div class="kcard"><div class="kv" id="br-nped">0</div><div class="kl">Pedidos Atendidos</div></div>
+    <div class="kcard"><div class="kv" id="br-nand">0</div><div class="kl">Em Andamento</div></div>
+  </div>
+  <!-- Filtros -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    <select id="br-st" onchange="renderBuncherRedir()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos os status</option>
+      <option value="Pendente">Pendente</option>
+      <option value="Em andamento">Em andamento</option>
+      <option value="Concluída">Concluída</option>
+    </select>
+    <input id="br-q" placeholder="Buscar..." oninput="renderBuncherRedir()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:200px">
+  </div>
+  <!-- Lista -->
+  <div id="br-list" class="sec-bd tw ts"></div>
+</div>
+
+
+<!-- ══ MODAL RESERVAR ══ -->
+<div id="modal-reservar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)fecharModalReservar()">
+  <div style="background:var(--bg);border-radius:10px;padding:24px;width:380px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+    <h3 style="margin:0 0 16px;color:var(--navy)">📦 Reservar Item</h3>
+    <div style="background:var(--bg2);border-radius:6px;padding:10px;margin-bottom:14px;font-size:12px">
+      <div><strong>Pedido:</strong> <span id="rsv-modal-ped" class="mono"></span></div>
+      <div><strong>Cliente:</strong> <span id="rsv-modal-cli"></span></div>
+      <div><strong>Produto:</strong> <span id="rsv-modal-prod"></span></div>
+      <div style="display:flex;gap:16px;margin-top:6px">
+        <div><strong>Pendente:</strong> <span id="rsv-modal-pend" style="color:var(--orange)"></span></div>
+        <div><strong>Estoque:</strong> <span id="rsv-modal-est" style="color:var(--green)"></span></div>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:600">Quantidade a reservar (<span id="rsv-modal-un"></span>)</label>
+      <input id="rsv-modal-qt" type="number" min="0" step="0.1"
+        style="width:100%;padding:8px;border:2px solid var(--navy);border-radius:var(--r);font-size:14px;margin-top:4px"
+        onkeydown="if(event.key==='Enter')confirmarReserva()">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn bsuc" style="flex:1" onclick="confirmarReserva()">✅ Confirmar Reserva</button>
+      <button class="btn bdng" onclick="fecharModalReservar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COMERCIAL ══ -->
+<div id="pg-comercial" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">🤝 Comercial — Gestão de Clientes</span>
+    <button class="btn bsuc bsm" onclick="salvarComercial()">💾 Salvar</button>
+  </div>
+  <!-- Filters -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+    <input id="com-q" placeholder="Buscar cliente..." oninput="renderComercial()"
+      style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:220px">
+    <select id="com-fprio" onchange="renderComercial()" style="padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+      <option value="">Todas as prioridades</option>
+      <option value="CRITICO">🔴 Crítico</option>
+      <option value="ALTA">🟠 Alta</option>
+      <option value="NORMAL">🟢 Normal</option>
+      <option value="VIP">⭐ VIP</option>
+    </select>
+    <button class="btn bgho bsm" onclick="renderComercial()">🔄 Atualizar</button>
+  </div>
+  <div id="comercial-list"></div>
+</div>
+<!-- ══ MODAL GERAR OPs ══ -->
+<div id="modal-gerar-ops" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--bg);border-radius:10px;padding:24px;width:420px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+    <h3 style="margin:0 0 16px;color:var(--navy)">⚙️ Gerar Ordens de Produção</h3>
+    <input type="hidden" id="mgop-modo" value="todos">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:var(--bg2);border-radius:6px;padding:10px;font-size:12px">
+        <span class="chip c-blue" id="mgop-n-todos">0</span> itens na prévia &nbsp;
+        <span class="chip c-green" id="mgop-n-sel">0</span> selecionados
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Quais itens:</label>
+        <select id="mgop-modo" style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+          <option value="todos">Todos da prévia</option>
+          <option value="selecionados">Somente selecionados</option>
+          <option value="individual">Individual (um por pedido)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tipo de agrupamento:</label>
+        <select id="mgop-tipo" style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+          <option value="buncher_ext">Buncher agrupado + Extrusora separada (recomendado)</option>
+          <option value="individual">Individual por pedido/produto</option>
+        </select>
+      </div>
+      <p style="font-size:11px;color:var(--text2);margin:0;background:var(--bg2);padding:8px;border-radius:6px">
+        <strong>Buncher agrupado:</strong> produtos com mesma formação de filamentos são somados em uma única OP de encordoamento.<br>
+        <strong>Extrusora:</strong> mantida separada por produto, com referência ao Buncher de origem.
+      </p>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn bpri" style="flex:1" onclick="confirmarModalGerarOPs()">⚙️ Gerar OPs</button>
+        <button class="btn bdng" onclick="fecharModalGerarOPs()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
+
 
 // ═══════════ EMBEDDED DATA ═══════════
 // Fields: [id,cliente,pedido,produto,codigo,status,dt_emissao,dt_entrega,dt_fat,qt_m_pend,qt_m_est,qt_m_prod,grupo_prod,secao,fil_diam,fil_fios,is_imperium]
@@ -2907,20 +3389,28 @@ function go(id){
 }
 
 // ═══════════ PERMISSIONS ═══════════
+function canAccessAba(id){
+  if(!CUSER)return id==='dash';
+  const p=CUSER.perfil||'operacional';
+  if(p==='admin'||p==='gestor')return true;
+  const abas=ABAS_PERFIL[p]||['dash'];
+  if(abas==='todas')return true;
+  return abas.includes(id);
+}
 function canAccess(id){
-  if(!CUSER)return false;
-  const p=CUSER.perfil;
-  if(p==='admin')return true;
-  const blocked={gestor:[],op1:['usuarios','historico'],sgq:['usuarios']};
-  return !(blocked[p]||[]).includes(id);
+  if(!CUSER)return id==='dash';
+  return canAccessAba(id);
 }
 function applyPermissions(){
   if(!CUSER)return;
-  const p=CUSER.perfil;
-  const hide=p==='op1'?['nt-usuarios','nt-historico']:p==='sgq'?['nt-usuarios']:[];
-  document.querySelectorAll('.nt').forEach(el=>{
-    el.style.display=hide.includes(el.id)?'none':'';
+  const p=CUSER.perfil||'operacional';
+  const abas=ABAS_PERFIL[p]||['dash'];
+  document.querySelectorAll('.nt[id^="nt-"]').forEach(el=>{
+    const abaId=el.id.replace('nt-','');
+    el.style.display=(abas==='todas'||abas.includes(abaId))?'':'none';
   });
+  const chip=document.getElementById('usr-chip');
+  if(chip&&PERFIS_DEF[p]) chip.textContent=PERFIS_DEF[p].icon+' '+PERFIS_DEF[p].label;
 }
 
 // ═══════════ HELPERS ═══════════
@@ -5191,12 +5681,26 @@ function hcSub(){}
 let _usrEdit=null;
 function renderUsuarios(){
   const el=document.getElementById('usr-list');if(!el)return;
-  el.innerHTML=USERS.map(u=>`<div style="padding:8px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:11px">
-    <span style="flex:1"><strong>${u.nome}</strong> <span class="chip c-blue" style="font-size:9px">${u.perfil}</span></span>
-    <span style="color:var(--text3)">${u.login}</span>
-    <button class="btn bgho bsm" onclick="editarUsuario('${u.login}')">✏️</button>
-    ${!DEFAULT_USERS.find(d=>d.login===u.login)?`<button class="btn bgho bsm" onclick="deletarUsuario('${u.login}')">🗑</button>`:''}
-  </div>`).join('');
+  const cnt=document.getElementById('usr-cnt');if(cnt)cnt.textContent=USERS.length;
+  if(USERS.length===0){el.innerHTML='<p style="color:var(--text3);font-size:12px">Nenhum usuário cadastrado.</p>';return;}
+  el.innerHTML=USERS.map(u=>{
+    const def=PERFIS_DEF[u.perfil]||{icon:'👤',label:u.perfil,cor:'c-gray'};
+    const isDefault=DEFAULT_USERS.find(d=>d.login===u.login);
+    return`<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">${def.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px">${u.nome}</div>
+        <div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap">
+          <span class="chip ${def.cor}" style="font-size:10px">${def.label}</span>
+          ${u.setor?`<span class="chip c-gray" style="font-size:10px">🏢 ${u.setor}</span>`:''}
+          ${u.turno?`<span class="chip c-gray" style="font-size:10px">⏰ ${u.turno}</span>`:''}
+        </div>
+      </div>
+      <span style="color:var(--text3);font-size:11px;font-family:monospace">${u.login}</span>
+      <button class="btn bgho bsm" onclick="editarUsuario('${u.login}')">✏️</button>
+      ${!isDefault?`<button class="btn bdng bsm" onclick="deletarUsuario('${u.login}')">🗑</button>`:''}
+    </div>`;
+  }).join('');
 }
 function editarUsuario(login){
   const u=USERS.find(x=>x.login===login);if(!u)return;
@@ -5262,434 +5766,6 @@ function imprimirRelatorio(){window.print();}
 function exportarHistorico(){exportHistorico();}
 
 
+
 </script>
-
-
-<!-- ══ HISTÓRICO COMPLETO ══ -->
-<div id="pg-historico" class="pg">
-  <div class="kpis" style="grid-template-columns:repeat(5,1fr)">
-    <div class="kpi blue"><div class="kpi-l">Pedidos</div><div class="kpi-v" id="hc-ped">0</div></div>
-    <div class="kpi green"><div class="kpi-l">Ordens de Prod.</div><div class="kpi-v" id="hc-ord">0</div></div>
-    <div class="kpi orange"><div class="kpi-l">Lotes Produzidos</div><div class="kpi-v" id="hc-lot">0</div></div>
-    <div class="kpi purple"><div class="kpi-l">Prévias PCP</div><div class="kpi-v" id="hc-prv">0</div></div>
-    <div class="kpi gray"><div class="kpi-l">Reservas</div><div class="kpi-v" id="hc-rsv">0</div></div>
-  </div>
-
-  <div class="subtabs" style="margin-bottom:14px">
-    <div class="stab on" id="hct-pedidos" onclick="hcSub('pedidos')">📋 Pedidos</div>
-    <div class="stab" id="hct-ordens"   onclick="hcSub('ordens')">📝 Ordens OP</div>
-    <div class="stab" id="hct-lotes"    onclick="hcSub('lotes')">✅ Lotes</div>
-    <div class="stab" id="hct-previas"  onclick="hcSub('previas')">📊 Prévias PCP</div>
-    <div class="stab" id="hct-reservas" onclick="hcSub('reservas')">📦 Reservas</div>
-    <div class="stab" id="hct-import"   onclick="hcSub('import')">📥 Importações</div>
-  </div>
-
-  <!-- Filtros globais do histórico -->
-  <div class="sec" style="margin-bottom:10px">
-    <div class="sec-hd">
-      <span class="sec-tt">🔍 Filtros</span>
-      <input id="hc-q" placeholder="Buscar em qualquer campo…" style="width:260px" oninput="renderHistorico()">
-      <input type="date" id="hc-de" onchange="renderHistorico()" style="width:140px">
-      <span style="font-size:10px;color:var(--text3)">até</span>
-      <input type="date" id="hc-ate" onchange="renderHistorico()" style="width:140px">
-      <button class="btn bgho bsm" onclick="limparFiltrosHC()">✕ Limpar</button>
-      <button class="btn bgho bsm" style="margin-left:auto" onclick="exportarHistorico()">⬇ Exportar CSV</button>
-      <button class="btn bred bsm" onclick="limparDadosHC()" title="Apagar todos os dados desta aba">🗑 Limpar Tudo</button>
-    </div>
-  </div>
-
-  <div id="hc-content"></div>
-</div>
-<!-- SGQ NC MODAL -->
-<div id="sgq-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:center;justify-content:center">
-  <div style="background:var(--bg2);border:2px solid var(--red);border-radius:var(--r2);padding:24px;width:420px;max-width:95vw">
-    <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:var(--red)">⚠ Não Conformidade — Análise SGQ</div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:14px" id="sgq-desc"></div>
-    <div class="fg"><label>Descrição da NC</label><textarea id="sgq-nc-desc" style="width:100%;min-height:60px;font-size:11px" placeholder="Descreva o problema…"></textarea></div>
-    <div class="fg"><label>Senha da SGQ</label><input type="password" id="sgq-pwd" placeholder="••••••" autocomplete="new-password"></div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn bgrn" style="flex:1;justify-content:center" onclick="sgqApprove()">✅ Aprovar Lote</button>
-      <button class="btn bred" style="flex:1;justify-content:center" onclick="sgqReject()">❌ Reprovar → Nova Ordem Urgente</button>
-      <button class="btn bdng" onclick="sgqCancel()">Cancelar</button>
-    </div>
-    <div class="login-err" id="sgq-err" style="margin-top:8px"></div>
-  </div>
-</div>
-
-
-<!-- ══ PAINEL OPs ══ -->
-<div id="pg-painel" class="pg">
-  <div class="pg-hd">
-    <span class="pg-tt">🏭 Painel de OPs em Andamento</span>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn bgho bsm" onclick="go('trefila')"     style="background:rgba(251,146,60,.15);color:#ea580c">🔧 Trefila</button>
-      <button class="btn bgho bsm" onclick="go('buncherfixo')" style="background:rgba(168,85,247,.15);color:#9333ea">🔩 Buncher</button>
-      <button class="btn bgho bsm" onclick="go('buncherredir')" style="background:rgba(14,165,233,.15);color:#0284c7">🌀 Torcedeira</button>
-      <button class="btn bgho bsm" onclick="go('extrusora')"   style="background:rgba(34,197,94,.15);color:#16a34a">🏭 Extrusora</button>
-    </div>
-    <button class="btn bgho bsm" onclick="renderPainel()">🔄 Atualizar</button>
-    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
-  </div>
-  <!-- KPIs -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    <div class="kcard"><div class="kv" id="pan-nand">0</div><div class="kl">Em Andamento</div></div>
-    <div class="kcard"><div class="kv" id="pan-npend">0</div><div class="kl">Pendentes</div></div>
-    <div class="kcard"><div class="kv c-orange" id="pan-mtot">0m</div><div class="kl">Total Metros</div></div>
-    <div class="kcard"><div class="kv" id="pan-nop">0</div><div class="kl">Total OPs Hoje</div></div>
-    <div class="kcard" style="border:2px solid #f59e0b;display:none"><div class="kv" id="pan-nreab" style="color:#92400e">0</div><div class="kl">⚠ Reabertas</div></div>
-  </div>
-  <!-- Filtros -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-    <input id="pan-op-q" placeholder="🔍 Número da OP..." oninput="renderPainel()"
-      style="padding:6px 10px;border:2px solid var(--navy);border-radius:var(--r);font-size:11px;width:170px;font-family:monospace">
-    <select id="pan-turno" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-      <option value="">Todos os turnos</option>
-      <option value="T1">T1 (06h-14h)</option>
-      <option value="T2">T2 (14h-22h)</option>
-      <option value="T3">T3 (22h-06h)</option>
-    </select>
-    <select id="pan-oper" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-      <option value="">Todos os operadores</option>
-    </select>
-    <select id="pan-st" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-      <option value="">Todos os status</option>
-      <option value="Em andamento">Em andamento</option>
-      <option value="Pendente">Pendente</option>
-      <option value="Reaberta">Reaberta</option>
-      <option value="Concluída">Concluída</option>
-    </select>
-    <input id="pan-q" placeholder="Produto / pedido..." oninput="renderPainel()"
-      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:180px">
-  </div>
-  <!-- Cards por turno/operador -->
-  <div id="painel-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px"></div>
-  <!-- Tabela completa -->
-  <div class="sec" style="margin-top:14px">
-    <div class="sec-hd"><span class="sec-tt">Lista Completa</span><span class="chip c-blue" id="pan-cnt">0</span></div>
-    <div id="painel-list" class="sec-bd tw ts"></div>
-  </div>
-</div>
-
-
-<!-- ══ TREFILA ══ -->
-<div id="pg-trefila" class="pg">
-  <div class="pg-hd">
-    <span class="pg-tt">🔧 Trefila — Bobinas de Filamento</span>
-    <button class="btn bpri bsm" onclick="abrirNovaOPTrefila()">+ Nova OP Trefila</button>
-    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
-  </div>
-  <!-- KPIs consumo de filamentos -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    <div class="kcard"><div class="kv c-orange" id="tref-need28">0m</div><div class="kl">Necessidade Ø0,28</div></div>
-    <div class="kcard"><div class="kv c-orange" id="tref-need36">0m</div><div class="kl">Necessidade Ø0,36</div></div>
-    <div class="kcard"><div class="kv" id="tref-nops">0</div><div class="kl">OPs Trefila</div></div>
-  </div>
-  <!-- Form nova OP -->
-  <div class="sec" id="form-trefila" style="display:none;margin-bottom:14px">
-    <div class="sec-hd"><span class="sec-tt">Nova OP Trefila</span>
-      <button class="btn bdng bsm" onclick="fecharFormTrefila()">✕</button>
-    </div>
-    <div class="sec-bd" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-      <div class="fg"><label>Ø Fio</label>
-        <select id="tref-diam" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-          <option value="0.28">Ø 0,28mm</option>
-          <option value="0.36">Ø 0,36mm</option>
-        </select>
-      </div>
-      <div class="fg"><label>Metros bobina</label>
-        <input id="tref-metros" type="number" min="100" step="100" value="5000"
-          style="width:120px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-      </div>
-      <div class="fg"><label>Qtd. bobinas</label>
-        <input id="tref-qtd" type="number" min="1" value="1"
-          style="width:80px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-      </div>
-      <div class="fg"><label>Operador</label>
-        <select id="tref-oper" style="padding:6px;border:1px solid var(--border);border-radius:var(--r);min-width:120px">
-          <option value="">Selecionar</option>
-        </select>
-      </div>
-      <div class="fg"><label>Turno</label>
-        <select id="tref-turno" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-          <option value="">—</option>
-          <option value="T1">T1</option><option value="T2">T2</option><option value="T3">T3</option>
-        </select>
-      </div>
-      <div class="fg"><label>Obs.</label>
-        <input id="tref-obs" placeholder="Observação..." style="width:180px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-      </div>
-      <button class="btn bsuc" onclick="criarOPTrefila()">✅ Criar OP</button>
-    </div>
-  </div>
-  <!-- Lista OPs Trefila -->
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-tt">OPs de Trefila</span>
-      <span class="chip c-blue" id="tref-cnt">0</span>
-    </div>
-    <div id="tref-list" class="sec-bd tw ts"></div>
-  </div>
-</div>
-
-<!-- ══ BUNCHER ══ -->
-<div id="pg-buncherfixo" class="pg">
-  <div class="pg-hd">
-    <span class="pg-tt">🔩 Buncher — 4 Máquinas</span>
-    <button class="btn bpri bsm" onclick="abrirNovaOPBuncherFixo()">+ Nova OP</button>
-    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
-  </div>
-
-  <!-- Machine utilization panel -->
-  <div id="bf-maq-panel" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
-
-  <!-- KPIs -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    <div class="kcard"><div class="kv" id="bf-nops">0</div><div class="kl">OPs Ativas</div></div>
-    <div class="kcard"><div class="kv c-orange" id="bf-tot">0m</div><div class="kl">Total em Produção</div></div>
-    <div class="kcard"><div class="kv" id="bf-cnt">0</div><div class="kl">Total OPs</div></div>
-  </div>
-
-  <!-- Form nova OP -->
-  <div class="sec" id="form-bfixo" style="display:none;margin-bottom:14px">
-    <div class="sec-hd">
-      <span class="sec-tt">Nova OP Buncher</span>
-      <button class="btn bdng bsm" onclick="fecharFormBFixed()">✕</button>
-    </div>
-    <div class="sec-bd">
-      <!-- Linha 1: seleção da bitola -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
-        <div class="fg">
-          <label>Bitola (mm²)</label>
-          <select id="bf-bitola" onchange="onBuncherBitolaChange()"
-            style="padding:6px;border:1px solid var(--border);border-radius:var(--r);min-width:120px">
-            <option value="">Selecionar</option>
-            <option value="16">16 mm²</option>
-            <option value="25">25 mm²</option>
-            <option value="35">35 mm²</option>
-            <option value="50">50 mm²</option>
-            <option value="70">70 mm²</option>
-            <option value="95">95 mm²</option>
-            <option value="120">120 mm²</option>
-            <option value="150">150 mm²</option>
-            <option value="185">185 mm²</option>
-            <option value="240">240 mm²</option>
-            <option value="300">300 mm²</option>
-            <option value="custom">Outra / Manual</option>
-          </select>
-        </div>
-        <div id="bf-config-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;font-size:11px;min-width:260px;display:none">
-          <!-- populated by JS -->
-        </div>
-      </div>
-      <!-- Linha 2: configuração manual (se custom ou override) -->
-      <div id="bf-manual-row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
-        <div class="fg">
-          <label>Ø Fio (mm)</label>
-          <select id="bf-diam" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-            <option value="0.28">Ø 0,28mm</option>
-            <option value="0.36" selected>Ø 0,36mm</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label>Nº Bobinas</label>
-          <input id="bf-fios" type="number" min="1" value="12"
-            style="width:80px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-        </div>
-        <div class="fg">
-          <label>Cordas/Bobina</label>
-          <input id="bf-cordas" type="number" min="1" value="84"
-            style="width:80px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-        </div>
-        <div class="fg">
-          <label>Alma (fios)</label>
-          <input id="bf-alma" type="number" min="0" value="0"
-            style="width:70px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-        </div>
-        <div class="fg">
-          <label>Passada</label>
-          <select id="bf-passada" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-            <option value="1">1ª passada</option>
-            <option value="2">2ª passada</option>
-          </select>
-        </div>
-      </div>
-      <!-- Linha 3: máquina, metros, operador, turno -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
-        <div class="fg">
-          <label>Máquina</label>
-          <select id="bf-maq" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-            <option value="Buncher 1">Buncher 1</option>
-            <option value="Buncher 2">Buncher 2</option>
-            <option value="Buncher 3">Buncher 3</option>
-            <option value="Buncher 4">Buncher 4</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label>Metros</label>
-          <input id="bf-metros" type="number" min="100" step="100" value="10000"
-            style="width:110px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-        </div>
-        <div class="fg">
-          <label>Operador</label>
-          <select id="bf-oper" style="padding:6px;border:1px solid var(--border);border-radius:var(--r);min-width:130px">
-            <option value="">Selecionar</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label>Turno</label>
-          <select id="bf-turno" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-            <option value="">—</option>
-            <option value="T1">T1 (06h-14h)</option>
-            <option value="T2">T2 (14h-22h)</option>
-            <option value="T3">T3 (22h-06h)</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label>Obs.</label>
-          <input id="bf-obs" placeholder="Observação..."
-            style="width:200px;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
-        </div>
-        <button class="btn bsuc" onclick="criarOPBuncherFixo()">✅ Criar OP</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Lista OPs -->
-  <div class="sec">
-    <div class="sec-hd">
-      <span class="sec-tt">OPs de Buncher</span>
-      <span class="chip c-purple" id="bf-cnt-list">0</span>
-      <select id="bf-st-fil" onchange="renderBuncherFixo()"
-        style="padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;margin-left:auto">
-        <option value="">Todos</option>
-        <option value="Pendente">Pendente</option>
-        <option value="Em andamento">Em andamento</option>
-        <option value="Concluída">Concluída</option>
-      </select>
-    </div>
-    <div id="bf-list" class="sec-bd tw ts"></div>
-  </div>
-</div>
-
-<!-- ══ TORCEDEIRA ══ -->
-<div id="pg-buncherredir" class="pg">
-  <div class="pg-hd">
-    <span class="pg-tt">🌀 Torcedeira — Cabos Finos ≤ 10mm² (Buncher Redirecionado)</span>
-    <span style="font-size:11px;color:var(--text2)">Gerado automaticamente pelos pedidos de cabo Flexível até 10mm²</span>
-    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
-  </div>
-  <!-- Explicação do fluxo -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--text2)">
-    <strong style="color:var(--navy)">Fluxo para cabos Flex ≤ 10mm²:</strong>
-    &nbsp;<span style="background:#6366f1;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px">TREFILA</span> →
-    <span style="background:#8b5cf6;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px">BUNCHER (4 máq.)</span> →
-    <span style="background:#a855f7;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px">TORCEDEIRA</span> →
-    <span style="background:#f97316;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px">EXTRUSORA</span>
-    &nbsp;&nbsp;As OPs são criadas automaticamente ao gerar a prévia PCP.
-  </div>
-  <!-- KPIs -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    <div class="kcard"><div class="kv" id="br-nops">0</div><div class="kl">OPs Torcedeira</div></div>
-    <div class="kcard"><div class="kv c-orange" id="br-mtot">0m</div><div class="kl">Total Metros</div></div>
-    <div class="kcard"><div class="kv" id="br-nped">0</div><div class="kl">Pedidos Atendidos</div></div>
-    <div class="kcard"><div class="kv" id="br-nand">0</div><div class="kl">Em Andamento</div></div>
-  </div>
-  <!-- Filtros -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-    <select id="br-st" onchange="renderBuncherRedir()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-      <option value="">Todos os status</option>
-      <option value="Pendente">Pendente</option>
-      <option value="Em andamento">Em andamento</option>
-      <option value="Concluída">Concluída</option>
-    </select>
-    <input id="br-q" placeholder="Buscar..." oninput="renderBuncherRedir()"
-      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:200px">
-  </div>
-  <!-- Lista -->
-  <div id="br-list" class="sec-bd tw ts"></div>
-</div>
-
-
-<!-- ══ MODAL RESERVAR ══ -->
-<div id="modal-reservar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)fecharModalReservar()">
-  <div style="background:var(--bg);border-radius:10px;padding:24px;width:380px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">
-    <h3 style="margin:0 0 16px;color:var(--navy)">📦 Reservar Item</h3>
-    <div style="background:var(--bg2);border-radius:6px;padding:10px;margin-bottom:14px;font-size:12px">
-      <div><strong>Pedido:</strong> <span id="rsv-modal-ped" class="mono"></span></div>
-      <div><strong>Cliente:</strong> <span id="rsv-modal-cli"></span></div>
-      <div><strong>Produto:</strong> <span id="rsv-modal-prod"></span></div>
-      <div style="display:flex;gap:16px;margin-top:6px">
-        <div><strong>Pendente:</strong> <span id="rsv-modal-pend" style="color:var(--orange)"></span></div>
-        <div><strong>Estoque:</strong> <span id="rsv-modal-est" style="color:var(--green)"></span></div>
-      </div>
-    </div>
-    <div class="fg" style="margin-bottom:14px">
-      <label style="font-size:12px;font-weight:600">Quantidade a reservar (<span id="rsv-modal-un"></span>)</label>
-      <input id="rsv-modal-qt" type="number" min="0" step="0.1"
-        style="width:100%;padding:8px;border:2px solid var(--navy);border-radius:var(--r);font-size:14px;margin-top:4px"
-        onkeydown="if(event.key==='Enter')confirmarReserva()">
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn bsuc" style="flex:1" onclick="confirmarReserva()">✅ Confirmar Reserva</button>
-      <button class="btn bdng" onclick="fecharModalReservar()">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ COMERCIAL ══ -->
-<div id="pg-comercial" class="pg">
-  <div class="pg-hd">
-    <span class="pg-tt">🤝 Comercial — Gestão de Clientes</span>
-    <button class="btn bsuc bsm" onclick="salvarComercial()">💾 Salvar</button>
-  </div>
-  <!-- Filters -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-    <input id="com-q" placeholder="Buscar cliente..." oninput="renderComercial()"
-      style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:220px">
-    <select id="com-fprio" onchange="renderComercial()" style="padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-      <option value="">Todas as prioridades</option>
-      <option value="CRITICO">🔴 Crítico</option>
-      <option value="ALTA">🟠 Alta</option>
-      <option value="NORMAL">🟢 Normal</option>
-      <option value="VIP">⭐ VIP</option>
-    </select>
-    <button class="btn bgho bsm" onclick="renderComercial()">🔄 Atualizar</button>
-  </div>
-  <div id="comercial-list"></div>
-</div>
-<!-- ══ MODAL GERAR OPs ══ -->
-<div id="modal-gerar-ops" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:var(--bg);border-radius:10px;padding:24px;width:420px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">
-    <h3 style="margin:0 0 16px;color:var(--navy)">⚙️ Gerar Ordens de Produção</h3>
-    <input type="hidden" id="mgop-modo" value="todos">
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div style="background:var(--bg2);border-radius:6px;padding:10px;font-size:12px">
-        <span class="chip c-blue" id="mgop-n-todos">0</span> itens na prévia &nbsp;
-        <span class="chip c-green" id="mgop-n-sel">0</span> selecionados
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Quais itens:</label>
-        <select id="mgop-modo" style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-          <option value="todos">Todos da prévia</option>
-          <option value="selecionados">Somente selecionados</option>
-          <option value="individual">Individual (um por pedido)</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tipo de agrupamento:</label>
-        <select id="mgop-tipo" style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-          <option value="buncher_ext">Buncher agrupado + Extrusora separada (recomendado)</option>
-          <option value="individual">Individual por pedido/produto</option>
-        </select>
-      </div>
-      <p style="font-size:11px;color:var(--text2);margin:0;background:var(--bg2);padding:8px;border-radius:6px">
-        <strong>Buncher agrupado:</strong> produtos com mesma formação de filamentos são somados em uma única OP de encordoamento.<br>
-        <strong>Extrusora:</strong> mantida separada por produto, com referência ao Buncher de origem.
-      </p>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="btn bpri" style="flex:1" onclick="confirmarModalGerarOPs()">⚙️ Gerar OPs</button>
-        <button class="btn bdng" onclick="fecharModalGerarOPs()">Cancelar</button>
-      </div>
-    </div>
-  </div>
-</div>
 </body></html>
