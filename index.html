@@ -3018,7 +3018,15 @@ function buildAlerts(){
     const prio = getPrio(r);
     const dtRef = r[8]||r[7]||'';
     const diasAtraso = dtRef ? Math.floor((todayDate - new Date(dtRef))/(86400000)) : 0;
-    if(prio==='P1'){
+    if(prio==='P0'){
+      alerts.push({
+        nivel:'p0', prio:'P0',
+        ped:r[2], cliente:String(r[1]||'').split('(')[0].trim().slice(0,25),
+        produto:shortProd(r[3]),
+        produzir:r[11], dt:dtRef, diasAtraso:999,
+        msg:'P0 — Máxima Urgência'
+      });
+    } else if(prio==='P1'){
       alerts.push({
         nivel:'critico', prio:'P1',
         ped:r[2], cliente:String(r[1]||'').split('(')[0].trim().slice(0,25),
@@ -3036,7 +3044,10 @@ function buildAlerts(){
       });
     }
   });
-  return alerts.sort((a,b)=>b.diasAtraso-a.diasAtraso||a.dt.localeCompare(b.dt));
+  return alerts.sort((a,b)=>{
+    const ap=a.prio==='P0'?-1:0, bp=b.prio==='P0'?-1:0;
+    return ap-bp || b.diasAtraso-a.diasAtraso || a.dt.localeCompare(b.dt);
+  });
 }
 
 function renderAlertPanel(){
@@ -3054,11 +3065,11 @@ function renderAlertPanel(){
     <div onclick="filtrarPedidoAlert('${a.ped}')"
       style="cursor:pointer;padding:8px 12px;border-bottom:1px solid #fee2e2;
         display:flex;align-items:center;gap:8px;
-        background:${a.nivel==='critico'?'#fff5f5':'#fffbeb'};
+        background:${a.nivel==='p0'?'#dc2626':a.nivel==='critico'?'#fff5f5':'#fffbeb'};
         transition:background .15s"
       onmouseover="this.style.background='#fecaca'"
-      onmouseout="this.style.background='${a.nivel==='critico'?'#fff5f5':'#fffbeb'}'">
-      <span style="font-size:18px;flex-shrink:0">${a.diasAtraso>0?'🔴':'🟠'}</span>
+      onmouseout="this.style.background='${a.nivel==='p0'?'#dc2626':a.nivel==='critico'?'#fff5f5':'#fffbeb'}'">
+      <span style="font-size:18px;flex-shrink:0">${a.nivel==='p0'?'🚨':a.diasAtraso>0?'🔴':'🟠'}</span>
       <div style="flex:1;min-width:0">
         <div style="display:flex;gap:6px;align-items:center">
           <span class="mono" style="font-weight:700;background:${getPedColor(a.ped)};padding:1px 6px;border-radius:4px;font-size:12px">${a.ped}</span>
@@ -3112,7 +3123,6 @@ function renderComercial(){
   const q=(document.getElementById('com-q')?.value||'').toLowerCase();
   const fprio=document.getElementById('com-fprio')?.value||'';
 
-  // Get unique clients from PEDIDOS
   const clientes=[...new Set(PEDIDOS.map(r=>r[1]).filter(Boolean))].sort();
   const filtered=clientes.filter(c=>{
     if(q&&!c.toLowerCase().includes(q))return false;
@@ -3122,75 +3132,106 @@ function renderComercial(){
   });
 
   if(filtered.length===0){
-    el.innerHTML='<p style="color:var(--text3);font-size:12px;padding:16px">Nenhum cliente encontrado.</p>';
+    el.innerHTML='<p style="color:var(--text3);font-size:12px;padding:16px">Nenhum cliente encontrado. Importe pedidos primeiro.</p>';
     return;
   }
 
   el.innerHTML=filtered.map(cli=>{
-    const com=COMERCIAL[cli]||{prioridade:'NORMAL',obs:'',prazo_override:'',alertas:[]};
-    const nPed=PEDIDOS.filter(r=>r[1]===cli&&(r[11]||0)>0).length;
-    const mProd=PEDIDOS.filter(r=>r[1]===cli).reduce((a,r)=>a+(r[11]||0),0);
+    const com=COMERCIAL[cli]||{prioridade:'NORMAL',obs:'',prazo_override:'',alertas:[],p0_pedidos:[]};
+    const pedsCli=PEDIDOS.filter(r=>r[1]===cli&&(r[11]||0)>0);
+    const mProd=pedsCli.reduce((a,r)=>a+(r[11]||0),0);
+    const p0Peds=com.p0_pedidos||[];
     const prioCls={CRITICO:'c-red',ALTA:'c-orange',NORMAL:'c-teal',VIP:'c-blue'}[com.prioridade]||'c-gray';
     const prioIcon={CRITICO:'🔴',ALTA:'🟠',NORMAL:'🟢',VIP:'⭐'}[com.prioridade]||'⬜';
-    const cliKey=encodeURIComponent(cli);
-    return`<div style="border:1.5px solid ${com.prioridade==='CRITICO'?'var(--red)':com.prioridade==='ALTA'?'var(--orange)':'var(--border)'};border-radius:var(--r);margin-bottom:10px;overflow:hidden">
-      <div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    const cliKey=cli.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
+    return`<div style="border:2px solid ${com.prioridade==='CRITICO'?'#dc2626':com.prioridade==='ALTA'?'#f97316':'var(--border)'};border-radius:10px;margin-bottom:14px;overflow:hidden">
+      <!-- HEADER -->
+      <div style="background:${com.prioridade==='CRITICO'?'#fef2f2':com.prioridade==='ALTA'?'#fff7ed':'var(--bg2)'};padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
-          <div style="font-weight:700;font-size:13px">${String(cli).split('(')[0].trim()}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px">${nPed} pedidos ativos · ${fm(mProd)}m a produzir</div>
+          <div style="font-weight:700;font-size:14px">${String(cli).split('(')[0].trim()}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${pedsCli.length} pedidos · ${fm(mProd)}m a produzir</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span class="chip ${prioCls}" style="font-size:11px">${prioIcon} ${com.prioridade||'NORMAL'}</span>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="chip ${prioCls}" style="font-size:12px">${prioIcon} ${com.prioridade||'NORMAL'}</span>
+          ${p0Peds.length>0?`<span class="chip" style="background:#dc2626;color:#fef08a;font-size:11px;font-weight:700">⚠ ${p0Peds.length} P0</span>`:''}
           ${com.alertas?.length>0?`<span class="chip c-red" style="font-size:10px">⚠ ${com.alertas.length} alerta(s)</span>`:''}
         </div>
       </div>
-      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+      <!-- BODY -->
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+        <!-- PRIORIDADE + PRAZO -->
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-          <div class="fg" style="flex:1;min-width:150px">
-            <label style="font-size:11px;font-weight:600">Prioridade</label>
-            <select id="com-prio-${cliKey}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"
+          <div class="fg" style="flex:1;min-width:160px">
+            <label style="font-size:11px;font-weight:600">Prioridade do Cliente</label>
+            <select id="com-prio-${cliKey}"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"
               onchange="updateComercial('${cli}','prioridade',this.value)">
-              <option value="NORMAL" ${(com.prioridade||'NORMAL')==='NORMAL'?'selected':''}>🟢 Normal</option>
-              <option value="VIP"    ${com.prioridade==='VIP'?'selected':''}>⭐ VIP</option>
-              <option value="ALTA"   ${com.prioridade==='ALTA'?'selected':''}>🟠 Alta prioridade</option>
-              <option value="CRITICO"${com.prioridade==='CRITICO'?'selected':''}>🔴 Crítico / Reclamação</option>
+              <option value="NORMAL"  ${(com.prioridade||'NORMAL')==='NORMAL' ?'selected':''}>🟢 Normal</option>
+              <option value="VIP"     ${com.prioridade==='VIP'    ?'selected':''}>⭐ VIP</option>
+              <option value="ALTA"    ${com.prioridade==='ALTA'   ?'selected':''}>🟠 Alta prioridade</option>
+              <option value="CRITICO" ${com.prioridade==='CRITICO'?'selected':''}>🔴 Crítico / Reclamação</option>
             </select>
           </div>
-          <div class="fg" style="flex:1;min-width:150px">
+          <div class="fg" style="flex:1;min-width:160px">
             <label style="font-size:11px;font-weight:600">Override Prazo de Entrega</label>
-            <input type="date" id="com-prazo-${cliKey}" value="${com.prazo_override||''}"
-              style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"
+            <input type="date" value="${com.prazo_override||''}"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"
               onchange="updateComercial('${cli}','prazo_override',this.value)">
           </div>
         </div>
+
+        <!-- PEDIDOS P0 -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:6px">🚨 Marcar Pedido como P0 (Máxima Urgência)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+            ${pedsCli.map(r=>{
+              const isP0=p0Peds.includes(r[2]);
+              return`<div onclick="toggleP0Pedido('${cli}','${r[2]}')"
+                style="cursor:pointer;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:2px solid ${isP0?'#dc2626':'#e5e7eb'};background:${isP0?'#dc2626':'#f9fafb'};color:${isP0?'#fef08a':'#374151'};transition:.15s"
+                title="${shortProd(r[3])} · ${fm(r[11])}m">
+                ${isP0?'🚨':'⬜'} ${r[2]}
+                ${isP0?'<span style="font-size:9px;opacity:.8">P0</span>':''}
+              </div>`;
+            }).join('')}
+          </div>
+          <p style="font-size:10px;color:var(--text2);margin:0">Clique no pedido para marcar/desmarcar P0. Pedidos P0 aparecem em vermelho com texto amarelo em todas as abas.</p>
+        </div>
+
+        <!-- OBSERVAÇÕES -->
         <div class="fg">
           <label style="font-size:11px;font-weight:600">Observações / Anotações Comerciais</label>
           <textarea id="com-obs-${cliKey}" rows="2"
-            style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;resize:vertical"
-            placeholder="Ex: Cliente reclamou atraso em mai/26, priorizar pedido 14451..."
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;resize:vertical"
+            placeholder="Ex: Cliente solicitou prioridade, reclamação sobre atraso, acordo de prazo..."
             onchange="updateComercial('${cli}','obs',this.value)">${com.obs||''}</textarea>
         </div>
-        <!-- Alertas -->
+
+        <!-- ALERTAS -->
         <div>
-          <div style="font-size:11px;font-weight:600;margin-bottom:4px">Alertas / Avisos</div>
-          <div id="com-alertas-${cliKey}" style="display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:11px;font-weight:600;margin-bottom:6px">⚠️ Alertas / Avisos</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
             ${(com.alertas||[]).map((a,i)=>`
-              <div style="display:flex;align-items:center;gap:6px;background:${a.tipo==='reclamacao'?'#fef2f2':a.tipo==='urgencia'?'#fffbeb':'#f0f9ff'};padding:6px 8px;border-radius:4px">
-                <span style="font-size:13px">${a.tipo==='reclamacao'?'😠':a.tipo==='urgencia'?'⚡':'📌'}</span>
-                <span style="flex:1;font-size:11px">${a.texto}</span>
-                <span style="font-size:10px;color:var(--text3)">${a.dt||''}</span>
-                <button class="btn bdng bsm" style="padding:1px 6px" onclick="removerAlertaComercial('${cli}',${i})">✕</button>
+              <div style="display:flex;align-items:center;gap:8px;background:${a.tipo==='reclamacao'?'#fef2f2':a.tipo==='urgencia'?'#fffbeb':'#f0f9ff'};padding:7px 10px;border-radius:6px;border-left:3px solid ${a.tipo==='reclamacao'?'#dc2626':a.tipo==='urgencia'?'#f59e0b':'#3b82f6'}">
+                <span style="font-size:14px">${a.tipo==='reclamacao'?'😠':a.tipo==='urgencia'?'⚡':a.tipo==='cancelamento'?'❌':'📌'}</span>
+                <div style="flex:1">
+                  <div style="font-size:11px;font-weight:600">${a.texto}</div>
+                  <div style="font-size:10px;color:var(--text2)">${a.dt||''} · ${a.user||''}</div>
+                </div>
+                <button class="btn bdng bsm" style="padding:2px 6px" onclick="removerAlertaComercial('${cli}',${i})">✕</button>
               </div>`).join('')}
           </div>
-          <div style="display:flex;gap:6px;margin-top:6px">
-            <select id="com-alerta-tipo-${cliKey}" style="padding:5px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <select id="com-alerta-tipo-${cliKey}"
+              style="padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
               <option value="aviso">📌 Aviso</option>
               <option value="urgencia">⚡ Urgência</option>
               <option value="reclamacao">😠 Reclamação</option>
+              <option value="cancelamento">❌ Cancelamento</option>
             </select>
             <input id="com-alerta-txt-${cliKey}" placeholder="Descreva o alerta..."
-              style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-            <button class="btn bwrn bsm" onclick="adicionarAlertaComercial('${cli}')">+ Alerta</button>
+              style="flex:1;min-width:180px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px"
+              onkeydown="if(event.key==='Enter')adicionarAlertaComercial('${cli}')">
+            <button class="btn bwrn" onclick="adicionarAlertaComercial('${cli}')">+ Adicionar Alerta</button>
           </div>
         </div>
       </div>
@@ -3198,22 +3239,39 @@ function renderComercial(){
   }).join('');
 }
 
-function updateComercial(cli, field, value){
-  if(!COMERCIAL[cli]) COMERCIAL[cli]={prioridade:'NORMAL',obs:'',prazo_override:'',alertas:[]};
-  COMERCIAL[cli][field]=value;
+function toggleP0Pedido(cli, pedido){
+  if(!COMERCIAL[cli]) COMERCIAL[cli]={prioridade:'NORMAL',obs:'',prazo_override:'',alertas:[],p0_pedidos:[]};
+  if(!COMERCIAL[cli].p0_pedidos) COMERCIAL[cli].p0_pedidos=[];
+  const idx=COMERCIAL[cli].p0_pedidos.indexOf(pedido);
+  if(idx>=0){
+    COMERCIAL[cli].p0_pedidos.splice(idx,1);
+    showToast&&showToast('⬜ P0 removido do pedido '+pedido);
+  } else {
+    COMERCIAL[cli].p0_pedidos.push(pedido);
+    showToast&&showToast('🚨 Pedido '+pedido+' marcado como P0!');
+  }
   saveSingle(LS.COMERCIAL, COMERCIAL);
+  renderComercial();
+  // Refresh pedidos if open
+  if(document.getElementById('pg-pedidos')?.classList.contains('on')) renderPed();
+}
+
+function updateComercial(cli, field, value){
+  if(!COMERCIAL[cli]) COMERCIAL[cli]={prioridade:'NORMAL',obs:'',prazo_override:'',alertas:[],p0_pedidos:[]};
+  COMERCIAL[cli][field]=value;
+  saveSingle(LS.COMERCIAL,COMERCIAL);
 }
 function adicionarAlertaComercial(cli){
-  if(!COMERCIAL[cli]) COMERCIAL[cli]={prioridade:'NORMAL',obs:'',prazo_override:'',alertas:[]};
-  const cliKey=encodeURIComponent(cli);
+  if(!COMERCIAL[cli]) COMERCIAL[cli]={prioridade:'NORMAL',obs:'',prazo_override:'',alertas:[],p0_pedidos:[]};
+  const cliKey=cli.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
   const tipo=document.getElementById('com-alerta-tipo-'+cliKey)?.value||'aviso';
-  const txt=document.getElementById('com-alerta-txt-'+cliKey)?.value?.trim()||'';
+  const txt=(document.getElementById('com-alerta-txt-'+cliKey)?.value||'').trim();
   if(!txt){alert('Descreva o alerta.');return;}
   if(!COMERCIAL[cli].alertas) COMERCIAL[cli].alertas=[];
   COMERCIAL[cli].alertas.unshift({tipo,texto:txt,dt:new Date().toISOString().slice(0,10),user:CUSER?.nome||'?'});
-  saveSingle(LS.COMERCIAL, COMERCIAL);
+  saveSingle(LS.COMERCIAL,COMERCIAL);
   renderComercial();
-  showToast('✅ Alerta adicionado para '+String(cli).split('(')[0].trim());
+  showToast&&showToast('✅ Alerta adicionado: '+tipo);
 }
 function removerAlertaComercial(cli, idx){
   if(!verificarSenhaGestor('Remover alerta do cliente')) return;
@@ -3542,6 +3600,8 @@ function getFil(g,s){
   return[0.28,22];
 }
 function getPrio(r){
+  // P0 = manually set by commercial (highest priority — red bg + yellow text in ALL tabs)
+  if(r._p0||COMERCIAL&&COMERCIAL[r[1]]&&COMERCIAL[r[1]].p0_pedidos&&COMERCIAL[r[1]].p0_pedidos.includes(r[2]))return'P0';
   const de=r[7],df=r[8];
   const today=new Date().toISOString().slice(0,10);
   if(de&&de<today)return'P1';
@@ -3554,6 +3614,7 @@ function getPrio(r){
 }
 function prioChip(r){
   const p=getPrio(r);
+  if(p==='P0') return`<span class="chip" style="background:#dc2626;color:#fef08a;font-size:9px;font-weight:900;border:1.5px solid #fef08a">P0</span>`;
   const cls={P1:'c-red',P2:'c-orange',P3:'c-yellow',P4:'c-gray'}[p]||'c-gray';
   return`<span class="chip ${cls}" style="font-size:9px">${p}</span>`;
 }
@@ -4854,7 +4915,9 @@ function pedRow(r){
     ? `<td class="obs-row-hover">${chip}<div class="obs-popup">${tooltip}</div></td>`
     : `<td>${chip}</td>`;
   const pedColor=getPedColor(r[2]);
-  return`<tr class="${imp?'imp-row':''}" title="${String(r[3]||'').replace(/"/g,'&quot;')}" style="border-left:4px solid ${pedColor}">
+  const isP0=getPrio(r)==='P0';
+  return`<tr class="${imp?'imp-row':''}" title="${String(r[3]||'').replace(/"/g,'&quot;')}"
+    style="border-left:4px solid ${isP0?'#dc2626':pedColor};${isP0?'background:#dc2626 !important;color:#fef08a !important;font-weight:700':''}">
     <td><input type="checkbox" class="ck-ped" value="${r[0]}" onchange="atualizarSelInfo()"></td>
     <td>${prioChip(r)}</td>
     <td class="mono" style="font-size:10px">${getPedidoDisplay(r[2])}</td>
@@ -5705,32 +5768,47 @@ function renderUsuarios(){
 function editarUsuario(login){
   const u=USERS.find(x=>x.login===login);if(!u)return;
   _usrEdit=login;
-  document.getElementById('usr-nome').value=u.nome||'';
-  document.getElementById('usr-login').value=u.login||'';
-  document.getElementById('usr-pwd').value=u.pwd||'';
-  document.getElementById('usr-perfil').value=u.perfil||'op1';
+  const ttl=document.getElementById('usr-form-ttl');if(ttl)ttl.textContent='Editar: '+u.nome;
+  document.getElementById('uf-nome').value=u.nome||'';
+  document.getElementById('uf-login').value=u.login||'';
+  document.getElementById('uf-pwd').value=u.pwd||'';
+  document.getElementById('uf-perfil').value=u.perfil||'operacional';
+  document.getElementById('uf-turno').value=u.turno||'';
+  const setor=document.getElementById('uf-setor');if(setor)setor.value=u.setor||'';
+  updatePerfilPerms&&updatePerfilPerms();
 }
 function salvarUsuario(){
-  const nome=document.getElementById('usr-nome')?.value?.trim();
-  const login=document.getElementById('usr-login')?.value?.trim().toLowerCase();
-  const pwd=document.getElementById('usr-pwd')?.value?.trim();
-  const perfil=document.getElementById('usr-perfil')?.value||'op1';
-  if(!nome||!login||!pwd){alert('Preencha todos os campos.');return;}
+  const nome  =(document.getElementById('uf-nome') ?.value||'').trim();
+  const login =(document.getElementById('uf-login')?.value||'').trim().toLowerCase();
+  const pwd   =(document.getElementById('uf-pwd')  ?.value||'').trim();
+  const perfil= document.getElementById('uf-perfil')?.value||'operacional';
+  const turno = document.getElementById('uf-turno') ?.value||'';
+  const setor = document.getElementById('uf-setor') ?.value||'';
+  if(!nome)  {alert('Informe o nome do usuário.');return;}
+  if(!login) {alert('Informe o login.');return;}
+  if(!pwd)   {alert('Informe a senha.');return;}
+  const abas = (ABAS_PERFIL&&ABAS_PERFIL[perfil])||[];
   if(_usrEdit){
     const idx=USERS.findIndex(u=>u.login===_usrEdit);
-    if(idx>=0)USERS[idx]={...USERS[idx],nome,login,pwd,perfil};
+    if(idx>=0) USERS[idx]={...USERS[idx],nome,login,pwd,perfil,turno,setor,abas};
     _usrEdit=null;
   }else{
-    if(USERS.find(u=>u.login===login)){alert('Login já existe.');return;}
-    USERS.push({id:'u'+Date.now(),nome,login,pwd,perfil});
+    if(USERS.find(u=>u.login===login)){alert('Login "'+login+'" já existe.');return;}
+    USERS.push({id:'u'+Date.now(),nome,login,pwd,perfil,turno,setor,abas});
   }
   saveSingle(LS.USUARIOS,USERS);
-  cancelarEdUsuario();renderUsuarios();
+  cancelarEdUsuario();
+  renderUsuarios();
+  showToast&&showToast('✅ Usuário "'+nome+'" salvo!');
 }
 function cancelarEdUsuario(){
   _usrEdit=null;
-  ['usr-nome','usr-login','usr-pwd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const p=document.getElementById('usr-perfil');if(p)p.value='op1';
+  const ttl=document.getElementById('usr-form-ttl');if(ttl)ttl.textContent='Novo Usuário';
+  ['uf-nome','uf-login','uf-pwd','uf-setor'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  const p=document.getElementById('uf-perfil');if(p){p.value='operacional';updatePerfilPerms&&updatePerfilPerms();}
+  const t=document.getElementById('uf-turno');if(t)t.value='';
 }
 function deletarUsuario(login){
   if(!confirm('Excluir usuário '+login+'?'))return;
