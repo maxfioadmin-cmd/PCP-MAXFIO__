@@ -726,6 +726,8 @@ tr:hover td{background:var(--bg3)}
       </select>
       <button class="btn bpri bsm" onclick="atribuirOperadorSelecionados()">✅ Atribuir</button>
       <button class="btn bsuc bsm" onclick="enviarOPsSelecionadasParaProducao()">🚀 Enviar Selecionadas</button>
+      <button class="btn bwrn bsm" onclick="reverterOPsParaPreviaEmLote()" title="Reverter para Prévia PCP">↩ Reverter p/ Prévia</button>
+      <button class="btn bdng bsm" onclick="excluirOPsEmLotePendentes()" title="Excluir (requer senha admin)">🗑 Excluir (admin)</button>
     </div>
     <div class="sec-bd" id="ord-list"></div>
   </div>
@@ -2059,6 +2061,273 @@ function renderFichasTecnicas(){
         </div>
       </div>`;
   }).join('');
+}
+
+// ═══════════ HISTÓRICO DE PRÉVIAS ═══════════
+let _pcpHistSel = null; // selected previa for detail
+
+function renderPCPHist(){
+  const el=document.getElementById('pcp-hlist');
+  if(!el)return;
+  updatePCPHcnt();
+
+  // Enrich HIST with OP data
+  const previas=HIST.filter(h=>h.id&&h.id.startsWith('PV-'));
+  if(previas.length===0){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text3)">'+
+      '<div style="font-size:32px;margin-bottom:8px">📭</div>'+
+      '<div style="font-size:13px">Nenhuma prévia gerada ainda.</div>'+
+      '<p style="font-size:11px">Vá em <strong>+ Nova Prévia</strong> para começar.</p></div>';
+    return;
+  }
+
+  // Enrich each previa with its OPs
+  const enriched=previas.map(pv=>{
+    const pvOps=ORDENS.filter(o=>o.previa_id===pv.id||
+      (pv.itens||[]).some(it=>
+        (o.pedidos||[o.pedido]).some(p=>String(p)===String(it.ped))
+        &&(!o.dt_criacao||o.dt_criacao===pv.dt)
+      ));
+    const total=pvOps.length;
+    const concluidas=pvOps.filter(o=>o.status==='Concluída').length;
+    const emAndamento=pvOps.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento').length;
+    const pendentes=pvOps.filter(o=>o.status==='Pendente').length;
+    const pct=total>0?Math.round((concluidas/total)*100):0;
+    return{...pv, ops:pvOps, total, concluidas, emAndamento, pendentes, pct};
+  });
+
+  el.innerHTML=`
+    <!-- SUMMARY CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:16px">
+      <div style="background:var(--navy);color:#fff;border-radius:8px;padding:10px 14px">
+        <div style="font-size:11px;opacity:.8">Total Prévias</div>
+        <div style="font-size:22px;font-weight:700">${previas.length}</div>
+      </div>
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:10px 14px">
+        <div style="font-size:11px;color:var(--text2)">OPs Concluídas</div>
+        <div style="font-size:22px;font-weight:700;color:#16a34a">${enriched.reduce((a,p)=>a+p.concluidas,0)}</div>
+      </div>
+      <div style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:8px;padding:10px 14px">
+        <div style="font-size:11px;color:var(--text2)">Em Andamento</div>
+        <div style="font-size:22px;font-weight:700;color:#2563eb">${enriched.reduce((a,p)=>a+p.emAndamento,0)}</div>
+      </div>
+      <div style="background:#fefce8;border:1.5px solid #fde047;border-radius:8px;padding:10px 14px">
+        <div style="font-size:11px;color:var(--text2)">Pendentes</div>
+        <div style="font-size:22px;font-weight:700;color:#ca8a04">${enriched.reduce((a,p)=>a+p.pendentes,0)}</div>
+      </div>
+    </div>
+
+    <!-- HEATMAP + TIMELINE -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px">🗺️ Mapa de Calor — Andamento das Prévias</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${enriched.map(pv=>{
+          const pct=pv.pct;
+          const bg=pct===100?'#16a34a':pct>=75?'#0d9488':pct>=50?'#2563eb':pct>=25?'#7c3aed':pct>0?'#f59e0b':'#e5e7eb';
+          const textColor=pct>0?'#fff':'var(--text3)';
+          return`<div onclick="mostrarDetalhePV('${pv.id}')"
+            title="${pv.id} · ${pv.dt} · ${pv.pct}% concluído"
+            style="width:48px;height:48px;border-radius:8px;background:${bg};
+              display:flex;flex-direction:column;align-items:center;justify-content:center;
+              cursor:pointer;transition:.15s;border:2px solid ${_pcpHistSel===pv.id?'#1a2e5a':'transparent'}"
+            onmouseover="this.style.transform='scale(1.1)'"
+            onmouseout="this.style.transform='scale(1)'">
+            <div style="font-size:11px;font-weight:700;color:${textColor}">${pct}%</div>
+            <div style="font-size:8px;color:${textColor};opacity:.8">${pv.dt.slice(5)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:12px;font-size:10px;color:var(--text2);margin-top:8px;flex-wrap:wrap">
+        <span>🟩 100% concluído</span><span style="color:#0d9488">🟦 ≥75%</span>
+        <span style="color:#2563eb">🔵 ≥50%</span><span style="color:#7c3aed">🟣 ≥25%</span>
+        <span style="color:#f59e0b">🟡 iniciado</span><span style="color:#9ca3af">⬜ sem OPs</span>
+      </div>
+    </div>
+
+    <!-- TIMELINE TABLE -->
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr style="background:var(--bg2)">
+        <th style="padding:7px 10px;text-align:left">ID Prévia</th>
+        <th>Data</th><th>Itens</th><th class="num">Metros</th>
+        <th>Criado por</th><th>OPs Geradas</th>
+        <th style="min-width:140px">Progresso</th>
+        <th>Ações</th>
+      </tr></thead>
+      <tbody>
+        ${enriched.map(pv=>{
+          const pct=pv.pct;
+          const barColor=pct===100?'#16a34a':pct>=50?'#0d9488':pct>0?'#2563eb':'#e5e7eb';
+          return`<tr style="border-bottom:1px solid var(--border);cursor:pointer;background:${_pcpHistSel===pv.id?'#eff6ff':'inherit'}"
+            onclick="mostrarDetalhePV('${pv.id}')">
+            <td style="padding:7px 10px;font-family:monospace;font-weight:700;color:var(--navy)">${pv.id.slice(3,13)}</td>
+            <td style="padding:6px 10px">${pv.dt}</td>
+            <td style="text-align:center">${pv.n||0}</td>
+            <td class="num">${fm(pv.metros||0)}m</td>
+            <td style="padding:6px 10px;font-size:10px">${pv.por||'—'}</td>
+            <td style="text-align:center">
+              <span class="chip c-blue" style="font-size:9px">${pv.total}</span>
+              ${pv.concluidas>0?`<span class="chip c-teal" style="font-size:9px">✓${pv.concluidas}</span>`:''}
+              ${pv.emAndamento>0?`<span class="chip c-blue" style="font-size:9px">▶${pv.emAndamento}</span>`:''}
+            </td>
+            <td style="padding:6px 10px">
+              <div style="background:#e5e7eb;border-radius:99px;height:8px;overflow:hidden">
+                <div style="width:${pct}%;height:100%;background:${barColor};border-radius:99px;transition:.3s"></div>
+              </div>
+              <div style="font-size:9px;color:var(--text2);margin-top:2px">${pct}% · ${pv.concluidas}/${pv.total} OPs</div>
+            </td>
+            <td style="padding:6px 10px;white-space:nowrap">
+              <button class="btn bgho bsm" onclick="event.stopPropagation();mostrarDetalhePV('${pv.id}')" title="Ver detalhes">🔍</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+
+    <!-- DETAIL PANEL -->
+    <div id="pv-detail-panel" style="display:none;margin-top:16px;border:2px solid var(--navy);border-radius:10px;overflow:hidden"></div>
+  `;
+
+  // Auto-show first detail if none selected
+  if(_pcpHistSel&&enriched.find(p=>p.id===_pcpHistSel)){
+    mostrarDetalhePV(_pcpHistSel);
+  }
+}
+
+function mostrarDetalhePV(pvId){
+  _pcpHistSel=pvId;
+  const pv=HIST.find(h=>h.id===pvId);
+  if(!pv)return;
+
+  // Re-render to update selection highlight
+  const panel=document.getElementById('pv-detail-panel');
+  if(!panel)return;
+  panel.style.display='block';
+
+  const pvOps=ORDENS.filter(o=>
+    (pv.itens||[]).some(it=>
+      (o.pedidos||[o.pedido]).some(p=>String(p)===String(it.ped))
+    )||o.previa_id===pvId
+  );
+
+  const statusFlow=['Pendente','Em andamento','Reaberta','Concluída'];
+  const statusColors={Pendente:'#9ca3af','Em andamento':'#2563eb',Reaberta:'#f59e0b',Concluída:'#16a34a'};
+
+  panel.innerHTML=`
+    <div style="background:var(--navy);color:#fff;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:13px;font-weight:700">📋 Prévia ${pvId.slice(3,13)}</span>
+      <span style="opacity:.8;font-size:11px">${pv.dt} · ${pv.por||'?'} · ${pv.n} itens · ${fm(pv.metros||0)}m</span>
+      <button onclick="panel.style.display='none';_pcpHistSel=null;document.getElementById('pv-detail-panel').style.display='none'"
+        style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div style="padding:14px">
+      <!-- Items da prévia -->
+      <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">Itens da Prévia:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+        ${(pv.itens||[]).map(it=>`
+          <div style="background:var(--bg2);border-radius:6px;padding:5px 10px;font-size:10px">
+            <span class="mono" style="font-weight:700">${it.ped}</span>
+            <span style="color:var(--text2);margin:0 4px">·</span>${it.prod}
+            <span style="color:var(--orange);font-weight:600;margin-left:4px">${fm(it.m||0)}m</span>
+          </div>`).join('')}
+      </div>
+      <!-- OPs geradas -->
+      <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">
+        OPs Geradas (${pvOps.length}):
+        ${pvOps.length===0?'<span style="color:var(--text3);font-weight:400"> nenhuma vinculada ainda</span>':''}
+      </div>
+      ${pvOps.length>0?`
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <thead><tr style="background:var(--bg2)">
+            <th style="padding:6px 8px;text-align:left">OP</th>
+            <th>Tipo</th><th>Produto</th><th class="num">Metros</th>
+            <th>Operador</th><th>Status</th><th>Progresso</th>
+          </tr></thead>
+          <tbody>
+            ${pvOps.map(o=>{
+              const sc=statusColors[o.status]||'#888';
+              const produzido=getMetrosProduzidos(o.id);
+              const pctOp=o.metros>0?Math.round(produzido/o.metros*100):0;
+              return`<tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:5px 8px;font-family:monospace;font-weight:700">${o.id}</td>
+                <td style="text-align:center"><span class="chip" style="background:${sc}22;color:${sc};border:1px solid ${sc};font-size:9px">${o.tipo||'—'}</span></td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortProd(o.produto)}</td>
+                <td class="num" style="color:var(--orange)">${fm(o.metros||0)}m</td>
+                <td>${o.operador||'—'}</td>
+                <td><span style="background:${sc};color:#fff;padding:2px 8px;border-radius:99px;font-size:9px;font-weight:600">${o.status}</span></td>
+                <td style="min-width:100px">
+                  <div style="background:#e5e7eb;border-radius:99px;height:6px;overflow:hidden">
+                    <div style="width:${pctOp}%;height:100%;background:${sc};border-radius:99px"></div>
+                  </div>
+                  <div style="font-size:9px;color:var(--text2)">${pctOp}%${produzido>0?' · '+fm(produzido)+'m':''}</div>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>` : ''}
+    </div>
+  `;
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // Update highlight
+  document.querySelectorAll('[onclick*="mostrarDetalhePV"]').forEach(el=>{
+    const id=el.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    el.style.border=id===pvId?'2px solid #1a2e5a':'2px solid transparent';
+  });
+}
+
+// ═══════════ GERIR OPs EM LOTE ═══════════
+function excluirOPsEmLotePendentes(){
+  const ids=[...document.querySelectorAll('.ck-ord:checked')].map(c=>c.value);
+  if(ids.length===0){alert('Selecione OPs pendentes primeiro.');return;}
+  
+  // Only allow pending OPs
+  const ops=ORDENS.filter(o=>ids.includes(o.id));
+  const emProd=ops.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento'||o.status==='Concluída');
+  if(emProd.length>0){
+    alert(emProd.length+' OP(s) ja estao em producao e nao podem ser excluidas: '+emProd.map(o=>o.id).join(', ')+'. Desmarque-as e tente novamente.');
+    return;
+  }
+  
+  if(!verificarSenhaGestor('Excluir '+ids.length+' OP(s) em lote')) return;
+  if(!confirm(`Excluir ${ids.length} OP(s) pendentes?\n\n${ops.map(o=>o.id+' — '+shortProd(o.produto)).join('\n')}\n\nEsta ação não pode ser desfeita.`)) return;
+  
+  ORDENS=ORDENS.filter(o=>!ids.includes(o.id));
+  saveSingle(LS.ORDENS,ORDENS);
+  renderOrdens();
+  showToast&&showToast(`✅ ${ids.length} OP(s) excluídas.`);
+}
+
+function reverterOPsParaPreviaEmLote(){
+  const ids=[...document.querySelectorAll('.ck-ord:checked')].map(c=>c.value);
+  if(ids.length===0){alert('Selecione OPs pendentes primeiro.');return;}
+  
+  const ops=ORDENS.filter(o=>ids.includes(o.id));
+  const emProd=ops.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento'||o.status==='Concluída');
+  if(emProd.length>0){
+    alert(emProd.length+' OP(s) ja estao em producao. Somente OPs pendentes podem ser revertidas.');
+    return;
+  }
+  if(!verificarSenhaGestor('Reverter '+ids.length+' OP(s) para Prévia')) return;
+  if(!confirm(`Reverter ${ids.length} OP(s) para a Prévia PCP?\nOs itens voltarão para edição.`)) return;
+  
+  let restored=0;
+  ops.forEach(op=>{
+    const peds=(op.pedidos||[op.pedido]).filter(Boolean);
+    peds.forEach(pedNum=>{
+      const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum)&&(op.codigo?r[4]===op.codigo:true));
+      if(ped&&!PCP_ITEMS.find(p=>p[2]===ped[2]&&p[4]===ped[4])){
+        PCP_ITEMS.push([...ped]);
+        restored++;
+      }
+    });
+  });
+  ORDENS=ORDENS.filter(o=>!ids.includes(o.id));
+  saveSingle(LS.ORDENS,ORDENS);
+  saveSingle(LS.PREVIAS,PCP_ITEMS);
+  renderOrdens();
+  showToast&&showToast(`✅ ${ids.length} OP(s) revertidas. ${restored} itens voltaram para a Prévia.`);
+  // Switch to prévia tab
+  go('pcp');
+  pcpSub('nova');
 }
 // ═══════════ PAINEL OPs ═══════════
 function renderPainel(){
@@ -5580,10 +5849,18 @@ function editOrdem(id){
   const btn=document.getElementById('ord-save-btn');if(btn)btn.textContent='💾 Salvar';
 }
 function deleteOrdem(id){
+  const op=ORDENS.find(o=>o.id===id);
+  if(!op){alert('OP nao encontrada.');return;}
+  if(op.status==='Em andamento'||op.status==='Em Andamento'||op.status==='Concluida'){
+    alert('Esta OP ja foi enviada para producao.\nUse Reabrir para reverter o status.');
+    return;
+  }
   if(!verificarSenhaGestor('Excluir OP '+id))return;
-  if(!confirm('Confirmar exclusão da OP '+id+'? Esta ação não pode ser desfeita.'))return;
+  if(!confirm('Confirmar exclusao da OP '+id+' — '+shortProd(op.produto)+'?'))return;
   ORDENS=ORDENS.filter(o=>o.id!==id);
-  saveSingle(LS.ORDENS,ORDENS);renderOrdens();
+  saveSingle(LS.ORDENS,ORDENS);
+  renderOrdens();
+  showToast&&showToast('OP '+id+' excluida.');
 }
 function limparOrdem(){
   ['ord-prod','ord-metros','ord-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -5768,7 +6045,20 @@ function removeItem(){}
 
 // ═══════════ PCP ═══════════
 let _pcpSub='nova';
-function pcpSub(t){_pcpSub=t;renderPCPPage();}
+function pcpSub(t){
+  _pcpSub=t;
+  // Show/hide sub-panels
+  ['nova','hist','consol'].forEach(s=>{
+    const el=document.getElementById('pcp-'+s);
+    if(el) el.style.display=s===t?'block':'none';
+    const btn=document.getElementById('pst-'+s);
+    if(btn) btn.classList.toggle('on', s===t);
+  });
+  if(t==='nova') renderPCPPage();
+  else if(t==='hist') renderPCPHist();
+  else if(t==='consol') renderConsolPrev&&renderConsolPrev();
+  updatePCPHcnt();
+}
 function updatePCPHcnt(){
   const el=document.getElementById('pcp-cnt');
   if(el)el.textContent=PCP_ITEMS.length;
