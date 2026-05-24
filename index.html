@@ -1494,10 +1494,10 @@ const FIL_IDX={};FILS.forEach(([g,c,d,f])=>{FIL_IDX[g+'|'+c]=[d,f];});
 const LS={PEDIDOS:'pcp_pedidos',HIST:'pcp_hist',ORDENS:'pcp_ordens',LOTES:'pcp_lotes',TORCEDEIRA:'pcp_torcedeira',PREVIAS:'pcp_previas',RESERVAS:'pcp_reservas',USUARIOS:'pcp_users',NC:'pcp_nc',RSV_REVISOES:'pcp_rsv_revisoes',COMERCIAL:'pcp_comercial',PC_MAP:'pcp_pc_map',SNAPSHOTS:'pcp_snapshots',APONTAMENTOS:'pcp_apontamentos'};
 
 // ═══════════ STATE ═══════════
-let PEDIDOS=[],HIST=[],ORDENS=[],LOTES=[],TORCEDEIRA=[]
+let PEDIDOS=[],HIST=[],ORDENS=[],LOTES=[],TORCEDEIRA=[],PREVIAS=[],RESERVAS=[],USERS=[],SNAPSHOTS=[];
 let RSV_REVISOES={};
 let COMERCIAL={};
-let APONTAMENTOS=[]; // lotes detalhados com status por etapa // {cliente: {prioridade, obs, prazo_override, alertas:[]}} // {pedido: {status:'revisado'|'nao_revisado', dt, user, locked}},PREVIAS=[],RESERVAS=[],USERS=[],SNAPSHOTS=[];
+let APONTAMENTOS=[]; // lotes detalhados com status por etapa
 let PCP_ITEMS=[],PCP_BEDIT=null,PCP_EEDIT=null,pcpSel=new Set(),consolSel=new Set();
 let PC_MAP={"14341": "90 A 91", "14321": "92 A 93", "14316": "95 E 96", "14310": "97", "14493": "98", "14583": "99", "14585": "100", "14586": "101", "14666": "102", "14669": "103", "14670": "104", "14620": "105", "14672": "106", "14673": "107", "14784": "109", "14785": "110", "14786": "111", "14718": "112", "14787": "113", "14788": "114", "14790": "115", "14791": "116", "14792": "117", "14793": "118", "14740": "119", "14742": "120"}; // pedido_interno → pc_imperium (seed from PEDIDO_IMPERIUM_VS_PEDIDO_BIMMER.xlsx)
 let pedPage=0;const PER=60;
