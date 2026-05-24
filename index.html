@@ -1442,42 +1442,7 @@ tr:hover td{background:var(--bg3)}
   </div>
   <div id="comercial-list"></div>
 </div>
-<!-- ══ MODAL GERAR OPs ══ -->
-<div id="modal-gerar-ops" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:var(--bg);border-radius:10px;padding:24px;width:420px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">
-    <h3 style="margin:0 0 16px;color:var(--navy)">⚙️ Gerar Ordens de Produção</h3>
-    <input type="hidden" id="mgop-modo" value="todos">
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div style="background:var(--bg2);border-radius:6px;padding:10px;font-size:12px">
-        <span class="chip c-blue" id="mgop-n-todos">0</span> itens na prévia &nbsp;
-        <span class="chip c-green" id="mgop-n-sel">0</span> selecionados
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Quais itens:</label>
-        <select id="mgop-modo" style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-          <option value="todos">Todos da prévia</option>
-          <option value="selecionados">Somente selecionados</option>
-          <option value="individual">Individual (um por pedido)</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tipo de agrupamento:</label>
-        <select id="mgop-tipo" style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-          <option value="buncher_ext">Buncher agrupado + Extrusora separada (recomendado)</option>
-          <option value="individual">Individual por pedido/produto</option>
-        </select>
-      </div>
-      <p style="font-size:11px;color:var(--text2);margin:0;background:var(--bg2);padding:8px;border-radius:6px">
-        <strong>Buncher agrupado:</strong> produtos com mesma formação de filamentos são somados em uma única OP de encordoamento.<br>
-        <strong>Extrusora:</strong> mantida separada por produto, com referência ao Buncher de origem.
-      </p>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="btn bpri" style="flex:1" onclick="confirmarModalGerarOPs()">⚙️ Gerar OPs</button>
-        <button class="btn bdng" onclick="fecharModalGerarOPs()">Cancelar</button>
-      </div>
-    </div>
-  </div>
-</div>
+
 <script>
 
 
@@ -2069,7 +2034,7 @@ function renderPainel(){
   setEl('pan-cnt',rows.length);
   // Show reaberta badge
   const reabEl=document.getElementById('pan-nreab');
-  if(reabEl){reabEl.textContent=nReab;reabEl.closest('.kcard').style.display=nReab>0?'block':'none';}
+  if(reabEl){reabEl.textContent=nReab;const kc=reabEl.closest?.('.kcard');if(kc)kc.style.display=nReab>0?'block':'none';}
 
   // Cards by turno+operador (Em andamento only)
   const cards=document.getElementById('painel-cards');
@@ -3386,6 +3351,9 @@ function renderDashPedidos(){
     </div>`;
 }
 // ═══════════ DASHBOARD ═══════════
+function getPCPPrevias(){return PCP_ITEMS||[];}
+function getMetrosProduzidosTotal(){return LOTES.reduce((a,l)=>a+(l.metros||0),0);}
+
 function renderDash(){
   const nP=PEDIDOS.length,nC=new Set(PEDIDOS.map(r=>r[1])).size;
   const mProd=PEDIDOS.reduce((a,r)=>a+(r[11]||0),0);
@@ -3436,6 +3404,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(!USERS||!Array.isArray(USERS)||USERS.length===0) USERS=[...DEFAULT_USERS];
   DEFAULT_USERS.forEach(du=>{if(!USERS.find(u=>u.login===du.login))USERS.push(du);});
   try{APONTAMENTOS=JSON.parse(localStorage.getItem('pcp_apontamentos')||'[]');}catch(e){APONTAMENTOS=[];}
+  // Move all modals to body level so they're visible regardless of parent display:none
+  ['modal-reservar','sgq-modal','modal-gerar-ops'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.parentNode!==document.body) document.body.appendChild(el);
+  });
   // ─── FIM BOOT SYNC ───
   document.getElementById('li-usr').focus();
   // Carrega o resto em background
@@ -6759,5 +6732,44 @@ function _parseDateStr(s){
     <div id="diario-resumo-content"></div>
   </div>
 </div>
+
+
+<!-- MODALS (body level) -->
+<!-- ══ MODAL GERAR OPs ══ -->
+<div id="modal-gerar-ops" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--bg);border-radius:10px;padding:24px;width:420px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+    <h3 style="margin:0 0 16px;color:var(--navy)">⚙️ Gerar Ordens de Produção</h3>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:var(--bg2);border-radius:6px;padding:10px;font-size:12px">
+        <span class="chip c-blue" id="mgop-n-todos">0</span> itens na prévia &nbsp;
+        <span class="chip c-green" id="mgop-n-sel">0</span> selecionados
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Quais itens:</label>
+        <select id="mgop-modo" style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+          <option value="todos">Todos da prévia</option>
+          <option value="selecionados">Somente selecionados</option>
+          <option value="individual">Individual (um por pedido)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tipo de agrupamento:</label>
+        <select id="mgop-tipo" style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+          <option value="buncher_ext">Buncher agrupado + Extrusora separada (recomendado)</option>
+          <option value="individual">Individual por pedido/produto</option>
+        </select>
+      </div>
+      <p style="font-size:11px;color:var(--text2);margin:0;background:var(--bg2);padding:8px;border-radius:6px">
+        <strong>Buncher agrupado:</strong> produtos com mesma formação de filamentos são somados em uma única OP de encordoamento.<br>
+        <strong>Extrusora:</strong> mantida separada por produto, com referência ao Buncher de origem.
+      </p>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn bpri" style="flex:1" onclick="confirmarModalGerarOPs()">⚙️ Gerar OPs</button>
+        <button class="btn bdng" onclick="fecharModalGerarOPs()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 </body></html>
