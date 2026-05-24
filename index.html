@@ -250,7 +250,7 @@ tr:hover td{background:var(--bg3)}
   <div class="nt" id="nt-usuarios"   onclick="go('usuarios')">👥 Usuários</div>
   <div class="nt" id="nt-historico"  onclick="go('historico')">🗂 Histórico</div>
   <div class="nt" id="nt-comercial" onclick="go('comercial')">🤝 Comercial</div>
-  <div class="nt" onclick="window.open('painel-diario.html','_blank')" style="background:rgba(59,130,246,.15);color:#93c5fd">📊 Diário</div>
+  <div class="nt" id="nt-diario" onclick="go('diario')" style="background:rgba(59,130,246,.15);color:#93c5fd">📊 Diário</div>
   <div class="nav-r">
     <span id="fb-status" style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(255,255,255,.1);cursor:pointer" onclick="go('config')" title="Status Firebase">🟡 Conectando...</span>
     <span id="usr-chip" class="chip c-blue"></span>
@@ -723,6 +723,8 @@ tr:hover td{background:var(--bg3)}
     <div class="sec"><div class="sec-hd"><span class="sec-tt">Produção por Operador</span></div><div class="sec-bd" id="prod-oper"></div></div>
   </div>
   <div class="sec"><div class="sec-hd"><span class="sec-tt">Histórico de Lotes</span>
+        <button class="btn bgho bsm" onclick="window.open('https://docs.google.com/forms/d/12td14m1IJ3KJtAWRKZICZdDLql_uwQVfpmAHyoCOWqQ/viewform','_blank')" style="color:var(--green)">📝 Formulário Apontamento</button>
+        <button class="btn bgho bsm" onclick="window.open('painel-diario.html','_blank')">📊 Abrir Diário</button>
         <button class="btn bgho bsm" onclick="importarHistoricoLotes()">📂 Importar histórico</button>
         <button class="btn bgho bsm" onclick="window.open('painel-diario.html','_blank')">📊 Abrir Diário</button><span class="chip c-green" id="lt-cnt">0</span>
     <button class="btn bgho bsm" style="margin-left:auto" onclick="exportLotes()">⬇ Exportar</button>
@@ -1489,12 +1491,13 @@ const FILS=[['FLEXIVEL','1',0.28,14],['FLEXIVEL','1,5',0.28,22],['FLEXIVEL','2,5
 const FIL_IDX={};FILS.forEach(([g,c,d,f])=>{FIL_IDX[g+'|'+c]=[d,f];});
 
 // ═══════════ LS KEYS ═══════════
-const LS={PEDIDOS:'pcp_pedidos',HIST:'pcp_hist',ORDENS:'pcp_ordens',LOTES:'pcp_lotes',TORCEDEIRA:'pcp_torcedeira',PREVIAS:'pcp_previas',RESERVAS:'pcp_reservas',USUARIOS:'pcp_users',NC:'pcp_nc',RSV_REVISOES:'pcp_rsv_revisoes',COMERCIAL:'pcp_comercial',PC_MAP:'pcp_pc_map',SNAPSHOTS:'pcp_snapshots'};
+const LS={PEDIDOS:'pcp_pedidos',HIST:'pcp_hist',ORDENS:'pcp_ordens',LOTES:'pcp_lotes',TORCEDEIRA:'pcp_torcedeira',PREVIAS:'pcp_previas',RESERVAS:'pcp_reservas',USUARIOS:'pcp_users',NC:'pcp_nc',RSV_REVISOES:'pcp_rsv_revisoes',COMERCIAL:'pcp_comercial',PC_MAP:'pcp_pc_map',SNAPSHOTS:'pcp_snapshots',APONTAMENTOS:'pcp_apontamentos'};
 
 // ═══════════ STATE ═══════════
 let PEDIDOS=[],HIST=[],ORDENS=[],LOTES=[],TORCEDEIRA=[]
 let RSV_REVISOES={};
-let COMERCIAL={}; // {cliente: {prioridade, obs, prazo_override, alertas:[]}} // {pedido: {status:'revisado'|'nao_revisado', dt, user, locked}},PREVIAS=[],RESERVAS=[],USERS=[],SNAPSHOTS=[];
+let COMERCIAL={};
+let APONTAMENTOS=[]; // lotes detalhados com status por etapa // {cliente: {prioridade, obs, prazo_override, alertas:[]}} // {pedido: {status:'revisado'|'nao_revisado', dt, user, locked}},PREVIAS=[],RESERVAS=[],USERS=[],SNAPSHOTS=[];
 let PCP_ITEMS=[],PCP_BEDIT=null,PCP_EEDIT=null,pcpSel=new Set(),consolSel=new Set();
 let PC_MAP={"14341": "90 A 91", "14321": "92 A 93", "14316": "95 E 96", "14310": "97", "14493": "98", "14583": "99", "14585": "100", "14586": "101", "14666": "102", "14669": "103", "14670": "104", "14620": "105", "14672": "106", "14673": "107", "14784": "109", "14785": "110", "14786": "111", "14718": "112", "14787": "113", "14788": "114", "14790": "115", "14791": "116", "14792": "117", "14793": "118", "14740": "119", "14742": "120"}; // pedido_interno → pc_imperium (seed from PEDIDO_IMPERIUM_VS_PEDIDO_BIMMER.xlsx)
 let pedPage=0;const PER=60;
@@ -3432,6 +3435,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   // Garante que os usuários padrão sempre existem
   if(!USERS||!Array.isArray(USERS)||USERS.length===0) USERS=[...DEFAULT_USERS];
   DEFAULT_USERS.forEach(du=>{if(!USERS.find(u=>u.login===du.login))USERS.push(du);});
+  try{APONTAMENTOS=JSON.parse(localStorage.getItem('pcp_apontamentos')||'[]');}catch(e){APONTAMENTOS=[];}
   // ─── FIM BOOT SYNC ───
   document.getElementById('li-usr').focus();
   // Carrega o resto em background
@@ -3478,7 +3482,8 @@ function go(id){
     painel:renderPainel,
     trefila:renderTrefila,
     buncherfixo:renderBuncherFixo,
-    buncherredir:renderBuncherRedir
+    buncherredir:renderBuncherRedir,
+    diario:renderDiario
   };
   if(renderers[id])renderers[id]();
 }
@@ -3776,11 +3781,11 @@ const PERFIS_DEF = {
 };
 const ABAS_PERFIL = {
   admin:       'todas',
-  gestor:      ['dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','reserva','engenharia','usuarios','historico','comercial','import'],
+  gestor:      ['dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','reserva','engenharia','usuarios','historico','comercial','import','diario'],
   logistica:   ['dash','reserva','painel','ordens'],
   comercial:   ['dash','pedidos','comercial'],
-  producao:    ['dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','engenharia','historico','import'],
-  operacional: ['dash','painel','trefila','buncherfixo','buncherredir','extrusora','lotes'],
+  producao:    ['dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','engenharia','historico','import','diario'],
+  operacional: ['dash','painel','trefila','buncherfixo','buncherredir','extrusora','lotes','diario'],
 };
 const WRITE_PERFIL = {
   admin:      'tudo',
@@ -5909,5 +5914,812 @@ function exportarHistorico(){exportHistorico();}
 
 
 
+
+
+// ═══ DIÁRIO JS ═══
+// ═══════════════════════════════════════════════════════
+// DIÁRIO DE PRODUÇÃO — Apontamento integrado no PCP
+// ═══════════════════════════════════════════════════════
+
+let _apontOpSelecionada = null; // OP currently being apontada
+let _produtosStatus = {};       // {produto_key: {status, metros, obs}}
+
+// Status options for each product
+const STATUS_PROD = [
+  {id:'iniciado',   label:'▶ Iniciado',          cls:'c-blue',   color:'#2563eb'},
+  {id:'finalizado', label:'✅ Finalizado',        cls:'c-teal',   color:'#0d9488'},
+  {id:'nao_prod',   label:'⬜ Não Produzido',     cls:'c-gray',   color:'#6b7280'},
+  {id:'proximo',    label:'➡ Próximo Turno',     cls:'c-orange', color:'#d97706'},
+  {id:'cancelado',  label:'❌ Cancelado/Estornar',cls:'c-red',    color:'#dc2626'},
+];
+
+function dirioSub(tab){
+  ['apont','hist','resumo'].forEach(t=>{
+    const btn=document.getElementById('dst-'+t);
+    const el=document.getElementById('dst-tab-'+t);
+    if(btn) btn.classList.toggle('on', t===tab);
+    if(el)  el.style.display = t===tab ? 'block':'none';
+  });
+  if(tab==='apont') renderApontOPs();
+  if(tab==='hist')  renderDiarioHist();
+  if(tab==='resumo'){
+    const rd=document.getElementById('resumo-data');
+    if(rd&&!rd.value) rd.value=new Date().toISOString().slice(0,10);
+    renderDiarioResumo();
+  }
+}
+
+function renderDiario(){
+  dirioSub('apont');
+}
+
+// ── STEP 1: List OPs for this operator/shift ──
+function renderApontOPs(){
+  const el=document.getElementById('apont-ops-list'); if(!el)return;
+  const turnoFil=document.getElementById('apont-turno-fil')?.value||'';
+  const etapaFil=document.getElementById('apont-etapa-fil')?.value||'';
+  const q=(document.getElementById('apont-q')?.value||'').toLowerCase();
+  const meuLogin=CUSER?.login||'';
+  const isAdmin=CUSER?.perfil==='admin'||CUSER?.perfil==='gestor'||CUSER?.perfil==='producao';
+
+  // Get OPs: admin sees all, operacional sees only theirs
+  let ops=ORDENS.filter(o=>{
+    if(o.status==='Concluída') return false;
+    if(!isAdmin && o.operador && o.operador!==meuLogin) return false;
+    if(turnoFil && o.turno && o.turno!==turnoFil) return false;
+    if(etapaFil && o.tipo!==etapaFil) return false;
+    if(q){
+      const txt=(o.id||'')+(o.produto||'')+(o.pedido||'')+(o.cliente||'');
+      if(!txt.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  if(ops.length===0){
+    el.innerHTML=`<div style="text-align:center;padding:32px;color:var(--text3)">
+      <div style="font-size:32px;margin-bottom:8px">📭</div>
+      <div style="font-size:14px;font-weight:600">Nenhuma OP disponível</div>
+      <div style="font-size:12px;margin-top:4px">${isAdmin?'Nenhuma OP ativa com esses filtros':'Você não tem OPs atribuídas no momento'}</div>
+      ${!isAdmin?`<p style="font-size:11px;color:var(--text3);margin-top:8px">Seu gestor precisa atribuir uma OP a você na aba ⚙️ Produção</p>`:''}
+    </div>`;
+    return;
+  }
+
+  // Group by etapa
+  const grouped={};
+  ops.forEach(o=>{
+    const e=o.etapa||o.tipo||'OP';
+    if(!grouped[e]) grouped[e]=[];
+    grouped[e].push(o);
+  });
+
+  const etapaColors={'TREFILA':'#fb923c','BUNCHER':'#22d3ee','TORCEDEIRA':'#a855f7',
+    'torcedeira':'#a855f7','torcedeira_redir':'#7c3aed',
+    'EXTRUSORA':'#22c55e','extrusora':'#22c55e','trefila':'#fb923c',
+    'buncherfixo':'#06b6d4'};
+
+  el.innerHTML=Object.entries(grouped).map(([etapa,opsEtapa])=>`
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:${etapaColors[etapa]||'var(--text2)'};
+        text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;
+        display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${etapaColors[etapa]||'#888'};display:inline-block"></span>
+        ${etapa}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+        ${opsEtapa.map(o=>{
+          const pedidos=(o.pedidos||[o.pedido]).filter(Boolean).join(', ');
+          const existente=APONTAMENTOS.filter(a=>a.op_id===o.id&&a.data===new Date().toISOString().slice(0,10));
+          const jaApontado=existente.length>0;
+          const sc=o.status==='Em andamento'||o.status==='Em Andamento'?'c-blue':o.status==='Reaberta'?'c-reaberta':'c-gray';
+          return`<div onclick="selecionarOP('${o.id}')"
+            style="border:2px solid ${jaApontado?'#0d9488':'var(--border)'};border-radius:10px;
+              padding:12px 14px;cursor:pointer;background:${jaApontado?'#f0fdfa':'var(--bg)'};
+              transition:.15s;position:relative"
+            onmouseover="this.style.borderColor='var(--navy)';this.style.background='var(--bg2)'"
+            onmouseout="this.style.borderColor='${jaApontado?'#0d9488':'var(--border)'}'
+              ;this.style.background='${jaApontado?'#f0fdfa':'var(--bg)'}'">
+            ${jaApontado?`<span style="position:absolute;top:8px;right:8px;font-size:10px;
+              background:#0d9488;color:#fff;padding:1px 6px;border-radius:10px">✓ apontado hoje</span>`:''}
+            <div style="font-size:11px;font-weight:700;color:var(--navy);font-family:monospace">${o.id}</div>
+            <div style="font-size:13px;font-weight:600;margin:4px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.produto||''}">${shortProd(o.produto)}</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px">
+              <span class="chip ${sc}" style="font-size:9px">${o.status||'Pendente'}</span>
+              ${o.operador?`<span style="font-size:10px;color:var(--text2)">👤 ${o.operador}</span>`:''}
+              ${o.turno?`<span style="font-size:10px;color:var(--text2)">⏰ ${o.turno}</span>`:''}
+              <span style="font-size:10px;color:var(--orange);font-weight:600">${fm(o.metros||0)}m</span>
+            </div>
+            ${pedidos?`<div style="font-size:10px;color:var(--text3);margin-top:4px">Pedido(s): ${pedidos}</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ── STEP 2: Apontamento form for selected OP ──
+function selecionarOP(opId){
+  const op=ORDENS.find(o=>o.id===opId);
+  if(!op)return;
+  _apontOpSelecionada=op;
+  _produtosStatus={};
+
+  // Show step2, hide step1
+  document.getElementById('apont-step1').style.display='none';
+  document.getElementById('apont-step2').style.display='block';
+
+  // OP title
+  const ttl=document.getElementById('apont-op-title');
+  if(ttl) ttl.textContent=`OP ${op.id} — ${shortProd(op.produto)}`;
+
+  // OP info card
+  const info=document.getElementById('apont-op-info');
+  if(info){
+    const pedidos=(op.pedidos||[op.pedido]).filter(Boolean).join(', ');
+    info.innerHTML=`
+      <div><div style="font-size:10px;opacity:.7">OP</div><div style="font-weight:700;font-family:monospace">${op.id}</div></div>
+      <div><div style="font-size:10px;opacity:.7">Produto</div><div style="font-weight:600">${shortProd(op.produto)}</div></div>
+      <div><div style="font-size:10px;opacity:.7">Etapa</div><div>${op.etapa||op.tipo||'—'}</div></div>
+      <div><div style="font-size:10px;opacity:.7">Metros</div><div style="color:#fb923c;font-weight:700">${fm(op.metros||0)}m</div></div>
+      <div><div style="font-size:10px;opacity:.7">Pedidos</div><div style="font-family:monospace;font-size:11px">${pedidos||'—'}</div></div>
+      <div><div style="font-size:10px;opacity:.7">Seção</div><div>${op.secao||'—'}</div></div>
+      ${op.dt_entrega?`<div><div style="font-size:10px;opacity:.7">Entrega</div><div>${op.dt_entrega.split('-').reverse().join('/')}</div></div>`:''}`;
+  }
+
+  // Set defaults
+  const dtEl=document.getElementById('apont-data');
+  if(dtEl) dtEl.value=new Date().toISOString().slice(0,10);
+  const operEl=document.getElementById('apont-oper');
+  if(operEl) operEl.value=CUSER?.nome||op.operador||'';
+  const turnoEl=document.getElementById('apont-turno');
+  if(turnoEl && (op.turno||CUSER?.turno)){
+    turnoEl.value=op.turno||CUSER?.turno||'T1';
+  }
+
+  // Build products list
+  renderApontProdutos(op);
+}
+
+function renderApontProdutos(op){
+  const el=document.getElementById('apont-produtos-list');if(!el)return;
+
+  // Determine products: for paired OPs (A+B), get both
+  const numBase=op.num_base||op.id;
+  const pairedOps=ORDENS.filter(o=>
+    (o.num_base===numBase||o.id.startsWith(numBase))
+    &&o.status!=='Concluída'
+  );
+  const allProds=pairedOps.length>1?pairedOps:[op];
+
+  el.innerHTML=allProds.map((o,oi)=>{
+    const etapaColor={'torcedeira':'#a855f7','torcedeira_redir':'#7c3aed',
+      'extrusora':'#22c55e','trefila':'#fb923c','buncherfixo':'#06b6d4','buncherredir':'#8b5cf6'}[o.tipo]||'#888';
+    const key=o.id;
+    const cur=_produtosStatus[key]||{status:'iniciado',metros:o.metros||0,obs:''};
+    return`<div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="background:${etapaColor};color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700">${(o.etapa||o.tipo||'OP').toUpperCase()}</span>
+        <span style="font-family:monospace;font-size:12px;font-weight:700">${o.id}</span>
+        <span style="font-size:13px;font-weight:600">${shortProd(o.produto)}</span>
+        <span style="color:var(--orange);font-weight:600;margin-left:auto">${fm(o.metros||0)}m</span>
+        ${corBadge(o.produto)}
+      </div>
+      <!-- Status buttons -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:10px">
+        ${STATUS_PROD.map(s=>`
+          <button onclick="setStatusProd('${key}','${s.id}')"
+            id="sprod-${key}-${s.id}"
+            style="padding:8px 10px;border-radius:6px;border:2px solid ${cur.status===s.id?s.color:'#e5e7eb'};
+              background:${cur.status===s.id?s.color+'22':'transparent'};
+              color:${cur.status===s.id?s.color:'#6b7280'};
+              font-size:11px;font-weight:600;cursor:pointer;transition:.15s;text-align:center">
+            ${s.label}
+          </button>`).join('')}
+      </div>
+      <!-- Metros produced -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="fg" style="flex:1;min-width:120px">
+          <label style="font-size:11px">Metros produzidos</label>
+          <input type="number" id="metros-${key}" value="${cur.metros}" min="0" step="0.1"
+            style="width:100%;padding:5px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"
+            onchange="_produtosStatus['${key}']=_produtosStatus['${key}']||{};_produtosStatus['${key}'].metros=parseFloat(this.value)||0">
+        </div>
+        <div class="fg" style="flex:2;min-width:200px">
+          <label style="font-size:11px">Obs. deste produto</label>
+          <input id="obs-${key}" value="${cur.obs||''}" placeholder="Ocorrências específicas..."
+            style="width:100%;padding:5px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"
+            onchange="_produtosStatus['${key}']=_produtosStatus['${key}']||{};_produtosStatus['${key}'].obs=this.value">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Set default status
+  allProds.forEach(o=>{
+    if(!_produtosStatus[o.id]){
+      _produtosStatus[o.id]={status:'iniciado',metros:o.metros||0,obs:''};
+    }
+  });
+}
+
+function setStatusProd(key, status){
+  if(!_produtosStatus[key]) _produtosStatus[key]={status,metros:0,obs:''};
+  _produtosStatus[key].status=status;
+  // Update button styles
+  STATUS_PROD.forEach(s=>{
+    const btn=document.getElementById(`sprod-${key}-${s.id}`);
+    if(btn){
+      const active=s.id===status;
+      btn.style.borderColor=active?s.color:'#e5e7eb';
+      btn.style.background=active?s.color+'22':'transparent';
+      btn.style.color=active?s.color:'#6b7280';
+    }
+  });
+  // Auto-update metros when finalizado
+  const metrosEl=document.getElementById(`metros-${key}`);
+  if(status==='finalizado'&&metrosEl&&parseFloat(metrosEl.value)<=0){
+    const op=ORDENS.find(o=>o.id===key);
+    if(op&&(op.metros||0)>0) metrosEl.value=op.metros;
+  }
+  if(status==='nao_prod'||status==='cancelado'){
+    if(metrosEl) metrosEl.value=0;
+  }
+}
+
+function voltarStep1(){
+  _apontOpSelecionada=null;
+  _produtosStatus={};
+  document.getElementById('apont-step1').style.display='block';
+  document.getElementById('apont-step2').style.display='none';
+}
+
+function previewApontFiles(input){
+  const prev=document.getElementById('apont-files-preview');
+  if(!prev)return;
+  prev.innerHTML='';
+  [...input.files].forEach(f=>{
+    const url=URL.createObjectURL(f);
+    if(f.type.startsWith('image')){
+      prev.innerHTML+=`<div style="position:relative">
+        <img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:9px;text-align:center;color:var(--text3);margin-top:2px">${f.name.slice(0,12)}</div>
+      </div>`;
+    } else {
+      prev.innerHTML+=`<div style="width:80px;height:80px;border-radius:6px;border:1px solid var(--border);
+        display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg2)">
+        <div style="font-size:24px">🎬</div>
+        <div style="font-size:9px;color:var(--text3);text-align:center;padding:2px">${f.name.slice(0,12)}</div>
+      </div>`;
+    }
+  });
+}
+
+function salvarApontamento(){
+  if(!_apontOpSelecionada){alert('Nenhuma OP selecionada.');return;}
+  const op=_apontOpSelecionada;
+  const dt=document.getElementById('apont-data')?.value||new Date().toISOString().slice(0,10);
+  const turno=document.getElementById('apont-turno')?.value||'';
+  const oper=CUSER?.nome||document.getElementById('apont-oper')?.value||'';
+  const sucataCu=parseFloat(document.getElementById('apont-sucata-cu')?.value)||0;
+  const sucataComp=parseFloat(document.getElementById('apont-sucata-comp')?.value)||0;
+  const parada=parseFloat(document.getElementById('apont-parada')?.value)||0;
+  const motivo=document.getElementById('apont-motivo')?.value||'';
+  const bobinas=parseInt(document.getElementById('apont-bobinas')?.value)||0;
+  const lanceIni=parseFloat(document.getElementById('apont-lance-ini')?.value)||0;
+  const lanceFim=parseFloat(document.getElementById('apont-lance-fim')?.value)||0;
+  const s5=parseInt(document.getElementById('apont-5s')?.value)||8;
+  const obs=document.getElementById('apont-obs')?.value||'';
+
+  // Build produtos array from _produtosStatus
+  const produtos=Object.entries(_produtosStatus).map(([opId,info])=>{
+    const o2=ORDENS.find(x=>x.id===opId)||op;
+    return{
+      op_id:opId, produto:o2.produto, codigo:o2.codigo,
+      etapa:o2.etapa||o2.tipo, secao:o2.secao,
+      status:info.status,
+      metros:parseFloat(document.getElementById(`metros-${opId}`)?.value)||info.metros||0,
+      obs:document.getElementById(`obs-${opId}`)?.value||info.obs||''
+    };
+  });
+
+  if(produtos.length===0){alert('Configure o status de pelo menos um produto.');return;}
+
+  // Build apontamento record
+  const apontamento={
+    id:'APT-'+Date.now(),
+    op_id:op.id,
+    num_base:op.num_base||op.id,
+    pedidos:(op.pedidos||[op.pedido]).filter(Boolean),
+    operador:oper,
+    login:CUSER?.login||'',
+    turno, dt,
+    carimbo:new Date().toISOString(),
+    etapa:op.etapa||op.tipo,
+    produtos,
+    metros_total:produtos.reduce((a,p)=>a+(p.metros||0),0),
+    sucata_cobre:sucataCu,
+    sucata_composto:sucataComp,
+    tempo_parada:parada,
+    motivo_parada:motivo,
+    bobinas, lance_ini:lanceIni, lance_fim:lanceFim,
+    pontuacao_5s:s5,
+    obs,
+    origem:'pcp',
+  };
+
+  APONTAMENTOS.unshift(apontamento);
+  saveSingle(LS.APONTAMENTOS, APONTAMENTOS);
+
+  // Update OP status based on produtos
+  const allFinal=produtos.every(p=>p.status==='finalizado'||p.status==='nao_prod'||p.status==='cancelado');
+  const anyIniciado=produtos.some(p=>p.status==='iniciado');
+  const o=ORDENS.find(x=>x.id===op.id);
+  if(o){
+    if(allFinal) o.status='Concluída';
+    else if(anyIniciado) o.status='Em andamento';
+    saveSingle(LS.ORDENS,ORDENS);
+  }
+
+  // Also create a LOTES entry for backward compat
+  const lote={
+    id:'LT-'+Date.now(),
+    origem:'pcp',
+    ordem:op.id,
+    produto:shortProd(op.produto),
+    metros:apontamento.metros_total,
+    operador:oper,
+    turno, obs,
+    status:'OK',
+    dt, carimbo:apontamento.carimbo,
+    etapa:op.etapa||op.tipo,
+    producao_texto:shortProd(op.produto)+' · '+fm(apontamento.metros_total)+'m',
+    prioridade:op.prio_prod||'N/I',
+    sucata_cobre:sucataCu,
+    sucata_composto:sucataComp,
+    tempo_parada:parada,
+    bobinas, lance_ini:lanceIni, lance_fim:lanceFim,
+    pontuacao_5s:s5,
+  };
+  LOTES.unshift(lote);
+  saveSingle(LS.LOTES, LOTES);
+
+  showToast&&showToast('✅ Apontamento registrado! OP '+op.id);
+  voltarStep1();
+  renderApontOPs();
+  // Refresh painel/ordens if open
+  renderAll&&renderAll();
+}
+
+// ── HISTÓRICO ──
+function renderDiarioHist(){
+  const el=document.getElementById('diario-hist-content');if(!el)return;
+  const de=document.getElementById('diario-hist-de')?.value||'';
+  const ate=document.getElementById('diario-hist-ate')?.value||'';
+  const oper=document.getElementById('diario-hist-oper')?.value||'';
+  const etapa=document.getElementById('diario-hist-etapa')?.value||'';
+
+  // Populate selects
+  const operSel=document.getElementById('diario-hist-oper');
+  if(operSel&&operSel.options.length<=1){
+    const opers=[...new Set(APONTAMENTOS.map(a=>a.operador).filter(Boolean))].sort();
+    opers.forEach(o=>{const opt=document.createElement('option');opt.value=o;opt.textContent=o;operSel.appendChild(opt);});
+  }
+  const etapaSel=document.getElementById('diario-hist-etapa');
+  if(etapaSel&&etapaSel.options.length<=1){
+    const etapas=[...new Set(APONTAMENTOS.map(a=>a.etapa).filter(Boolean))].sort();
+    etapas.forEach(e=>{const opt=document.createElement('option');opt.value=e;opt.textContent=e;etapaSel.appendChild(opt);});
+  }
+
+  let apts=APONTAMENTOS.filter(a=>{
+    if(de&&a.dt<de)return false;
+    if(ate&&a.dt>ate)return false;
+    if(oper&&a.operador!==oper)return false;
+    if(etapa&&a.etapa!==etapa)return false;
+    return true;
+  });
+
+  if(apts.length===0){
+    el.innerHTML='<p style="color:var(--text3);font-size:12px;padding:16px;text-align:center">Nenhum apontamento encontrado. Use os filtros ou importe do Sheets.</p>';
+    return;
+  }
+
+  el.innerHTML=apts.map(a=>{
+    const dtFmt=a.dt?a.dt.split('-').reverse().join('/'):'';
+    const hora=a.carimbo?a.carimbo.slice(11,16):'';
+    return`<div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-family:monospace;font-weight:700;font-size:12px">${a.op_id}</span>
+        <span style="font-size:11px;color:var(--text2)">${dtFmt} ${hora}</span>
+        <span class="chip c-blue" style="font-size:9px">${a.turno||'—'}</span>
+        <span style="font-size:11px">👤 ${a.operador}</span>
+        <span style="color:var(--orange);font-weight:600;margin-left:auto">${fm(a.metros_total||0)}m</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        ${(a.produtos||[]).map(p=>{
+          const st=STATUS_PROD.find(s=>s.id===p.status)||{label:p.status,color:'#888'};
+          return`<div style="background:${st.color}22;border:1px solid ${st.color};border-radius:6px;padding:4px 10px;font-size:10px">
+            <span style="color:${st.color};font-weight:700">${st.label}</span>
+            <span style="color:var(--text2);margin-left:4px">${shortProd(p.produto||'')} · ${fm(p.metros||0)}m</span>
+          </div>`;
+        }).join('')}
+      </div>
+      ${a.obs?`<div style="font-size:11px;color:var(--text2);font-style:italic">"${a.obs}"</div>`:''}
+      <div style="display:flex;gap:12px;font-size:10px;color:var(--text3);margin-top:4px;flex-wrap:wrap">
+        ${a.sucata_cobre>0?`<span>🔴 Cobre: ${a.sucata_cobre}kg</span>`:''}
+        ${a.sucata_composto>0?`<span>⚫ Composto: ${a.sucata_composto}kg</span>`:''}
+        ${a.tempo_parada>0?`<span>⏱ Parada: ${a.tempo_parada}min${a.motivo_parada?' ('+a.motivo_parada+')':''}</span>`:''}
+        ${a.bobinas>0?`<span>📦 Bobinas: ${a.bobinas}</span>`:''}
+        ${a.lance_ini||a.lance_fim?`<span>📏 Lance: ${a.lance_ini||0}m–${a.lance_fim||0}m</span>`:''}
+        ${a.pontuacao_5s?`<span>⭐ 5S: ${a.pontuacao_5s}/10</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RESUMO TURNO ──
+function renderDiarioResumo(){
+  const el=document.getElementById('diario-resumo-content');if(!el)return;
+  const dt=document.getElementById('resumo-data')?.value||new Date().toISOString().slice(0,10);
+  const turnoFil=document.getElementById('resumo-turno')?.value||'';
+  const apts=APONTAMENTOS.filter(a=>a.dt===dt&&(!turnoFil||a.turno===turnoFil));
+
+  if(apts.length===0){
+    el.innerHTML=`<p style="color:var(--text3);text-align:center;padding:24px">Nenhum apontamento para ${dt.split('-').reverse().join('/')} ${turnoFil||''}</p>`;
+    return;
+  }
+
+  const totMetros=apts.reduce((a,x)=>a+(x.metros_total||0),0);
+  const totSucataCu=apts.reduce((a,x)=>a+(x.sucata_cobre||0),0);
+  const totParada=apts.reduce((a,x)=>a+(x.tempo_parada||0),0);
+  const opers=[...new Set(apts.map(a=>a.operador).filter(Boolean))];
+  const byEtapa={};
+  apts.forEach(a=>{const e=a.etapa||'—';if(!byEtapa[e])byEtapa[e]={n:0,m:0};byEtapa[e].n++;byEtapa[e].m+=a.metros_total||0;});
+
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px">
+      <div class="kcard"><div class="kv">${apts.length}</div><div class="kl">Apontamentos</div></div>
+      <div class="kcard"><div class="kv c-orange">${fm(totMetros)}m</div><div class="kl">Total Produzido</div></div>
+      <div class="kcard"><div class="kv">${opers.length}</div><div class="kl">Operadores</div></div>
+      ${totSucataCu>0?`<div class="kcard"><div class="kv" style="color:var(--red)">${totSucataCu}kg</div><div class="kl">Sucata Cobre</div></div>`:''}
+      ${totParada>0?`<div class="kcard"><div class="kv" style="color:var(--orange)">${totParada}min</div><div class="kl">Paradas</div></div>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px">
+      ${Object.entries(byEtapa).map(([e,d])=>`
+        <div style="border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+          <div style="font-size:12px;font-weight:700;color:var(--navy)">${e}</div>
+          <div style="font-size:16px;font-weight:700;color:var(--orange);margin-top:4px">${fm(d.m)}m</div>
+          <div style="font-size:10px;color:var(--text2)">${d.n} apontamentos</div>
+        </div>`).join('')}
+    </div>
+    ${apts.map(a=>`
+      <div style="border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-family:monospace;font-size:11px;font-weight:700">${a.op_id}</span>
+        <span style="font-size:11px">👤 ${a.operador}</span>
+        <span class="chip c-blue" style="font-size:9px">${a.turno||'—'}</span>
+        <span style="font-size:11px;color:var(--text2)">${a.etapa||'—'}</span>
+        <span style="color:var(--orange);font-weight:600;margin-left:auto">${fm(a.metros_total||0)}m</span>
+      </div>`).join('')}`;
+}
+
+// ── Import historical from Sheets CSV ──
+async function importarHistoricoSheets(){
+  const btn=event.target;
+  btn.textContent='⏳ Importando...';
+  btn.disabled=true;
+  try{
+    const SHEET_ID='1PY4AR_6Zx3uKoN7PckNAtgJaaUloVefMRTUgPvMyPKY';
+    const GID='1186239752';
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}&cachebust=${Date.now()}`;
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const csv=await res.text();
+    const rows=_parseCSVSimple(csv);
+    if(rows.length<2){throw new Error('CSV vazio');}
+    const headers=rows[0].map(h=>String(h||'').trim().toLowerCase());
+    const idxOf=(...kws)=>{
+      for(let i=0;i<headers.length;i++){const h=headers[i];for(const k of kws)if(h.includes(k))return i;}
+      return-1;
+    };
+    const COL={
+      carimbo:idxOf('carimbo','timestamp'),
+      data:idxOf('data:','data '),
+      turno:idxOf('turno'),
+      op:idxOf('ordem','op:','op '),
+      etapa:idxOf('etapa','maquina','setor'),
+      oper:idxOf('operador','nome'),
+      prod:idxOf('produção','producao','descri'),
+      obs:idxOf('observa','obs'),
+      sucataCu:idxOf('cobre'),
+      sucataComp:idxOf('composto'),
+      parada:idxOf('parada'),
+      prio:idxOf('prioridade'),
+    };
+    let added=0;
+    const existingIds=new Set(APONTAMENTOS.map(a=>a.id));
+    for(let i=1;i<rows.length;i++){
+      const r=rows[i];
+      if(!r.some(c=>c&&c.trim()))continue;
+      const get=idx=>idx>=0?String(r[idx]||'').trim():'';
+      const carimbo=get(COL.carimbo);
+      const fakeId='SHEETS-'+carimbo.replace(/[^0-9]/g,'')+'-'+i;
+      if(existingIds.has(fakeId))continue;
+      const dtStr=get(COL.data)||carimbo.slice(0,10);
+      const apt={
+        id:fakeId,
+        op_id:get(COL.op)||('SEM-OP-'+dtStr),
+        num_base:get(COL.op)||'',
+        pedidos:[],
+        operador:get(COL.oper),
+        login:'',
+        turno:get(COL.turno),
+        dt:_parseDateStr(dtStr),
+        carimbo,
+        etapa:get(COL.etapa),
+        produtos:[{
+          op_id:get(COL.op),
+          produto:get(COL.prod),
+          status:'finalizado',
+          metros:0,
+          obs:get(COL.obs)
+        }],
+        metros_total:0,
+        sucata_cobre:parseFloat(get(COL.sucataCu))||0,
+        sucata_composto:parseFloat(get(COL.sucataComp))||0,
+        tempo_parada:parseFloat(get(COL.parada))||0,
+        obs:get(COL.obs),
+        origem:'sheets',
+      };
+      APONTAMENTOS.push(apt);
+      added++;
+    }
+    APONTAMENTOS.sort((a,b)=>(b.carimbo||'').localeCompare(a.carimbo||''));
+    saveSingle(LS.APONTAMENTOS,APONTAMENTOS);
+    renderDiarioHist();
+    showToast&&showToast('✅ '+added+' registros importados do Google Sheets!');
+  }catch(e){
+    alert('❌ Erro ao importar: '+e.message+'\n\nVerifique se a planilha está pública (Qualquer pessoa com o link pode visualizar)');
+  }finally{
+    btn.textContent='📥 Importar do Sheets';
+    btn.disabled=false;
+  }
+}
+
+function _parseCSVSimple(text){
+  const rows=[];let row=[],f='',inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i],n=text[i+1];
+    if(inQ){if(c==='"'&&n==='"'){f+='"';i++;}else if(c==='"')inQ=false;else f+=c;}
+    else{if(c==='"')inQ=true;else if(c===','){row.push(f);f='';}
+      else if(c==='\n'){row.push(f);rows.push(row);row=[];f='';}
+      else if(c!=='\r')f+=c;}
+  }
+  if(f||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.length>1||(r.length===1&&r[0].trim()));
+}
+
+function _parseDateStr(s){
+  if(!s)return'';
+  // DD/MM/YYYY
+  const m1=s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if(m1)return`${m1[3]}-${m1[2]}-${m1[1]}`;
+  // YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
+  // From carimbo like "17/07/2024 13:57:20"
+  const m2=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if(m2)return`${m2[3]}-${m2[2]}-${m2[1]}`;
+  return s.slice(0,10);
+}
+
 </script>
+<!-- ══ DIÁRIO DE PRODUÇÃO ══ -->
+<div id="pg-diario" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">📊 Diário de Produção</span>
+    <button class="btn bgho bsm" onclick="renderDiario()">🔄 Atualizar</button>
+    <button class="btn bgho bsm" onclick="window.open('painel-diario.html','_blank')">🖥 Painel Completo</button>
+    <button class="btn bgho bsm" onclick="window.open('https://docs.google.com/forms/d/12td14m1IJ3KJtAWRKZICZdDLql_uwQVfpmAHyoCOWqQ/viewform','_blank')" style="color:var(--green)">📝 Form. Apontamento</button>
+  </div>
+
+  <!-- SUB TABS -->
+  <div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:0">
+    <button class="stab on" id="dst-apont"  onclick="dirioSub('apont')">⚙️ Apontar Produção</button>
+    <button class="stab"     id="dst-hist"   onclick="dirioSub('hist')">📋 Histórico</button>
+    <button class="stab"     id="dst-resumo" onclick="dirioSub('resumo')">📊 Resumo Turno</button>
+  </div>
+
+  <!-- ── APONTAR ── -->
+  <div id="dst-tab-apont">
+    <!-- Step 1: select OP -->
+    <div class="sec" id="apont-step1">
+      <div class="sec-hd">
+        <span class="sec-tt">1. Selecione a OP do seu turno</span>
+        <span style="font-size:11px;color:var(--text2)">Somente OPs atribuídas a você aparecem aqui</span>
+      </div>
+      <div class="sec-bd">
+        <!-- Filters -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <select id="apont-turno-fil" onchange="renderApontOPs()"
+            style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+            <option value="">Todos os turnos</option>
+            <option value="T1">T1 (06h-14h)</option>
+            <option value="T2">T2 (14h-22h)</option>
+            <option value="T3">T3 (22h-06h)</option>
+          </select>
+          <select id="apont-etapa-fil" onchange="renderApontOPs()"
+            style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+            <option value="">Todas as etapas</option>
+            <option value="trefila">🔧 Trefila</option>
+            <option value="buncherfixo">🔩 Buncher</option>
+            <option value="torcedeira">🌀 Torcedeira</option>
+            <option value="torcedeira_redir">🌀 Torcedeira (Redir.)</option>
+            <option value="extrusora">🏭 Extrusora</option>
+          </select>
+          <input id="apont-q" placeholder="Buscar OP..." oninput="renderApontOPs()"
+            style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:160px">
+        </div>
+        <div id="apont-ops-list"></div>
+      </div>
+    </div>
+
+    <!-- Step 2: apontamento form (shown after OP selected) -->
+    <div id="apont-step2" style="display:none">
+      <div class="sec">
+        <div class="sec-hd">
+          <span class="sec-tt" id="apont-op-title">OP Selecionada</span>
+          <button class="btn bgho bsm" onclick="voltarStep1()">← Voltar</button>
+        </div>
+        <div class="sec-bd">
+          <!-- OP info card -->
+          <div id="apont-op-info" style="background:var(--navy);color:#fff;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap"></div>
+
+          <!-- Seção 1: Identificação -->
+          <div style="background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              <span style="background:var(--navy);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px">1</span>
+              Identificação do Turno
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <div class="fg" style="flex:1;min-width:120px">
+                <label>Data</label>
+                <input type="date" id="apont-data" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+              </div>
+              <div class="fg" style="flex:1;min-width:140px">
+                <label>Turno</label>
+                <select id="apont-turno" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+                  <option value="T1">T1 — 06h às 14h</option>
+                  <option value="T2">T2 — 14h às 22h</option>
+                  <option value="T3">T3 — 22h às 06h</option>
+                </select>
+              </div>
+              <div class="fg" style="flex:2;min-width:160px">
+                <label>Operador</label>
+                <input id="apont-oper" readonly style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção 2: Status dos Produtos por Etapa -->
+          <div style="background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              <span style="background:var(--navy);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px">2</span>
+              Status da Produção por Produto
+            </div>
+            <div id="apont-produtos-list"></div>
+          </div>
+
+          <!-- Seção 3: Qualidade -->
+          <div style="background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              <span style="background:var(--navy);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px">3</span>
+              Qualidade e Perdas
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <div class="fg" style="flex:1;min-width:120px">
+                <label>Sucata Cobre (kg)</label>
+                <input type="number" id="apont-sucata-cu" min="0" step="0.1" value="0"
+                  style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+              </div>
+              <div class="fg" style="flex:1;min-width:120px">
+                <label>Sucata Composto (kg)</label>
+                <input type="number" id="apont-sucata-comp" min="0" step="0.1" value="0"
+                  style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+              </div>
+              <div class="fg" style="flex:1;min-width:120px">
+                <label>Tempo de Parada (min)</label>
+                <input type="number" id="apont-parada" min="0" step="5" value="0"
+                  style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+              </div>
+              <div class="fg" style="flex:1;min-width:200px">
+                <label>Motivo da Parada</label>
+                <input id="apont-motivo" placeholder="Ex: Troca de ferramenta, setup..."
+                  style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção 4: Extras -->
+          <div style="background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              <span style="background:var(--navy);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px">4</span>
+              Lances, Bobinas e Observações
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+              <div class="fg" style="flex:1;min-width:120px">
+                <label>Bobinas produzidas (qtd)</label>
+                <input type="number" id="apont-bobinas" min="0" value="0"
+                  style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+              </div>
+              <div class="fg" style="flex:1;min-width:120px">
+                <label>Lance inicial (m)</label>
+                <input type="number" id="apont-lance-ini" min="0" step="0.1" placeholder="0"
+                  style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+              </div>
+              <div class="fg" style="flex:1;min-width:120px">
+                <label>Lance final (m)</label>
+                <input type="number" id="apont-lance-fim" min="0" step="0.1" placeholder="0"
+                  style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r)">
+              </div>
+              <div class="fg" style="flex:2;min-width:200px">
+                <label>Pontuação 5S (1-10)</label>
+                <input type="range" id="apont-5s" min="1" max="10" value="8"
+                  style="width:100%;" oninput="document.getElementById('apont-5s-val').textContent=this.value">
+                <div style="font-size:11px;text-align:right;color:var(--navy)">Nota: <strong id="apont-5s-val">8</strong></div>
+              </div>
+            </div>
+            <div class="fg" style="margin-bottom:10px">
+              <label>Observações</label>
+              <textarea id="apont-obs" rows="3" placeholder="Descreva ocorrências, intercorrências, informações relevantes..."
+                style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;resize:vertical"></textarea>
+            </div>
+            <!-- Image/video upload -->
+            <div class="fg">
+              <label>Anexar imagens ou vídeos curtos</label>
+              <input type="file" id="apont-files" multiple accept="image/*,video/*"
+                style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"
+                onchange="previewApontFiles(this)">
+              <div id="apont-files-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn bdng" onclick="voltarStep1()">Cancelar</button>
+            <button class="btn bsuc" style="padding:10px 24px;font-size:14px" onclick="salvarApontamento()">
+              ✅ Registrar Apontamento
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTÓRICO ── -->
+  <div id="dst-tab-hist" style="display:none">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+      <input type="date" id="diario-hist-de" style="padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px" onchange="renderDiarioHist()">
+      <span style="font-size:11px;color:var(--text3)">até</span>
+      <input type="date" id="diario-hist-ate" style="padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px" onchange="renderDiarioHist()">
+      <select id="diario-hist-oper" onchange="renderDiarioHist()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        <option value="">Todos operadores</option>
+      </select>
+      <select id="diario-hist-etapa" onchange="renderDiarioHist()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        <option value="">Todas etapas</option>
+      </select>
+      <button class="btn bgho bsm" onclick="importarHistoricoSheets()">📥 Importar do Sheets</button>
+    </div>
+    <div id="diario-hist-content"></div>
+  </div>
+
+  <!-- ── RESUMO TURNO ── -->
+  <div id="dst-tab-resumo" style="display:none">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <select id="resumo-turno" onchange="renderDiarioResumo()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        <option value="">Turno atual</option>
+        <option value="T1">T1</option><option value="T2">T2</option><option value="T3">T3</option>
+      </select>
+      <input type="date" id="resumo-data" onchange="renderDiarioResumo()" style="padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+    </div>
+    <div id="diario-resumo-content"></div>
+  </div>
+</div>
+
 </body></html>
