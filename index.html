@@ -2137,11 +2137,11 @@ function renderPCPHist(){
 
   // Enrich each previa with its OPs
   const enriched=previas.map(pv=>{
-    const pvOps=ORDENS.filter(o=>o.previa_id===pv.id||
-      (pv.itens||[]).some(it=>
-        (o.pedidos||[o.pedido]).some(p=>String(p)===String(it.ped))
-        &&(!o.dt_criacao||o.dt_criacao===pv.dt)
-      ));
+    const pvOps=ORDENS.filter(o=>
+      o.previa_id===pv.id ||
+      (pv.ops_ids||[]).includes(o.id) ||
+      (pv.itens||[]).some(it=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(it.ped))&&o.dt_criacao===pv.dt)
+    );
     const total=pvOps.length;
     const concluidas=pvOps.filter(o=>o.status==='Concluída').length;
     const emAndamento=pvOps.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento').length;
@@ -2258,9 +2258,9 @@ function mostrarDetalhePV(pvId){
   panel.style.display='block';
 
   const pvOps=ORDENS.filter(o=>
-    (pv.itens||[]).some(it=>
-      (o.pedidos||[o.pedido]).some(p=>String(p)===String(it.ped))
-    )||o.previa_id===pvId
+    o.previa_id===pvId ||
+    (pv.ops_ids||[]).includes(o.id) ||
+    (pv.itens||[]).some(it=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(it.ped))&&o.dt_criacao===pv.dt)
   );
 
   const statusFlow=['Pendente','Em andamento','Reaberta','Concluída'];
@@ -2344,23 +2344,9 @@ function excluirOPsEmLotePendentes(){
   if(!verificarSenhaGestor('Excluir '+ids.length+' OP(s) em lote')) return;
   if(!confirm(`Excluir ${ids.length} OP(s) pendentes?\n\n${ops.map(o=>o.id+' — '+shortProd(o.produto)).join('\n')}\n\nEsta ação não pode ser desfeita.`)) return;
   
-  // Save all to history before removing
-  ops.forEach(op=>{
-    HIST_EXCL.unshift({
-      id:op.id, produto:op.produto, tipo:op.tipo,
-      pedidos:(op.pedidos||[op.pedido]).filter(Boolean),
-      metros:op.metros, secao:op.secao, operador:op.operador, status:op.status,
-      dt_criacao:op.dt_criacao,
-      excluido_em:new Date().toISOString().slice(0,10),
-      excluido_por:CUSER?.nome||'?'
-    });
-  });
-  if(HIST_EXCL.length>200)HIST_EXCL=HIST_EXCL.slice(0,200);
-  saveSingle(LS.HIST_EXCL, HIST_EXCL);
-  ORDENS=ORDENS.filter(o=>!ids.includes(o.id));
-  saveSingle(LS.ORDENS,ORDENS);
+  ops.forEach(op=>_executarExclusaoOP(op));
   renderOrdens();
-  showToast&&showToast(ids.length+' OP(s) excluidas e salvas no historico.');
+  showToast&&showToast(ops.length+' OP(s) excluidas e movidas para historico.');
 }
 
 function reverterOPsParaPreviaEmLote(){
@@ -2414,29 +2400,33 @@ function renderHistExcl(){
   if(!el)return;
   if(cnt)cnt.textContent=HIST_EXCL.length;
   if(HIST_EXCL.length===0){
-    el.innerHTML='<p style="color:var(--text3);font-size:12px;text-align:center;padding:16px">Nenhuma OP excluida ainda.</p>';
+    el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:28px">📭</div><div>Nenhuma OP excluida ainda.</div></div>';
     return;
   }
-  el.innerHTML=`<table style="width:100%;font-size:11px;border-collapse:collapse">
-    <thead><tr style="background:var(--bg3)">
-      <th style="padding:6px 8px;text-align:left">OP</th>
-      <th>Tipo</th><th>Produto</th><th class="num">Metros</th>
-      <th>Pedido(s)</th><th>Status anterior</th>
-      <th>Excluído em</th><th>Por</th>
-    </tr></thead>
-    <tbody>${HIST_EXCL.map(h=>`
-      <tr style="border-bottom:1px solid var(--border);opacity:.8">
-        <td style="padding:5px 8px;font-family:monospace;font-weight:600;color:var(--text2)">${h.id}</td>
-        <td style="text-align:center"><span class="chip c-gray" style="font-size:9px">${h.tipo||'—'}</span></td>
-        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortProd(h.produto||'')}</td>
-        <td class="num">${fm(h.metros||0)}m</td>
-        <td class="mono" style="font-size:10px">${(h.pedidos||[]).join(', ')||'—'}</td>
-        <td><span class="chip c-gray" style="font-size:9px">${h.status||'—'}</span></td>
-        <td>${h.excluido_em||'—'}</td>
-        <td style="font-size:10px">${h.excluido_por||'—'}</td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
+  el.innerHTML=`
+    <table style="width:100%;font-size:11px;border-collapse:collapse">
+      <thead><tr style="background:#374151;color:#fff">
+        <th style="padding:7px 10px;text-align:left">OP</th>
+        <th>Prévia</th><th>Tipo</th><th>Produto</th><th class="num">Metros</th>
+        <th>Pedido(s)</th><th>Operador</th><th>Status Anterior</th>
+        <th>Excluído em</th><th>Por</th>
+      </tr></thead>
+      <tbody>
+        ${HIST_EXCL.map(h=>`
+        <tr style="border-bottom:1px solid var(--border);background:#f8f8f8">
+          <td style="padding:6px 10px;font-family:monospace;font-weight:700;color:#374151;opacity:.7">${h.id}</td>
+          <td style="font-size:10px;font-family:monospace;color:#6b7280">${h.previa_id||'—'}</td>
+          <td style="text-align:center"><span style="background:#e5e7eb;color:#374151;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${(h.tipo||'—').toUpperCase().slice(0,4)}</span></td>
+          <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#374151">${shortProd(h.produto||'')}</td>
+          <td class="num" style="color:#374151">${fm(h.metros||0)}m</td>
+          <td style="font-size:10px;font-family:monospace">${(h.pedidos||[]).join(', ')||'—'}</td>
+          <td style="font-size:10px">${h.operador||'—'}</td>
+          <td><span style="background:#e5e7eb;color:#374151;border-radius:4px;padding:1px 6px;font-size:9px">${h.status_anterior||h.status||'—'}</span></td>
+          <td style="font-size:10px;white-space:nowrap">${h.excluido_em||'—'}</td>
+          <td style="font-size:10px;font-weight:600">${h.excluido_por||'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
 }
 // ═══════════ PAINEL OPs ═══════════
 function renderPainel(){
@@ -2829,13 +2819,7 @@ function reverterSelecionadasParaPrevia(){
   renderPainel();renderOrdens&&renderOrdens();renderPCPPage&&renderPCPPage();
   alert(`✅ ${revertidas} revertidas para prévia\n${reabertas} marcadas como Reaberta\n${bloqueadas} bloqueadas`);
 }
-function concluirOP(id){
-  const o=ORDENS.find(x=>x.id===id);
-  if(!o)return;
-  o.status='Concluída';o.dt_conclusao=new Date().toISOString().slice(0,10);
-  saveSingle(LS.ORDENS,ORDENS);
-  renderPainel();renderOrdens();
-}
+
 
 // ═══════════ TREFILA ═══════════
 function renderTrefila(){
@@ -4078,38 +4062,84 @@ function ckAllOrdens(el){
 
 // ═══════════ STATUS PRODUÇÃO NOS PEDIDOS ═══════════
 function getStatusProd(pedRow){
-  // Returns production status for a pedido row
-  if(pedRow._status_prod==='em_producao'){
-    const op=ORDENS.find(o=>o.id===pedRow._op_vinculada);
-    if(op?.status==='Concluída') return{label:'✅ Finalizado',cls:'c-teal',color:'#0d9488'};
-    return{label:'🔵 Em Produção',cls:'c-blue',color:'#2563eb'};
+  // Check if has active OP
+  const activeOPs=ORDENS.filter(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(pedRow[2]))&&o.status!=='EXCLUIDA');
+  if(activeOPs.some(o=>o.status==='Concluída'))
+    return{label:'✅ Finalizado',cls:'c-teal',color:'#0d9488',extra:null};
+  if(activeOPs.some(o=>o.status==='Em andamento'||o.status==='Em Andamento')){
+    const op=activeOPs.find(o=>o.status==='Em andamento'||o.status==='Em Andamento');
+    return{label:'🔵 Em Produção',cls:'c-blue',color:'#2563eb',extra:op?.id};
   }
-  if(pedRow._status_prod==='finalizado') return{label:'✅ Finalizado',cls:'c-teal',color:'#0d9488'};
-  // Check if has OP
-  const hasOP=ORDENS.some(o=>(o.pedidos||[o.pedido]).includes(String(pedRow[2])));
-  if(hasOP) return{label:'🔵 Em Produção',cls:'c-blue',color:'#2563eb'};
-  // Check if in PCP_ITEMS
-  const inPCP=PCP_ITEMS&&PCP_ITEMS.some(p=>p[2]===pedRow[2]);
-  if(inPCP) return{label:'📋 Na Prévia',cls:'c-purple',color:'#7c3aed'};
+  if(activeOPs.some(o=>o.status==='Pendente')){
+    const op=activeOPs.find(o=>o.status==='Pendente');
+    return{label:'⏳ OP Gerada',cls:'c-orange',color:'#d97706',extra:op?.id};
+  }
+  // Check previa link
+  if(pedRow._previa_id||pedRow._status_prod==='em_previa'){
+    return{label:'📋 Na Prévia',cls:'c-purple',color:'#7c3aed',extra:pedRow._previa_id};
+  }
+  // Check if in current PCP_ITEMS
+  if(PCP_ITEMS&&PCP_ITEMS.some(p=>p[2]===pedRow[2]))
+    return{label:'📋 Na Prévia',cls:'c-purple',color:'#7c3aed',extra:null};
   return null;
 }
 
 // ═══════════ SALVAR PRÉVIA NO HISTÓRICO ═══════════
-function salvarPreviaHistorico(){
-  if(PCP_ITEMS.length===0) return;
+function _gerarNumPrevia(){
+  // Format: PCPddmmaaaa_N (sequential per day)
+  const d=new Date();
+  const dd=String(d.getDate()).padStart(2,'0');
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const aaaa=d.getFullYear();
+  const prefixo='PCP'+dd+mm+aaaa;
+  // Find highest N for today
+  const existing=HIST.filter(h=>h&&h.id&&h.id.startsWith(prefixo));
+  const maxN=existing.reduce((a,h)=>{
+    const n=parseInt((h.id||'').split('_')[1])||0;
+    return Math.max(a,n);
+  },0);
+  return prefixo+'_'+(maxN+1);
+}
+
+function salvarPreviaHistorico(opsGeradas){
+  if(PCP_ITEMS.length===0) return null;
+  const pvId=_gerarNumPrevia();
+  const dt=new Date().toISOString().slice(0,10);
   const snap={
-    id:'PV-'+Date.now(),
-    dt:new Date().toISOString().slice(0,10),
+    id:pvId,
+    dt,
     n:PCP_ITEMS.length,
     metros:PCP_ITEMS.reduce((a,r)=>a+(r[11]||0),0),
     clientes:[...new Set(PCP_ITEMS.map(r=>r[1]).filter(Boolean))].length,
-    itens:PCP_ITEMS.map(r=>({ped:r[2],cod:r[4],prod:shortProd(r[3]),m:r[11]})),
+    itens:PCP_ITEMS.map(r=>({ped:r[2],cod:r[4],prod:shortProd(r[3]),m:r[11],cliente:r[1]})),
     por:CUSER?.nome||'?',
+    ops_ids:(opsGeradas||[]).map(o=>o.id),
   };
   HIST.unshift(snap);
-  if(HIST.length>50)HIST=HIST.slice(0,50);
+  if(HIST.length>200)HIST=HIST.slice(0,200);
   saveSingle(LS.HIST,HIST);
-  return snap.id;
+
+  // Stamp previa_id on each generated OP
+  if(opsGeradas){
+    opsGeradas.forEach(op=>{
+      op.previa_id=pvId;
+      op.previa_dt=dt;
+    });
+    saveSingle(LS.ORDENS,ORDENS);
+  }
+
+  // Link previa to pedidos
+  PCP_ITEMS.forEach(r=>{
+    const ped=PEDIDOS.find(p=>p[2]===r[2]&&p[4]===r[4]);
+    if(ped){
+      ped._previa_id=pvId;
+      ped._previa_dt=dt;
+      if(!ped._status_prod||ped._status_prod==='') ped._status_prod='em_previa';
+    }
+  });
+  saveSingle(LS.PEDIDOS,PEDIDOS);
+
+  return pvId;
 }
 
 // ═══════════ DASHBOARD PRODUÇÃO ═══════════
@@ -5929,7 +5959,7 @@ function pedRow(r){
     <td style="font-size:10px;text-align:center">${cobertura}</td>
     ${obsCell}
     <td>${statusChip(r[5])}</td>
-    ${(()=>{const sp=getStatusProd(r);return sp?`<td><span class="chip" style="background:${sp.color}22;color:${sp.color};border:1px solid ${sp.color};font-size:9px;font-weight:600">${sp.label}</span>${r._op_vinculada?`<br><span class="mono" style="font-size:8px;color:var(--text3)">${r._op_vinculada}</span>`:''}</td>`:'<td>—</td>';})()}
+    ${(()=>{const sp=getStatusProd(r);return sp?`<td><span class="chip" style="background:${sp.color}22;color:${sp.color};border:1px solid ${sp.color};font-size:9px;font-weight:600">${sp.label}</span>${sp.extra?`<br><span class="mono" style="font-size:8px;color:var(--text3)">${sp.extra}</span>`:''}</td>`:'<td style="color:var(--text3)">—</td>';})()}
   </tr>`;
 }
 function ckAll(el){document.querySelectorAll('.ck-ped').forEach(c=>c.checked=el.checked);atualizarSelInfo();}
@@ -6209,25 +6239,48 @@ function editOrdem(id){
 function deleteOrdem(id){
   const op=ORDENS.find(o=>o.id===id);
   if(!op){alert('OP nao encontrada.');return;}
-  if(op.status==='Em andamento'||op.status==='Em Andamento'||op.status==='Concluida'){
-    alert('Esta OP ja foi enviada para producao. Use Reabrir para reverter.');
-    return;
-  }
-  if(!verificarSenhaGestor('Excluir OP '+id))return;
-  if(!confirm('Confirmar exclusao da OP '+id+' — '+shortProd(op.produto)+'?'))return;
-  // Save to exclusion history
+  if(op.status==='EXCLUIDA'){alert('OP ja excluida.');return;}
+  // Require admin password always
+  if(!verificarSenhaGestor('Excluir OP '+id)) return;
+  if(!confirm('Confirmar exclusao da OP '+id+' — '+shortProd(op.produto)+'?\n\nEla sera marcada como EXCLUIDA e movida para o Historico de Exclusoes.')) return;
+  _executarExclusaoOP(op);
+  renderOrdens();
+  showToast&&showToast('OP '+id+' excluida.');
+}
+
+function _executarExclusaoOP(op){
+  const now=new Date().toISOString().slice(0,10);
+  // Revert pedido status if was linked to this OP
+  const peds=(op.pedidos||[op.pedido]).filter(Boolean);
+  peds.forEach(pedNum=>{
+    const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum));
+    if(ped){
+      // Revert if this OP was the linked one, OR if no more OPs for this pedido
+      if(ped._op_vinculada===op.id||!ORDENS.filter(o=>o.id!==op.id).some(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(pedNum))&&o.status!=='EXCLUIDA')){
+        ped._status_prod=ped._previa_id?'em_previa':'';
+        ped._op_vinculada=null;
+        ped._dt_envio_prod=null;
+      }
+    }
+  });
+  saveSingle(LS.PEDIDOS,PEDIDOS);
+  // Move to HIST_EXCL
   HIST_EXCL.unshift({
-    id:op.id, produto:op.produto, tipo:op.tipo, pedidos:(op.pedidos||[op.pedido]).filter(Boolean),
-    metros:op.metros, secao:op.secao, operador:op.operador, status:op.status,
-    dt_criacao:op.dt_criacao, excluido_em:new Date().toISOString().slice(0,10),
+    id:op.id, produto:op.produto, tipo:op.tipo,
+    pedidos:peds, metros:op.metros, secao:op.secao,
+    operador:op.operador, turno:op.turno,
+    status_anterior:op.status,
+    previa_id:op.previa_id||null,
+    dt_criacao:op.dt_criacao,
+    dt_envio:op.dt_envio||null,
+    excluido_em:now,
     excluido_por:CUSER?.nome||'?'
   });
-  if(HIST_EXCL.length>200)HIST_EXCL=HIST_EXCL.slice(0,200);
-  saveSingle(LS.HIST_EXCL, HIST_EXCL);
-  ORDENS=ORDENS.filter(o=>o.id!==id);
+  if(HIST_EXCL.length>500)HIST_EXCL=HIST_EXCL.slice(0,500);
+  saveSingle(LS.HIST_EXCL,HIST_EXCL);
+  // Remove from ORDENS
+  ORDENS=ORDENS.filter(o=>o.id!==op.id);
   saveSingle(LS.ORDENS,ORDENS);
-  renderOrdens();
-  showToast&&showToast('OP '+id+' excluida e salva no historico.');
 }
 function limparOrdem(){
   ['ord-prod','ord-metros','ord-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -6764,8 +6817,10 @@ function gerarOPsComOpcoes(modo, tipoAgrup){
   const msg=`✅ ${opsGeradas.length} OPs criadas!\n`+
     `${nRedir} Torcedeira (_A) + ${nTorc} Torcedeira (_A) + ${nExt} Extrusora (_B)\n\nDeseja salvar a lista em PDF?`;
 
-  // Save preview to history
-  salvarPreviaHistorico();
+  // Save preview to history with opsGeradas
+  const pvId=salvarPreviaHistorico(opsGeradas);
+  // Stamp previa_id on ops (belt+suspenders)
+  if(pvId) opsGeradas.forEach(op=>{op.previa_id=op.previa_id||pvId;});
   // Clear PCP_ITEMS after generating (move to history)
   if(PCP_ITEMS.length>0){
     PCP_ITEMS=[];
