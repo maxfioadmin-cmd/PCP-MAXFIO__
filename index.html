@@ -344,7 +344,7 @@ function engBuscaFluxo(){
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>PCP MAXFIO v8</title>
+<title>PCP MAXFIO v9</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -587,11 +587,7 @@ if(typeof QRCode === 'undefined') {
   <div class="nt" id="nt-painel"     onclick="go('painel')">🏭 Painel OPs</div>
   <!-- ETAPAS submenu as dropdown under Painel OPs -->
   <div class="nt-group" style="position:relative;display:inline-block">
-    <div class="nt" id="nt-etapas" onclick="toggleEtapasMenu()" style="gap:4px">
-      ⚙️ Etapas ▾
-    </div>
-    <div id="etapas-dropdown" style="display:none;position:absolute;top:100%;left:0;z-index:500;background:var(--navy2);border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,.3);min-width:150px">
-      <div class="nt" id="nt-trefila"     onclick="closeEtapasMenu();go('trefila')"     style="border-bottom:1px solid rgba(255,255,255,.1)">🔧 Trefila</div>
+
       <div class="nt" id="nt-buncherfixo" onclick="closeEtapasMenu();go('buncherfixo')" style="border-bottom:1px solid rgba(255,255,255,.1)">🔩 Buncher</div>
       <div class="nt" id="nt-buncherredir" onclick="closeEtapasMenu();go('buncherredir')" style="border-bottom:1px solid rgba(255,255,255,.1)">🌀 Torcedeira</div>
       <div class="nt" id="nt-extrusora"   onclick="closeEtapasMenu();go('extrusora')">🏭 Extrusora</div>
@@ -1883,6 +1879,8 @@ if(typeof QRCode === 'undefined') {
 </div>
 
 <!-- ══ TORCEDEIRA ══ -->
+
+
 <div id="pg-buncherredir" class="pg">
   <div class="pg-hd">
     <span class="pg-tt">🌀 Torcedeira — Cabos Finos ≤ 10mm² (Buncher Redirecionado)</span>
@@ -1972,13 +1970,13 @@ if(typeof QRCode === 'undefined') {
 <script>
 
 
+
 // ═══════════ EMBEDDED DATA ═══════════
 // Fields: [id,cliente,pedido,produto,codigo,status,dt_emissao,dt_entrega,dt_fat,qt_m_pend,qt_m_est,qt_m_prod,grupo_prod,secao,fil_diam,fil_fios,is_imperium]
 const SEED_PEDIDOS = [];
 const SEED_TORCEDEIRA = [];
 
 // ═══════════ FILAMENTOS REF ═══════════
-const FILS=[['FLEXIVEL','1',0.28,14],['FLEXIVEL','1,5',0.28,22],['FLEXIVEL','2,5',0.28,36],['FLEXIVEL','4',0.28,58],['FLEXIVEL','6',0.28,86],['FLEXIVEL','10',0.36,88],['FLEXIVEL','16',0.36,128],['FLEXIVEL','25',0.36,192],['FLEXIVEL','35',0.36,260],['FLEXIVEL','50',0.36,368],['FLEXIVEL','70',0.36,536],['FLEXIVEL','95',0.36,710],['FLEXIVEL','120',0.36,924],['FLEXIVEL','150',0.36,1156],['FLEXIVEL','185',0.36,1376],['FLEXIVEL','240',0.36,1764],['FLEXIVEL','300',0.36,2260],['HEPR','1,5',0.28,20],['HEPR','2,5',0.28,32],['HEPR','4',0.28,54],['HEPR','6',0.28,84],['HEPR','10',0.36,84],['HEPR','16',0.36,128],['HEPR','25',0.36,192],['HEPR','35',0.36,260],['HEPR','50',0.36,368],['HEPR','70',0.36,536],['HEPR','95',0.36,710],['HEPR','120',0.36,924],['HEPR','150',0.36,1156],['HEPR','185',0.36,1376],['PP','2x1,0',0.28,24],['PP','2x1,5',0.28,40],['PP','2x2,5',0.28,64],['PP','2x4,0',0.28,108],['PP','2x6,0',0.28,168],['PP','2x10,0',0.36,168],['PP','2x16,0',0.36,256],['PP','3x1,0',0.28,36],['PP','3x1,5',0.28,60],['PP','3x2,5',0.28,96],['PP','3x4,0',0.28,168],['PP','3x6,0',0.28,252],['PP','3x10,0',0.36,252],['PP','3x16,0',0.36,384],['PP','4x1,0',0.28,48],['PP','4x1,5',0.28,80],['PP','4x2,5',0.28,128],['PP','4x4,0',0.28,216],['PP','4x6,0',0.28,336],['PP','4x10,0',0.36,336],['PP','4x16,0',0.36,512],['PP','5x1,0',0.28,60],['PP','5x1,5',0.28,80],['PP','5x2,5',0.28,160],['PP','6x1,0',0.28,72],['PP','6x1,5',0.28,120],['PP','6x2,5',0.28,192],['PP','7x1,0',0.28,84],['PP','7x1,5',0.28,140],['PP','7x2,5',0.28,224]];
 const FIL_IDX={};FILS.forEach(([g,c,d,f])=>{FIL_IDX[g+'|'+c]=[d,f];});
 
 // ═══════════ LS KEYS ═══════════
@@ -2000,24 +1998,23 @@ let editingUserId=null;
 
 // ═══════════ DEFAULTS ═══════════
 const DEFAULT_USERS=[
-  {id:1,nome:'Administrador',   login:'admin',  pwd:'admin123', perfil:'admin',    turno:'',setor:'TI'},
-  {id:2,nome:'Gestor PCP',      login:'gestor', pwd:'gestor123',perfil:'gestor',   turno:'',setor:'PCP'},
-  {id:4,nome:'SGQ Qualidade',   login:'sgq',    pwd:'sgq2024',  perfil:'producao', turno:'',setor:'Qualidade'},
-  // ── TURNO 1: MANHÃ (06:00–16:00) ──
-  {id:'op_tiago',nome:'Tiago Anselmo',login:'tia123',pwd:'tia123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Líder/Extrusora',etapa:'extrusora'},
-  {id:'op_iarley',nome:'Iarley',login:'iar123',pwd:'iar123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Extrusora',etapa:'extrusora'},
-  {id:'op_marcelo',nome:'Marcelo',login:'mar123',pwd:'mar123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Extrusora',etapa:'extrusora'},
-  {id:'op_lucas',nome:'Lucas',login:'luc123',pwd:'luc123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Trefila',etapa:'trefila'},
-  {id:'op_ronaldy',nome:'Ronaldy',login:'ron123',pwd:'ron123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Torcedeira',etapa:'torcedeira'},
-  {id:'op_tsuname',nome:'Tsuname',login:'tsu123',pwd:'tsu123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Buncher',etapa:'buncherfixo'},
-  {id:'op_adriano',nome:'Adriano',login:'adr123',pwd:'adr123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Trefila',etapa:'trefila'},
-  {id:'op_alcilei',nome:'Alcilei',login:'alc123',pwd:'alc123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Buncher',etapa:'buncherfixo'},
-  {id:'op_emleand',nome:'Emerson Leandro',login:'ele123',pwd:'ele123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Extrusora',etapa:'extrusora'},
-  {id:'op_emjask',nome:'Emerson Jaskiu',login:'emj123',pwd:'emj123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Extrusora',etapa:'extrusora'},
-  {id:'op_adao',nome:'Adão',login:'ada123',pwd:'ada123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Trefila',etapa:'trefila'},
-  {id:'op_josue',nome:'Josue',login:'jos123',pwd:'jos123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Buncher',etapa:'buncherfixo'},
-  {id:'op_pedro',nome:'Pedro',login:'ped123',pwd:'ped123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Líder/Torcedeira',etapa:'torcedeira'},
-  {id:'op_thiago',nome:'Thiago',login:'thi123',pwd:'thi123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Extrusora',etapa:'extrusora'}
+  {id:1,nome:'Administrador',login:'admin',pwd:'admin123',perfil:'admin',turno:'',setor:'TI',must_change:false},
+  {id:2,nome:'Gestor PCP',login:'gestor',pwd:'gestor123',perfil:'gestor',turno:'',setor:'PCP',must_change:false},
+  {id:4,nome:'SGQ Qualidade',login:'sgq',pwd:'sgq123',perfil:'producao',turno:'',setor:'Qualidade',must_change:true},
+  {id:'op_tiago',nome:'Tiago Anselmo',login:'tiago',pwd:'tiago123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Lider/Extrusora',etapa:'extrusora',must_change:true},
+  {id:'op_iarley',nome:'Iarley',login:'iarley',pwd:'iarley123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Extrusora',etapa:'extrusora',must_change:true},
+  {id:'op_marcelo',nome:'Marcelo',login:'marcelo',pwd:'marcelo123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Extrusora',etapa:'extrusora',must_change:true},
+  {id:'op_lucas',nome:'Lucas',login:'lucas',pwd:'lucas123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Trefila',etapa:'trefila',must_change:true},
+  {id:'op_ronaldy',nome:'Ronaldy',login:'ronaldy',pwd:'ronaldy123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Torcedeira',etapa:'torcedeira',must_change:true},
+  {id:'op_tsuname',nome:'Tsuname',login:'tsuname',pwd:'tsuname123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Buncher',etapa:'buncherfixo',must_change:true},
+  {id:'op_adriano',nome:'Adriano',login:'adriano',pwd:'adriano123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Trefila',etapa:'trefila',must_change:true},
+  {id:'op_alcilei',nome:'Alcilei',login:'alcilei',pwd:'alcilei123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Buncher',etapa:'buncherfixo',must_change:true},
+  {id:'op_emleand',nome:'Emerson Leandro',login:'emerson',pwd:'emerson123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Extrusora',etapa:'extrusora',must_change:true},
+  {id:'op_emjask',nome:'Emerson Jaskiu',login:'emersonj',pwd:'emersonj123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Extrusora',etapa:'extrusora',must_change:true},
+  {id:'op_adao',nome:'Adao',login:'adao',pwd:'adao123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Trefila',etapa:'trefila',must_change:true},
+  {id:'op_josue',nome:'Josue',login:'josue',pwd:'josue123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Buncher',etapa:'buncherfixo',must_change:true},
+  {id:'op_pedro',nome:'Pedro',login:'pedro',pwd:'pedro123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Lider/Torcedeira',etapa:'torcedeira',must_change:true},
+  {id:'op_thiago',nome:'Thiago',login:'thiago',pwd:'thiago123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Extrusora',etapa:'extrusora',must_change:true}
 ];
 
 // Operadores por etapa e turno (para filtros/atribuição automática)
@@ -2034,6 +2031,7 @@ const ABA_LABELS={import:'📥 Importar',pedidos:'📋 Pedidos',pcp:'📋 Prévi
 let CUSER=null;
 
 // ═══════════ LOAD/SAVE ═══════════
+async 
 async function loadAll(){
   try {
   // 1. Carrega localStorage primeiro (instantâneo)
@@ -2319,63 +2317,126 @@ function setGSMsg(msg, color) {
 
 // ═══════════ AUTH ═══════════
 async function doLogin(){
-  const u=document.getElementById('li-usr').value.trim().toLowerCase();
-  const p=document.getElementById('li-pwd').value;
-  // Merge DEFAULT_USERS with USERS (DEFAULT always wins)
-  const allUsers=[...DEFAULT_USERS,...(Array.isArray(USERS)?USERS:[]).filter(x=>!DEFAULT_USERS.find(d=>d.login===x.login))];
-  const user=allUsers.find(x=>String(x.login||'').toLowerCase()===u&&String(x.pwd||'')===p);
-  if(!user){
-    // Try loading from GS if we haven't yet
-    const errEl=document.getElementById('li-err');
-    errEl.textContent='Verificando...';
-    // Attempt GS load once
-    if(GS_CONFIG.enabled && GS_CONFIG.url && location.protocol!=='file:'){
-      try{
-        const res=await fetch(GS_CONFIG.url+'?col='+encodeURIComponent(LS.USUARIOS),
-          {signal:AbortSignal.timeout(5000)});
-        const txt=await res.text();
-        const gsUsers=JSON.parse(txt);
-        if(Array.isArray(gsUsers)&&gsUsers.length>0){
-          USERS=gsUsers;
-          DEFAULT_USERS.forEach(du=>{if(!USERS.find(x=>x.login===du.login))USERS.push(du);});
-          const allUsers2=[...DEFAULT_USERS,...USERS.filter(x=>!DEFAULT_USERS.find(d=>d.login===x.login))];
-          const user2=allUsers2.find(x=>String(x.login||'').toLowerCase()===u&&String(x.pwd||'')===p);
-          if(user2){
-            // Normalize and login
-            const perfilMap2={'op1':'operacional','sgq':'producao','operador':'operacional','admin':'admin','gestor':'gestor','logistica':'logistica','comercial':'comercial','producao':'producao','operacional':'operacional'};
-            user2.perfil=perfilMap2[user2.perfil]||user2.perfil||'operacional';
-            CUSER=user2;
-            document.getElementById('login-overlay').style.display='none';
-            document.getElementById('main-nav').style.display='flex';
-            const perfDef2=(typeof PERFIS_DEF!=='undefined'&&PERFIS_DEF[user2.perfil])||{icon:'👤',label:user2.perfil};
-            document.getElementById('usr-chip').textContent=perfDef2.icon+' '+user2.nome;
-            applyPermissions();populateOperSelects();populateClienteSelect();
-            populateFilSelect();initOrdemForm();
-            document.getElementById('imp-dot').style.display=PEDIDOS.length===0?'block':'none';
-            go('dash');
-            return;
-          }
-        }
-      }catch(gsErr){console.warn('GS user lookup failed:',gsErr);}
+  const login=(document.getElementById('login-input')?.value||'').trim().toLowerCase();
+  const pwd=document.getElementById('pwd-input')?.value||'';
+  if(!login||!pwd){alert('Informe login e senha.');return;}
+  const allU=[...DEFAULT_USERS,...USERS.filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const user=allU.find(u=>u.login.toLowerCase()===login&&u.pwd===pwd);
+  if(!user){alert('Login ou senha incorretos.');return;}
+  CUSER=user;
+  sessionStorage.setItem('pcp_session',JSON.stringify({login:user.login,ts:Date.now()}));
+  if(user.must_change){
+    _pendingUser=user;
+    const m=document.getElementById('modal-trocar-senha');
+    if(m){
+      const t=document.getElementById('mts-title');
+      if(t)t.textContent='Primeiro acesso - defina sua senha';
+      const msg=document.getElementById('mts-msg');
+      if(msg)msg.textContent='Por seguranca, crie uma senha pessoal.';
+      document.getElementById('mts-nova').value='';
+      document.getElementById('mts-confirm').value='';
+      m.style.display='flex';
     }
-    errEl.textContent='Usuário ou senha incorretos. Padrão: admin/admin123';
     return;
   }
-  // Normalize legacy perfil names
-  const perfilMap={'op1':'operacional','sgq':'producao','operador':'operacional','admin':'admin','gestor':'gestor','logistica':'logistica','comercial':'comercial','producao':'producao','operacional':'operacional'};
-  user.perfil = perfilMap[user.perfil]||user.perfil||'operacional';
-  CUSER=user;
-  document.getElementById('login-overlay').style.display='none';
-  document.getElementById('main-nav').style.display='flex';
-  const perfDef=(typeof PERFIS_DEF!=='undefined'&&PERFIS_DEF[user.perfil])||{icon:'👤',label:user.perfil};
-  document.getElementById('usr-chip').textContent=perfDef.icon+' '+user.nome;
-  applyPermissions();
-  populateOperSelects();
-  populateClienteSelect();
-  populateFilSelect();
-  initOrdemForm();
-  document.getElementById('imp-dot').style.display=PEDIDOS.length===0?'block':'none';
+  _finalizarLogin(user);
+}
+let _pendingUser=null;
+function abrirModalTrocarSenha(){
+  const m=document.getElementById('modal-trocar-senha');
+  if(!m)return;
+  const t=document.getElementById('mts-title');if(t)t.textContent='Trocar senha';
+  const msg=document.getElementById('mts-msg');if(msg)msg.textContent='';
+  document.getElementById('mts-nova').value='';
+  document.getElementById('mts-confirm').value='';
+  m.style.display='flex';
+}
+function fecharModalTrocarSenha(){
+  const m=document.getElementById('modal-trocar-senha');if(m)m.style.display='none';
+}
+function confirmarTrocarSenha(){
+  const nova=(document.getElementById('mts-nova')?.value||'').trim();
+  const conf=(document.getElementById('mts-confirm')?.value||'').trim();
+  if(!nova||nova.length<4){alert('Senha deve ter ao menos 4 caracteres.');return;}
+  if(nova!==conf){alert('Senhas nao conferem.');return;}
+  const user=_pendingUser||CUSER;if(!user)return;
+  let found=USERS.find(u=>u.login===user.login);
+  if(!found){found={...user};USERS.push(found);}
+  found.pwd=nova;found.must_change=false;
+  const di=DEFAULT_USERS.findIndex(u=>u.login===user.login);
+  if(di>=0)DEFAULT_USERS[di].must_change=false;
+  saveSingle(LS.USERS,USERS);
+  fecharModalTrocarSenha();
+  showToast&&showToast('Senha alterada!');
+  CUSER={...user,pwd:nova,must_change:false};_pendingUser=null;
+  _finalizarLogin(CUSER);
+}
+function _finalizarLogin(user){
+  const lo=document.getElementById('login-overlay');
+  const nav=document.getElementById('main-nav');
+  if(lo)lo.style.display='none';if(nav)nav.style.display='flex';
+  applyPermissions&&applyPermissions(user);go('dash');
+  showToast&&showToast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
+}
+
+let _pendingNewPwdUser=null;
+
+function abrirModalTrocarSenha(firstAccess){
+  const m=document.getElementById('modal-trocar-senha');
+  if(!m)return;
+  document.getElementById('mts-title').textContent=
+    firstAccess?'🔑 Primeiro acesso — defina sua senha':'🔑 Trocar senha';
+  document.getElementById('mts-msg').textContent=
+    firstAccess?'Por segurança, você deve criar uma senha pessoal no primeiro acesso.':'';
+  document.getElementById('mts-nova').value='';
+  document.getElementById('mts-confirm').value='';
+  m.style.display='flex';
+}
+
+function fecharModalTrocarSenha(){
+  const m=document.getElementById('modal-trocar-senha');
+  if(m) m.style.display='none';
+}
+
+function confirmarTrocarSenha(){
+  const nova=(document.getElementById('mts-nova')?.value||'').trim();
+  const conf=(document.getElementById('mts-confirm')?.value||'').trim();
+  if(!nova||nova.length<4){alert('Senha deve ter ao menos 4 caracteres.');return;}
+  if(nova!==conf){alert('Senhas não conferem.');return;}
+
+  const user=_pendingNewPwdUser||CUSER;
+  if(!user){alert('Erro: usuário não encontrado.');return;}
+
+  // Update password in USERS array
+  let found=USERS.find(u=>u.login===user.login);
+  if(!found){
+    found={...user};
+    USERS.push(found);
+  }
+  found.pwd=nova;
+  found.must_change=false;
+  // Also update DEFAULT_USERS reference if admin
+  const dIdx=DEFAULT_USERS.findIndex(u=>u.login===user.login);
+  if(dIdx>=0) DEFAULT_USERS[dIdx].must_change=false;
+  saveSingle(LS.USERS,USERS);
+
+  fecharModalTrocarSenha();
+  showToast&&showToast('Senha alterada com sucesso!');
+
+  // Complete login
+  CUSER={...user, pwd:nova, must_change:false};
+  _pendingNewPwdUser=null;
+  _finalizarLogin(CUSER);
+}
+
+function _finalizarLogin(user){
+  const loginOverlay=document.getElementById('login-overlay');
+  const nav=document.getElementById('main-nav');
+  if(loginOverlay) loginOverlay.style.display='none';
+  if(nav) nav.style.display='flex';
+  applyPermissions(user);
   go('dash');
+  showToast&&showToast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
 }
 function doLogout(){
   CUSER=null;
@@ -4276,22 +4337,7 @@ function filtrarPedidoAlert(ped){
   renderPed();
 }
 
-function toggleEtapasMenu(){
-  const dd=document.getElementById('etapas-dropdown');
-  if(!dd)return;
-  const isOpen=dd.style.display!=='none';
-  dd.style.display=isOpen?'none':'block';
-  if(!isOpen){
-    setTimeout(()=>{
-      document.addEventListener('click',function h(e){
-        if(!dd.contains(e.target)&&e.target.id!=='nt-etapas'){
-          dd.style.display='none';
-          document.removeEventListener('click',h);
-        }
-      });
-    },100);
-  }
-}
+
 function closeEtapasMenu(){
   const dd=document.getElementById('etapas-dropdown');
   if(dd)dd.style.display='none';
@@ -5036,8 +5082,15 @@ function canAccessAba(id){
   return abas.includes(id);
 }
 function canAccess(id){
-  if(!CUSER)return id==='dash';
-  return canAccessAba(id);
+  if(!CUSER)return false;
+  if(CUSER.perfil==='admin')return true;
+  const allU=[...DEFAULT_USERS,...USERS.filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const user=allU.find(u=>u.login===CUSER.login)||CUSER;
+  if(user.perms&&user.perms[id])return Object.values(user.perms[id]).some(v=>v&&v!=='nao');
+  const abas=ABAS_PERFIL[CUSER.perfil];
+  if(abas==='todas')return true;
+  if(Array.isArray(abas))return abas.includes(id);
+  return false;
 }
 function applyPermissions(){
   if(!CUSER)return;
@@ -7583,29 +7636,132 @@ function hcSub(){}
 
 // ═══════════ USUÁRIOS ═══════════
 let _usrEdit=null;
+const ABAS_DEF=[["dashprod","Dash Pedidos",["visualizar"]],["dash","Menu",["visualizar"]],["pedidos","Pedidos",["visualizar","editar","gerar_previa"]],["pcp","Previa PCP",["visualizar","editar","gerar_ops"]],["ordens","Producao",["visualizar","editar","enviar","cancelar","excluir"]],["painel","Painel OPs",["visualizar","concluir","reabrir"]],["reserva","Reserva",["visualizar","editar","cancelar"]],["engenharia","Engenharia",["visualizar"]],["comercial","Comercial",["visualizar","editar"]],["usuarios","Usuarios",["visualizar","editar","criar","excluir"]],["historico","Historico",["visualizar"]],["import","Importar",["executar"]],["diario","Diario",["visualizar","registrar"]]];
+const PERFIL_DEFAULT_PERMS={"admin": {"dashprod": {"visualizar": "total"}, "dash": {"visualizar": "total"}, "pedidos": {"visualizar": "total", "editar": "total", "gerar_previa": "total"}, "pcp": {"visualizar": "total", "editar": "total", "gerar_ops": "total"}, "ordens": {"visualizar": "total", "editar": "total", "enviar": "total", "cancelar": "total", "excluir": "total"}, "painel": {"visualizar": "total", "concluir": "total", "reabrir": "total"}, "reserva": {"visualizar": "total", "editar": "total", "cancelar": "total"}, "engenharia": {"visualizar": "total"}, "comercial": {"visualizar": "total", "editar": "total"}, "usuarios": {"visualizar": "total", "editar": "total", "criar": "total", "excluir": "total"}, "historico": {"visualizar": "total"}, "import": {"executar": "total"}, "diario": {"visualizar": "total", "registrar": "total"}}, "gestor": {"dashprod": {"visualizar": "total"}, "dash": {"visualizar": "total"}, "pedidos": {"visualizar": "total", "editar": "total", "gerar_previa": "total"}, "pcp": {"visualizar": "total", "editar": "total", "gerar_ops": "total"}, "ordens": {"visualizar": "total", "editar": "total", "enviar": "total", "cancelar": "total", "excluir": "total"}, "painel": {"visualizar": "total", "concluir": "total", "reabrir": "total"}, "reserva": {"visualizar": "total", "editar": "total", "cancelar": "total"}, "engenharia": {"visualizar": "total"}, "comercial": {"visualizar": "total", "editar": "total"}, "usuarios": {"visualizar": "total", "editar": "total", "criar": "total", "excluir": "total"}, "historico": {"visualizar": "total"}, "import": {"executar": "total"}, "diario": {"visualizar": "total", "registrar": "total"}}, "producao": {"dashprod": {"visualizar": "total"}, "dash": {"visualizar": "total"}, "pedidos": {"visualizar": "total", "editar": "nao", "gerar_previa": "nao"}, "pcp": {"visualizar": "total", "editar": "total", "gerar_ops": "total"}, "ordens": {"visualizar": "total", "editar": "total", "enviar": "total", "cancelar": "total", "excluir": "total"}, "painel": {"visualizar": "total", "concluir": "total", "reabrir": "total"}, "reserva": {"visualizar": "nao", "editar": "nao", "cancelar": "nao"}, "engenharia": {"visualizar": "total"}, "comercial": {"visualizar": "nao", "editar": "nao"}, "usuarios": {"visualizar": "nao", "editar": "nao", "criar": "nao", "excluir": "nao"}, "historico": {"visualizar": "total"}, "import": {"executar": "nao"}, "diario": {"visualizar": "total", "registrar": "total"}}, "logistica": {"dashprod": {"visualizar": "total"}, "dash": {"visualizar": "total"}, "pedidos": {"visualizar": "nao", "editar": "nao", "gerar_previa": "nao"}, "pcp": {"visualizar": "nao", "editar": "nao", "gerar_ops": "nao"}, "ordens": {"visualizar": "nao", "editar": "nao", "enviar": "nao", "cancelar": "nao", "excluir": "nao"}, "painel": {"visualizar": "total", "concluir": "nao", "reabrir": "nao"}, "reserva": {"visualizar": "total", "editar": "total", "cancelar": "total"}, "engenharia": {"visualizar": "nao"}, "comercial": {"visualizar": "nao", "editar": "nao"}, "usuarios": {"visualizar": "nao", "editar": "nao", "criar": "nao", "excluir": "nao"}, "historico": {"visualizar": "nao"}, "import": {"executar": "nao"}, "diario": {"visualizar": "nao", "registrar": "nao"}}, "comercial": {"dashprod": {"visualizar": "total"}, "dash": {"visualizar": "total"}, "pedidos": {"visualizar": "total", "editar": "total", "gerar_previa": "total"}, "pcp": {"visualizar": "nao", "editar": "nao", "gerar_ops": "nao"}, "ordens": {"visualizar": "nao", "editar": "nao", "enviar": "nao", "cancelar": "nao", "excluir": "nao"}, "painel": {"visualizar": "nao", "concluir": "nao", "reabrir": "nao"}, "reserva": {"visualizar": "nao", "editar": "nao", "cancelar": "nao"}, "engenharia": {"visualizar": "nao"}, "comercial": {"visualizar": "total", "editar": "total"}, "usuarios": {"visualizar": "nao", "editar": "nao", "criar": "nao", "excluir": "nao"}, "historico": {"visualizar": "nao"}, "import": {"executar": "nao"}, "diario": {"visualizar": "nao", "registrar": "nao"}}, "operacional": {"dashprod": {"visualizar": "total"}, "dash": {"visualizar": "total"}, "pedidos": {"visualizar": "nao", "editar": "nao", "gerar_previa": "nao"}, "pcp": {"visualizar": "nao", "editar": "nao", "gerar_ops": "nao"}, "ordens": {"visualizar": "nao", "editar": "nao", "enviar": "nao", "cancelar": "nao", "excluir": "nao"}, "painel": {"visualizar": "total", "concluir": "total", "reabrir": "total"}, "reserva": {"visualizar": "nao", "editar": "nao", "cancelar": "nao"}, "engenharia": {"visualizar": "nao"}, "comercial": {"visualizar": "nao", "editar": "nao"}, "usuarios": {"visualizar": "nao", "editar": "nao", "criar": "nao", "excluir": "nao"}, "historico": {"visualizar": "nao"}, "import": {"executar": "nao"}, "diario": {"visualizar": "total", "registrar": "total"}}};
+
+
 function renderUsuarios(){
-  const el=document.getElementById('usr-list');if(!el)return;
-  const cnt=document.getElementById('usr-cnt');if(cnt)cnt.textContent=USERS.length;
-  if(USERS.length===0){el.innerHTML='<p style="color:var(--text3);font-size:12px">Nenhum usuário cadastrado.</p>';return;}
-  el.innerHTML=USERS.map(u=>{
-    const def=PERFIS_DEF[u.perfil]||{icon:'👤',label:u.perfil,cor:'c-gray'};
-    const isDefault=DEFAULT_USERS.find(d=>d.login===u.login);
-    return`<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;display:flex;align-items:center;gap:10px">
-      <span style="font-size:18px">${def.icon}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:13px">${u.nome}</div>
-        <div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap">
-          <span class="chip ${def.cor}" style="font-size:10px">${def.label}</span>
-          ${u.setor?`<span class="chip c-gray" style="font-size:10px">🏢 ${u.setor}</span>`:''}
-          ${u.turno?`<span class="chip c-gray" style="font-size:10px">⏰ ${u.turno}</span>`:''}
+  const el=document.getElementById('usr-list');
+  if(!el)return;
+  const allU=[...DEFAULT_USERS,...USERS.filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const PC={admin:'#dc2626',gestor:'#2563eb',producao:'#7c3aed',logistica:'#0891b2',comercial:'#16a34a',operacional:'#ea580c'};
+  const PL={admin:'Admin',gestor:'Gestor',producao:'Producao',logistica:'Logistica',comercial:'Comercial',operacional:'Operacional'};
+  const FL={visualizar:'ver',editar:'editar',excluir:'excluir',criar:'criar',enviar:'enviar',
+    cancelar:'cancelar',gerar_previa:'gerar previa',gerar_ops:'gerar OPs',
+    importar:'importar',executar:'executar',concluir:'concluir',reabrir:'reabrir',registrar:'registrar'};
+  el.innerHTML=allU.map((u,idx)=>{
+    const c=PC[u.perfil]||'#888';
+    const perms=u.perms||PERFIL_DEFAULT_PERMS[u.perfil]||{};
+    const nA=ABAS_DEF.filter(a=>{const ap=perms[a[0]]||{};return Object.values(ap).some(v=>v&&v!=='nao');}).length;
+    const rows=ABAS_DEF.map(a=>{
+      const [aid,albl,feats]=a;
+      const ap=perms[aid]||{};
+      const anyOn=feats.some(f=>ap[f]&&ap[f]!=='nao');
+      const allOn=feats.every(f=>ap[f]==='total');
+      const nivel=allOn?'total':anyOn?'ver':'nao';
+      const bg=allOn?'#dcfce7':anyOn?'#fef9c3':'#f8f8f8';
+      const featChk=feats.map(f=>{
+        const fv=ap[f]||'nao';
+        return `<label style="display:flex;align-items:center;gap:2px;font-size:10px;cursor:pointer;color:${fv!=='nao'?'#16a34a':'var(--text3)'}"><input type="checkbox" data-usr="${u.login}" data-aba="${aid}" data-feat="${f}" ${fv!=='nao'?'checked':''} onchange="_setFeat(this)" style="accent-color:#16a34a"> ${FL[f]||f}</label>`;
+      }).join('');
+      return `<tr style="border-bottom:1px solid var(--border);${anyOn?'':'opacity:.4'}">
+        <td style="padding:5px 10px;font-weight:600;font-size:11px">${albl}</td>
+        <td style="text-align:center;padding:3px 6px">
+          <select data-usr="${u.login}" data-aba="${aid}" onchange="_setAbaLvl(this)" style="padding:2px 5px;border:1px solid var(--border);border-radius:4px;font-size:10px;background:${bg}">
+            <option value="nao" ${nivel==='nao'?'selected':''}>Sem acesso</option>
+            <option value="ver" ${nivel==='ver'?'selected':''}>Ver</option>
+            <option value="total" ${nivel==='total'?'selected':''}>Total</option>
+          </select>
+        </td>
+        <td style="padding:3px 8px"><div style="display:flex;gap:4px;flex-wrap:wrap">${featChk}</div></td>
+      </tr>`;
+    }).join('');
+    const initials=u.nome.split(' ').slice(0,2).map(w=>w[0]).join('');
+    const turnos=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+      <div class="fg"><label>Nome</label><input id="un-n-${idx}" value="${u.nome.replace(/"/g,'&quot;')}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"></div>
+      <div class="fg"><label>Login</label><input id="un-l-${idx}" value="${u.login}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"></div>
+      <div class="fg"><label>Nova senha</label><input id="un-p-${idx}" type="password" placeholder="em branco=manter" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"></div>
+      <div class="fg"><label>Perfil</label><select id="un-pf-${idx}" onchange="_applyPP(${idx},this)" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        ${Object.entries(PL).map(([k,v])=>`<option value="${k}" ${u.perfil===k?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+      ${u.turno?`<div class="fg"><label>Turno</label><select id="un-t-${idx}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:var(--r);font-size:12px"><option value="">-</option><option value="T1" ${u.turno==='T1'?'selected':''}>T1</option><option value="T2" ${u.turno==='T2'?'selected':''}>T2</option><option value="T3" ${u.turno==='T3'?'selected':''}>T3</option></select></div>`:''}
+      <div class="fg" style="display:flex;align-items:flex-end"><label style="font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px"><input type="checkbox" id="un-mc-${idx}" ${u.must_change?'checked':''}>Forcar troca senha</label></div>
+    </div>`;
+    return `<div class="sec" style="margin-bottom:10px;border-left:4px solid ${c}">
+      <div class="sec-hd" style="cursor:pointer" onclick="(function(){var e=document.getElementById('ud-${idx}');e.style.display=e.style.display==='none'?'block':'none';})()">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <div style="width:36px;height:36px;border-radius:50%;background:${c};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">${initials}</div>
+          <div>
+            <div style="font-weight:800;font-size:13px">${u.nome}</div>
+            <div style="font-size:11px;color:var(--text2)">login: <b>${u.login}</b>${u.turno?' | '+u.turno:''}${u.must_change?' | <span style="color:#d97706">troca senha</span>':''}</div>
+          </div>
+          <span style="background:${c};color:#fff;border-radius:99px;padding:2px 10px;font-size:11px;margin-left:auto">${PL[u.perfil]||u.perfil}</span>
+          <span style="font-size:11px;color:var(--text2)">${nA}/${ABAS_DEF.length} abas</span>
+          <span style="font-size:14px;opacity:.5">v</span>
         </div>
       </div>
-      <span style="color:var(--text3);font-size:11px;font-family:monospace">${u.login}</span>
-      <button class="btn bgho bsm" onclick="editarUsuario('${u.login}')">✏️</button>
-      ${!isDefault?`<button class="btn bdng bsm" onclick="deletarUsuario('${u.login}')">🗑</button>`:''}
+      <div id="ud-${idx}" style="display:none;padding:12px">
+        ${turnos}
+        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">Permissoes por aba</div>
+        <div style="overflow-x:auto"><table style="width:100%;font-size:11px;border-collapse:collapse">
+          <thead><tr style="background:#f1f5f9"><th style="padding:6px 10px;text-align:left">Aba</th><th>Nivel</th><th>Funcionalidades</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+          ${u.login!=='admin'?`<button class="btn bdng bsm" onclick="excluirUsuario('${u.login}')">Excluir</button>`:''}
+          <button class="btn bsuc" onclick="salvarUsrMatrix(${idx},'${u.login}')" style="padding:7px 18px;font-weight:700">Salvar</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
+
+function _setAbaLvl(sel){
+  const login=sel.getAttribute('data-usr'),abaId=sel.getAttribute('data-aba'),nivel=sel.value;
+  const user=_getEditUser(login);
+  if(!user.perms)user.perms={};if(!user.perms[abaId])user.perms[abaId]={};
+  const abaDef=ABAS_DEF.find(a=>a[0]===abaId);if(!abaDef)return;
+  abaDef[2].forEach(f=>{user.perms[abaId][f]=nivel==='total'?'total':(nivel==='ver'&&f==='visualizar'?'total':'nao');});
+  renderUsuarios();
+}
+function _setFeat(cb){
+  const login=cb.getAttribute('data-usr'),abaId=cb.getAttribute('data-aba'),feat=cb.getAttribute('data-feat');
+  const user=_getEditUser(login);
+  if(!user.perms)user.perms={};if(!user.perms[abaId])user.perms[abaId]={};
+  user.perms[abaId][feat]=cb.checked?'total':'nao';
+}
+function _getEditUser(login){
+  let user=USERS.find(u=>u.login===login);
+  if(!user){const def=DEFAULT_USERS.find(u=>u.login===login);if(def){user={...def};USERS.push(user);}}
+  return user||{};
+}
+function _applyPP(idx,sel){
+  const pf=sel?sel.value:(document.getElementById('un-pf-'+idx)||{}).value||'';
+  if(!pf)return;
+  const user=_getEditUser((document.getElementById('un-l-'+idx)||{}).value||'');
+  user.perms=JSON.parse(JSON.stringify(PERFIL_DEFAULT_PERMS[pf]||{}));
+  renderUsuarios();
+}
+function salvarUsrMatrix(idx,login){
+  const n=((document.getElementById('un-n-'+idx)||{}).value||'').trim();
+  const nl=((document.getElementById('un-l-'+idx)||{}).value||'').trim().toLowerCase();
+  const pwd=((document.getElementById('un-p-'+idx)||{}).value||'').trim();
+  const pf=((document.getElementById('un-pf-'+idx)||{}).value||'');
+  const mc=(document.getElementById('un-mc-'+idx)||{}).checked||false;
+  if(!n||!nl){alert('Nome e login obrigatorios.');return;}
+  const user=_getEditUser(login);
+  user.nome=n;user.login=nl;user.perfil=pf;user.must_change=mc;
+  if(pwd)user.pwd=pwd;
+  if(!user.perms)user.perms=JSON.parse(JSON.stringify(PERFIL_DEFAULT_PERMS[pf]||{}));
+  saveSingle(LS.USERS,USERS);showToast&&showToast('Usuario '+n+' salvo!');renderUsuarios();
+}
+function excluirUsuario(login){
+  if(login==='admin'){alert('Admin nao pode ser excluido.');return;}
+  if(!confirm('Excluir '+login+'?'))return;
+  USERS=USERS.filter(u=>u.login!==login);
+  saveSingle(LS.USERS,USERS);renderUsuarios();
+}
+
 function editarUsuario(login){
   const u=USERS.find(x=>x.login===login);if(!u)return;
   _usrEdit=login;
@@ -8519,14 +8675,11 @@ function salvarNovaOP(){
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
 }
 
+
 </script>
-<!-- ══ DIÁRIO DE PRODUÇÃO ══ -->
-<div id="pg-diario" class="pg">
-  <div class="pg-hd">
-    <span class="pg-tt">📊 Diário de Produção</span>
-    <button class="btn bgho bsm" onclick="renderDiario()">🔄 Atualizar</button>
-    <button class="btn bgho bsm" onclick="window.open('painel-diario.html','_blank')">🖥 Painel Completo</button>
-    <button class="btn bgho bsm" onclick="window.open('https://docs.google.com/forms/d/12td14m1IJ3KJtAWRKZICZdDLql_uwQVfpmAHyoCOWqQ/viewform','_blank')" style="color:var(--green)">📝 Form. Apontamento</button>
+
+
+oCOWqQ/viewform','_blank')" style="color:var(--green)">📝 Form. Apontamento</button>
   </div>
 
   <!-- SUB TABS -->
@@ -8731,6 +8884,10 @@ function salvarNovaOP(){
     <div id="diario-resumo-content"></div>
   </div>
 </div>
+
+
+
+
 
 
 
@@ -9212,6 +9369,42 @@ function salvarNovaOP(){
         <button class="btn bsuc" onclick="salvarNovaOP()" style="padding:9px 24px;
           font-size:14px;font-weight:700">
           ✅ Criar Ordem de Produção
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL TROCAR SENHA ══ -->
+<div id="modal-trocar-senha" style="display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;width:380px;max-width:95vw;
+    box-shadow:0 8px 40px rgba(0,0,0,.3)">
+    <div style="background:#1a2e5a;color:#fff;border-radius:12px 12px 0 0;padding:16px 20px">
+      <div id="mts-title" style="font-size:16px;font-weight:800">🔑 Trocar senha</div>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div id="mts-msg" style="font-size:12px;color:#d97706;font-weight:600"></div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--navy)">Nova senha</label>
+        <input id="mts-nova" type="password" placeholder="Mínimo 4 caracteres"
+          style="width:100%;padding:8px 10px;border:2px solid var(--border);
+            border-radius:var(--r);font-size:13px;margin-top:4px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--navy)">Confirmar senha</label>
+        <input id="mts-confirm" type="password" placeholder="Repita a nova senha"
+          style="width:100%;padding:8px 10px;border:2px solid var(--border);
+            border-radius:var(--r);font-size:13px;margin-top:4px">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px;
+        border-top:1px solid var(--border)">
+        <button class="btn bgho" onclick="fecharModalTrocarSenha()" style="padding:8px 16px">
+          Cancelar
+        </button>
+        <button class="btn bsuc" onclick="confirmarTrocarSenha()"
+          style="padding:8px 20px;font-weight:700">
+          ✅ Confirmar
         </button>
       </div>
     </div>
