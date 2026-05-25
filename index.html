@@ -2,9 +2,32 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<meta name="version" content="5.1">
+<script>
+// ── FORCE CACHE CLEAR ON EVERY LOAD ──
+(function(){
+  // Clear all caches
+  if('caches' in window){
+    caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
+  }
+  // Unregister service workers
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(regs=>regs.forEach(r=>r.unregister()));
+  }
+  // Force reload if cached version (check version param)
+  const v='5.1';
+  const stored=sessionStorage.getItem('pcp_version');
+  if(stored&&stored!==v){
+    sessionStorage.setItem('pcp_version',v);
+    window.location.reload(true);
+  } else {
+    sessionStorage.setItem('pcp_version',v);
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>PCP MAXFIO v5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -4357,6 +4380,44 @@ function salvarPreviaHistorico(opsGeradas){
 // ═══════════ DASHBOARD PRODUÇÃO ═══════════
 function renderDashProd(){
   const today=new Date().toISOString().slice(0,10);
+
+  // ── Empty state: no data imported ──
+  const pedAtivos=PEDIDOS.filter(r=>(r[11]||0)>0);
+  if(pedAtivos.length===0){
+    const kpis=document.getElementById('dp-kpis');
+    if(kpis) kpis.innerHTML=`
+      <div style="grid-column:1/-1;text-align:center;padding:32px;
+        background:#f8faff;border:2px dashed #93c5fd;border-radius:12px">
+        <div style="font-size:48px;margin-bottom:12px">📭</div>
+        <div style="font-size:18px;font-weight:800;color:#1e40af;margin-bottom:8px">
+          Nenhum dado de pedidos importado
+        </div>
+        <div style="font-size:14px;color:#6b7280;margin-bottom:20px">
+          Importe o CSV de pedidos para visualizar o dashboard de produção
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button onclick="go('import')"
+            style="background:#1d4ed8;color:#fff;border:none;border-radius:8px;
+              padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">
+            📥 Ir para Importar Dados
+          </button>
+          <button onclick="go('pedidos')"
+            style="background:#16a34a;color:#fff;border:none;border-radius:8px;
+              padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">
+            📋 Ver Pedidos
+          </button>
+        </div>
+      </div>`;
+    // Show OPs stats even without PEDIDOS
+    ['dp-list-atrasados','dp-list-producao','dp-list-iniciada','dp-list-finalizado'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML='<p style="padding:12px;color:#9ca3af;text-align:center;font-size:12px">Aguardando dados</p>';
+    });
+    ['dp-cnt-atrasados','dp-cnt-producao','dp-cnt-iniciada','dp-cnt-finalizado'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.textContent='0';
+    });
+    return;
+  }
 
   // Categorize pedidos
   const atrasadosSemPCP=[], emProducao=[], iniciada=[], finalizado=[];
