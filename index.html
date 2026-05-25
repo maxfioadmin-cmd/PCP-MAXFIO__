@@ -347,7 +347,7 @@ function engBuscaFluxo(){
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>PCP MAXFIO v9.4</title>
+<title>PCP MAXFIO v9.5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -2103,6 +2103,8 @@ alter publication supabase_realtime add table pcp_sync;</div>
 
 
 
+
+<script>
 
 // ═══════════ EMBEDDED DATA ═══════════
 // Fields: [id,cliente,pedido,produto,codigo,status,dt_emissao,dt_entrega,dt_fat,qt_m_pend,qt_m_est,qt_m_prod,grupo_prod,secao,fil_diam,fil_fios,is_imperium]
@@ -9123,11 +9125,7 @@ function salvarNovaOP(){
 
 
 
-RDENS);
-  fecharModalNovaOP();
-  renderOrdens();
-  showToast&&showToast('OP '+numBase+' criada com sucesso!');
-}
+
 
 
 
