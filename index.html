@@ -2,6 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>PCP MAXFIO v4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -204,6 +207,16 @@ tr:hover td{background:var(--bg3)}
   body{background:white!important;color:black!important}
 }
 </style>
+
+<script>
+// Defensive stub - prevents "QRCode is not defined" from cached old scripts
+if(typeof QRCode === 'undefined') {
+  window.QRCode = function(el, opts) {
+    if(el) el.innerHTML = '<div style="padding:8px;font-size:11px;color:#888">QR: '+(opts&&opts.text?opts.text.slice(0,20):'')+'</div>';
+  };
+  window.QRCode.CorrectLevel = {L:1,M:0,Q:3,H:2};
+}
+</script>
 </head>
 <body>
 
