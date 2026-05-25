@@ -570,7 +570,7 @@ if(typeof QRCode === 'undefined') {
     <button class="btn bpri" style="width:100%;justify-content:center;padding:8px" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="li-err"></div>
 <div style="text-align:center;margin-top:10px">
-  <button onclick="localStorage.removeItem('pcp_users');location.reload()" style="font-size:10px;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline">↺ Resetar usuários</button>
+  <button onclick="localStorage.removeItem('pcp_users');// reload removed" style="font-size:10px;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline">↺ Resetar usuários</button>
 </div>
   </div>
 </div>
@@ -1582,6 +1582,7 @@ if(typeof QRCode === 'undefined') {
       <p style="font-size:10px;color:var(--text3);margin-top:6px">✅ = editar · 👁 = visualizar · — = sem acesso · * = somente OPs atribuídas ao usuário</p>
     </div>
   </div>
+</div>
 
 <!-- ══ HISTÓRICO COMPLETO ══ -->
 <div id="pg-historico" class="pg">
