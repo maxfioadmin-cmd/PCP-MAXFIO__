@@ -555,6 +555,8 @@ if(typeof QRCode === 'undefined') {
   window.QRCode.CorrectLevel = {L:1,M:0,Q:3,H:2};
 }
 </script>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -568,6 +570,7 @@ if(typeof QRCode === 'undefined') {
     <div class="fg"><label>Usuário</label><input id="li-usr" type="text" placeholder="usuario" autocomplete="username"></div>
     <div class="fg"><label>Senha</label><input id="li-pwd" type="password" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();doLogin();}"></div>
     <button class="btn bpri" style="width:100%;justify-content:center;padding:8px" onclick="doLogin()">Entrar</button>
+    <button onclick="limparBaseDados()" style="width:100%;margin-top:8px;padding:7px;background:#fff0f0;border:1px solid #dc2626;border-radius:6px;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer">🗑 Limpar base de pedidos e OPs</button>
     <div class="login-err" id="li-err"></div>
 <div style="text-align:center;margin-top:10px">
   <button onclick="localStorage.removeItem('pcp_users');// reload removed" style="font-size:10px;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline">↺ Resetar usuários</button>
@@ -604,6 +607,7 @@ if(typeof QRCode === 'undefined') {
   <div class="nt" id="nt-comercial" onclick="go('comercial')">🤝 Comercial</div>
   <div class="nt" id="nt-diario" onclick="go('diario')" style="background:rgba(59,130,246,.15);color:#93c5fd">📊 Diário</div>
   <div class="nav-r">
+    <span id="fb-status-nav" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer" onclick="go('import')" title="Clique para configurar Supabase">⚫ Supabase</span>
     <span id="fb-status" style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(255,255,255,.1);cursor:pointer" onclick="go('config')" title="Status Firebase">🟡 Conectando...</span>
     <span id="usr-chip" class="chip c-blue"></span>
     <span id="nav-clock" style="font-family:monospace;font-size:12px"></span>
@@ -748,6 +752,53 @@ if(typeof QRCode === 'undefined') {
 
 <!-- ══ IMPORTAR ══ -->
 <div id="pg-import" class="pg">
+  <!-- ══ SUPABASE ══ -->
+  <div class="sec" style="border-left:4px solid #3ECF8E;margin-bottom:16px">
+    <div class="sec-hd">
+      <span class="sec-tt" style="color:#059669">⚡ Supabase — Sincronização em tempo real</span>
+      <span id="fb-status-imp" style="font-size:11px;color:var(--text2)">⚫ Não conectado</span>
+    </div>
+    <div class="sec-bd">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Cole a <strong>URL</strong> e <strong>chave anon</strong> do seu projeto Supabase para sincronizar todos os usuários em tempo real.<br><span style="font-size:11px;color:var(--text3)">Gratuito até 500MB. Criar em: <a href="https://supabase.com" target="_blank" style="color:var(--navy)">supabase.com</a></span></p>
+      <details style="margin-bottom:10px">
+        <summary style="font-size:11px;font-weight:700;color:var(--navy);cursor:pointer;user-select:none">▶ Como criar o projeto (5 passos)</summary>
+        <ol style="font-size:11px;color:var(--text2);margin:8px 0 0 16px;line-height:1.9">
+          <li>Acesse <strong>supabase.com</strong> → "Start your project" → login com GitHub</li>
+          <li>"New project" → nome <strong>pcp-maxfio</strong> → região <strong>South America (São Paulo)</strong> → Create</li>
+          <li><strong>SQL Editor</strong> → "New query" → cole o SQL abaixo → Run</li>
+          <li><strong>Settings → API</strong> → copie <em>Project URL</em> e <em>anon public key</em></li>
+          <li>Cole os valores abaixo → Salvar e Conectar → Subir dados locais</li>
+        </ol>
+        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;margin-top:8px;font-size:10px;font-family:monospace;color:var(--text2);white-space:pre-wrap">create table pcp_sync (
+  chave text primary key,
+  dados text,
+  atualizado_em timestamptz default now()
+);
+alter table pcp_sync enable row level security;
+create policy "Acesso total" on pcp_sync
+  for all using (true) with check (true);
+alter publication supabase_realtime add table pcp_sync;</div>
+      </details>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div class="fg">
+          <label>Project URL</label>
+          <input id="sb-url-input" placeholder="https://xxxx.supabase.co" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        </div>
+        <div class="fg">
+          <label>Chave anon (public)</label>
+          <input id="sb-key-input" type="password" placeholder="eyJhbGciOiJIUzI1NiIs..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bpri" onclick="salvarSupabaseConfig()" style="font-weight:700">💾 Salvar e Conectar</button>
+        <button class="btn bgho" onclick="sbUploadAll()">⬆️ Subir dados locais → Supabase</button>
+        <button class="btn bgho" onclick="sbLoad().then(function(){if(typeof renderAll==='function')renderAll()})">⬇️ Baixar do Supabase</button>
+        <button class="btn bdng bsm" onclick="limparBaseDados&&limparBaseDados()" style="margin-left:auto">🗑 Limpar Base</button>
+      </div>
+      <div id="sb-config-msg" style="margin-top:8px;font-size:11px"></div>
+    </div>
+  </div>
+
   <div class="g2" style="margin-bottom:12px">
     <div class="sec"><div class="sec-hd"><span class="sec-tt">📥 Importar Relatório de Pedidos (MAXFIO)</span></div>
       <div class="sec-bd">
@@ -1086,7 +1137,58 @@ if(typeof QRCode === 'undefined') {
       📤 OPs Enviadas para Produção <span id="ord-env-cnt"
         style="background:#2563eb;color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;margin-left:4px">0</span>
     </button>
+  
+    <button class="btn bdng bsm" onclick="limparBaseDados()" style="margin-left:auto">🗑 Limpar Base (Pedidos + OPs)</button></div>
+  <!-- ══ SUPABASE CONFIG ══ -->
+  <div class="sec" style="border-left:4px solid #3ECF8E;margin-bottom:16px">
+    <div class="sec-hd">
+      <span class="sec-tt">⚡ Supabase — Sincronização em tempo real</span>
+      <span id="fb-status-imp" style="font-size:11px;color:var(--text2)">⚫ Não conectado</span>
+    </div>
+    <div class="sec-bd">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Cole a <strong>URL</strong> e <strong>chave anon</strong> do projeto Supabase.<br>
+        <span style="font-size:11px;color:var(--text3)">Gratuito: 500MB · Realtime incluso · <a href="https://supabase.com" target="_blank" style="color:var(--navy)">supabase.com</a></span>
+      </p>
+      <details style="margin-bottom:10px">
+        <summary style="font-size:11px;font-weight:700;color:var(--navy);cursor:pointer">▶ Como configurar (5 passos)</summary>
+        <ol style="font-size:11px;color:var(--text2);margin:8px 0 0 16px;line-height:1.9">
+          <li>Acesse <strong>supabase.com</strong> → "Start your project" → login com GitHub</li>
+          <li>"New project" → nome <strong>pcp-maxfio</strong> → região <strong>South America (São Paulo)</strong> → Create</li>
+          <li><strong>SQL Editor</strong> → "New query" → cole o SQL abaixo → Run</li>
+          <li><strong>Settings → API</strong> → copie <em>Project URL</em> e <em>anon public key</em></li>
+          <li>Cole abaixo → Salvar e Conectar → Subir dados</li>
+        </ol>
+        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;margin-top:8px;font-family:monospace;font-size:10px;color:var(--text2);white-space:pre">create table pcp_sync (
+  chave text primary key,
+  dados text,
+  atualizado_em timestamptz default now()
+);
+alter table pcp_sync enable row level security;
+create policy "Acesso total" on pcp_sync for all using (true) with check (true);
+alter publication supabase_realtime add table pcp_sync;</div>
+      </details>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="fg">
+          <label>Project URL</label>
+          <input id="sb-url-input" placeholder="https://xxxx.supabase.co"
+            style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        </div>
+        <div class="fg">
+          <label>Chave anon (public)</label>
+          <input id="sb-key-input" type="password" placeholder="eyJhbGciOiJIUzI1NiIs..."
+            style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bpri" onclick="salvarSupabaseConfig()" style="font-weight:700">💾 Salvar e Conectar</button>
+        <button class="btn bgho" onclick="sbUploadAll()">⬆️ Subir dados locais → Supabase</button>
+        <button class="btn bgho" onclick="sbLoad().then(function(){if(typeof renderAll==='function')renderAll()})">⬇️ Baixar do Supabase</button>
+      </div>
+      <div id="sb-config-msg" style="margin-top:8px;font-size:11px"></div>
+    </div>
   </div>
+
 
   <!-- ── OPs ENVIADAS (colapsado por padrão) ── -->
   <div id="enviadas-panel" style="display:none;margin-bottom:14px;
@@ -1961,15 +2063,13 @@ if(typeof QRCode === 'undefined') {
       <option value="">Todas as prioridades</option>
       <option value="CRITICO">🔴 Crítico</option>
       <option value="ALTA">🟠 Alta</option>
-      <option value="NORMAL">🟢 Normal</option>
-      <option value="VIP">⭐ VIP</option>
-    </select>
-    <button class="btn bgho bsm" onclick="renderComercial()">🔄 Atualizar</button>
-  </div>
-  <div id="comercial-list"></div>
-</div>
+      <option value="NORMAL">
+
+
 
 <script>
+
+
 
 
 // ═══════════ EMBEDDED DATA ═══════════
@@ -2123,11 +2223,174 @@ function showGSStatus(msg, color) {
 }
 
 // saveSingle: salva no localStorage (imediato) + Google Sheets (assíncrono)
+
+
+
+// ════════════════════════════════════════════════════════════
+// SUPABASE — Sincronização em tempo real
+// Configure em Importar > Supabase
+// ════════════════════════════════════════════════════════════
+let _sb = null;
+let SB_ACTIVE = false;
+let _sbChannels = [];
+
+function initSupabase(url, key) {
+  try {
+    if (!url || !key) { console.log('Supabase: config não definida'); return; }
+    _sb = supabase.createClient(url, key);
+    SB_ACTIVE = true;
+    console.log('✅ Supabase conectado:', url);
+    _showSBStatus('🟢 Supabase conectado', '#16a34a');
+    startSupabaseSync();
+  } catch(e) {
+    console.error('Supabase init error:', e);
+    _showSBStatus('🔴 Erro: ' + e.message, '#dc2626');
+  }
+}
+
+function _showSBStatus(msg, color) {
+  ['fb-status-nav','fb-status-imp'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.textContent = msg; el.style.color = color || 'inherit'; }
+  });
+}
+
+// Salva no Supabase (upsert assíncrono)
+function sbSave(k, v) {
+  if (!SB_ACTIVE || !_sb) return;
+  _sb.from('pcp_sync')
+    .upsert({ chave: k, dados: JSON.stringify(v), atualizado_em: new Date().toISOString() }, { onConflict: 'chave' })
+    .then(function(res) {
+      if (res.error) console.warn('Supabase save error', k, res.error.message);
+    });
+}
+
+// Carrega todos os dados do Supabase
+async function sbLoad() {
+  if (!SB_ACTIVE || !_sb) return false;
+  try {
+    _showSBStatus('⏳ Carregando...', '#d97706');
+    var res = await _sb.from('pcp_sync').select('chave,dados');
+    if (res.error) throw new Error(res.error.message);
+    if (!res.data || res.data.length === 0) {
+      _showSBStatus('🟢 Supabase (sem dados ainda)', '#16a34a');
+      return false;
+    }
+    var d = {};
+    res.data.forEach(function(row) {
+      try { d[row.chave] = JSON.parse(row.dados); } catch(e) {}
+    });
+    if (d[LS.PEDIDOS])      { PEDIDOS      = d[LS.PEDIDOS];      localStorage.setItem(LS.PEDIDOS,      JSON.stringify(PEDIDOS)); }
+    if (d[LS.ORDENS])       { ORDENS       = d[LS.ORDENS];       localStorage.setItem(LS.ORDENS,       JSON.stringify(ORDENS)); }
+    if (d[LS.PREVIAS])      { PREVIAS      = d[LS.PREVIAS];      localStorage.setItem(LS.PREVIAS,      JSON.stringify(PREVIAS)); }
+    if (d[LS.LOTES])        { LOTES        = d[LS.LOTES];        localStorage.setItem(LS.LOTES,        JSON.stringify(LOTES)); }
+    if (d[LS.RESERVAS])     { RESERVAS     = d[LS.RESERVAS];     localStorage.setItem(LS.RESERVAS,     JSON.stringify(RESERVAS)); }
+    if (d[LS.HIST])         { HIST         = d[LS.HIST];         localStorage.setItem(LS.HIST,         JSON.stringify(HIST)); }
+    if (d[LS.HIST_EXCL])    { HIST_EXCL    = d[LS.HIST_EXCL];   localStorage.setItem(LS.HIST_EXCL,    JSON.stringify(HIST_EXCL)); }
+    if (d[LS.NC])           { NC_LIST      = d[LS.NC];           localStorage.setItem(LS.NC,           JSON.stringify(NC_LIST)); }
+    if (d[LS.PC_MAP])       { PC_MAP       = d[LS.PC_MAP];       localStorage.setItem(LS.PC_MAP,       JSON.stringify(PC_MAP)); }
+    if (d[LS.APONTAMENTOS]) { APONTAMENTOS = d[LS.APONTAMENTOS]; localStorage.setItem(LS.APONTAMENTOS, JSON.stringify(APONTAMENTOS)); }
+    if (d[LS.COMERCIAL])    { COMERCIAL    = d[LS.COMERCIAL];    localStorage.setItem(LS.COMERCIAL,    JSON.stringify(COMERCIAL)); }
+    if (d[LS.USUARIOS]) {
+      var u = d[LS.USUARIOS];
+      if (Array.isArray(u) && u.length > 0) { USERS = u; localStorage.setItem(LS.USUARIOS, JSON.stringify(USERS)); }
+    }
+    _showSBStatus('🟢 Supabase (' + (PEDIDOS.length) + ' pedidos)', '#16a34a');
+    return true;
+  } catch(e) {
+    console.error('Supabase load error:', e);
+    _showSBStatus('🔴 Erro: ' + e.message, '#dc2626');
+    return false;
+  }
+}
+
+// Listener Realtime — atualiza automaticamente quando outro usuário salva
+function startSupabaseSync() {
+  if (!SB_ACTIVE || !_sb) return;
+  // Cancela canais anteriores
+  _sbChannels.forEach(function(c) { _sb.removeChannel(c); });
+  _sbChannels = [];
+
+  var channel = _sb
+    .channel('pcp_sync_changes')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'pcp_sync' },
+      function(payload) {
+        var k = payload.new && payload.new.chave;
+        var v = null;
+        try { v = JSON.parse(payload.new.dados); } catch(e) { return; }
+        if (!k || !v) return;
+        // Evita loop: compara com localStorage
+        var local = localStorage.getItem(k);
+        if (local === JSON.stringify(v)) return;
+        localStorage.setItem(k, JSON.stringify(v));
+        if (k===LS.PEDIDOS)      PEDIDOS      = v;
+        if (k===LS.ORDENS)       ORDENS       = v;
+        if (k===LS.PREVIAS)      PREVIAS      = v;
+        if (k===LS.LOTES)        LOTES        = v;
+        if (k===LS.RESERVAS)     RESERVAS     = v;
+        if (k===LS.HIST)         HIST         = v;
+        if (k===LS.HIST_EXCL)    HIST_EXCL    = v;
+        if (k===LS.NC)           NC_LIST      = v;
+        if (k===LS.PC_MAP)       PC_MAP       = v;
+        if (k===LS.APONTAMENTOS) APONTAMENTOS = v;
+        if (k===LS.COMERCIAL)    COMERCIAL    = v;
+        if (k===LS.USUARIOS)     USERS        = v;
+        if (typeof renderAll === 'function') renderAll();
+        if (typeof showToast === 'function') showToast('🔄 ' + k.replace('pcp_','') + ' atualizado');
+      }
+    )
+    .subscribe(function(status) {
+      console.log('Supabase realtime:', status);
+      if (status === 'SUBSCRIBED') _showSBStatus('🟢 Supabase (tempo real ativo)', '#16a34a');
+    });
+  _sbChannels.push(channel);
+}
+
+// Sobe todos os dados locais → Supabase (migração inicial)
+async function sbUploadAll() {
+  if (!SB_ACTIVE || !_sb) { alert('Supabase não conectado.'); return; }
+  var keys = [LS.PEDIDOS,LS.ORDENS,LS.PREVIAS,LS.LOTES,LS.RESERVAS,
+    LS.HIST,LS.HIST_EXCL,LS.APONTAMENTOS,LS.NC,LS.PC_MAP,LS.COMERCIAL,LS.USUARIOS];
+  var rows = [];
+  keys.forEach(function(k) {
+    var v = localStorage.getItem(k);
+    if (v) rows.push({ chave: k, dados: v, atualizado_em: new Date().toISOString() });
+  });
+  var res = await _sb.from('pcp_sync')
+    .upsert(rows, { onConflict: 'chave' });
+  if (res.error) { alert('Erro: ' + res.error.message); return; }
+  alert('✅ ' + rows.length + ' coleções enviadas para o Supabase!');
+}
+
+function loadSupabaseConfig() {
+  try {
+    var s = localStorage.getItem('pcp_supabase_config');
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+
+function salvarSupabaseConfig() {
+  var url = (document.getElementById('sb-url-input') || {}).value || '';
+  var key = (document.getElementById('sb-key-input') || {}).value || '';
+  url = url.trim(); key = key.trim();
+  if (!url || !key) { alert('Preencha URL e chave anon.'); return; }
+  if (!url.startsWith('https://')) { alert('URL deve começar com https://'); return; }
+  var cfg = { url: url, key: key };
+  localStorage.setItem('pcp_supabase_config', JSON.stringify(cfg));
+  var msg = document.getElementById('sb-config-msg');
+  if (msg) { msg.textContent = '✅ Salvo! Conectando...'; msg.style.color = '#16a34a'; }
+  initSupabase(url, key);
+  setTimeout(function() { if (typeof sbLoad === 'function') sbLoad().then(function() { if (typeof renderAll==='function') renderAll(); }); }, 800);
+}
+
 function saveSingle(k, v) {
-  // Sempre salva local como backup instantâneo
+  // Salva local (backup instantâneo)
   try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {}
-  // Google Sheets: enfileira para salvar (só quando publicado na web)
-  if (GS_CONFIG.enabled && GS_CONFIG.url && location.protocol !== 'file:') {
+  // Supabase: sincroniza com todos os usuários
+  sbSave(k, v);
+  // Google Sheets legacy
+  if (GS_CONFIG && GS_CONFIG.enabled && GS_CONFIG.url && location.protocol !== 'file:') {
     GS_QUEUE[k] = v;
     scheduleGSSave();
   }
@@ -4954,6 +5217,20 @@ setInterval(()=>{const d=new Date();document.getElementById('nav-clock').textCon
 
 // ═══════════ INIT ═══════════
 window.addEventListener('DOMContentLoaded',()=>{
+  const _sbCfg=loadSupabaseConfig();
+  if(_sbCfg){
+    initSupabase(_sbCfg.url,_sbCfg.key);
+    // Pre-preenche campos
+    setTimeout(function(){
+      var u=document.getElementById('sb-url-input');
+      var k=document.getElementById('sb-key-input');
+      if(u) u.value=_sbCfg.url;
+      if(k) k.value=_sbCfg.key;
+    },500);
+  }
+  // ─── Firebase: inicializa com config salva ───
+  const _fbCfg = loadFirebaseConfig();
+  if (_fbCfg) initFirebase(_fbCfg);
   // ─── BOOT SYNC: carrega dados locais imediatamente (síncrono) ───
   // Garante que USERS está disponível ANTES do loadAll assíncrono
   try{
@@ -8452,6 +8729,20 @@ function nopPreview(){
   }
 }
 
+function limparBaseDados(){
+  if(!confirm('Limpar TODOS os pedidos, OPs e histórico de produção?\nEsta ação não pode ser desfeita.')) return;
+  var keys=['pcp_pedidos','pcp_ordens','pcp_previas','pcp_lotes','pcp_torcedeira',
+    'pcp_hist','pcp_nc','pcp_pc_map','pcp_snapshots','pcp_rsv_revisoes',
+    'pcp_apontamentos','pcp_hist_excl','pcp_comercial','pcp_reservas'];
+  keys.forEach(function(k){ try{localStorage.removeItem(k);}catch(e){} });
+  PEDIDOS=[];ORDENS=[];PREVIAS=[];LOTES=[];HIST=[];NC_LIST=[];
+  PC_MAP={};SNAPSHOTS=[];APONTAMENTOS=[];HIST_EXCL=[];RESERVAS=[];
+  if(typeof PCP_ITEMS!=='undefined') PCP_ITEMS=[];
+  if(typeof pcpSel!=='undefined') pcpSel=new Set();
+  alert('Base limpa! Agora importe os pedidos pela aba Importar.');
+  if(typeof renderAll==='function') renderAll();
+}
+
 function salvarNovaOP(){
   const tipo=document.getElementById('nop-tipo')?.value||'';
   const prod=(document.getElementById('nop-produto')?.value||'').trim();
@@ -8518,6 +8809,8 @@ function salvarNovaOP(){
   renderOrdens();
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
 }
+
+
 
 </script>
 <!-- ══ DIÁRIO DE PRODUÇÃO ══ -->
