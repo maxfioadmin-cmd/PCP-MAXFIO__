@@ -337,7 +337,7 @@ function engBuscaFluxo(){
   const stored=sessionStorage.getItem('pcp_version');
   if(stored&&stored!==v){
     sessionStorage.setItem('pcp_version',v);
-    window.location.reload(true);
+    // reload disabled
   } else {
     sessionStorage.setItem('pcp_version',v);
   }
