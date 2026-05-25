@@ -773,23 +773,29 @@ if(typeof QRCode === 'undefined') {
       <input id="ord-q" placeholder="Buscar OP..." oninput="renderOrdens()"
         style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:150px">
     </div>
-    <!-- Atribuir operador em lote -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;background:var(--bg2);border-radius:var(--r);margin-bottom:10px">
-      <span style="font-size:11px;font-weight:600">Atribuir selecionadas:</span>
+    <!-- Ações em lote para OPs Pendentes -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;background:#f8faff;border:1px solid #e5e7eb;border-radius:var(--r);margin-bottom:10px">
+      <span style="font-size:11px;font-weight:700;color:var(--navy)">Selecionadas (pendentes):</span>
       <select id="ord-oper-sel" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;min-width:160px">
-        <option value="">Operador...</option>
+        <option value="">Atribuir operador...</option>
       </select>
       <select id="ord-turno-sel" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
         <option value="">Turno...</option>
-        <option value="T1">T1 (06h-14h)</option>
-        <option value="T2">T2 (14h-22h)</option>
-        <option value="T3">T3 (22h-06h)</option>
+        <option value="T1">T1 (06h–14h)</option>
+        <option value="T2">T2 (14h–22h)</option>
+        <option value="T3">T3 (22h–06h)</option>
       </select>
       <button class="btn bpri bsm" onclick="atribuirOperadorSelecionados()">✅ Atribuir</button>
-      <button class="btn bsuc bsm" onclick="enviarOPsSelecionadasParaProducao()">🚀 Enviar Selecionadas</button>
-      <button class="btn bwrn bsm" onclick="reverterOPsParaPreviaEmLote()" title="Reverter para Prévia PCP">↩ Reverter p/ Prévia</button>
-      <button class="btn bdng bsm" onclick="excluirOPsEmLotePendentes()" title="Excluir (requer senha admin)">🗑 Excluir (admin)</button>
-      <button class="btn bgho bsm" onclick="toggleHistExcl()" style="margin-left:auto">📋 Histórico de Exclusões</button>
+      <span style="color:var(--border)">|</span>
+      <button class="btn bsuc" style="padding:6px 14px;font-size:12px;font-weight:700"
+        onclick="enviarOPsSelecionadasParaProducao()">🚀 Enviar para Produção</button>
+      <button class="btn bgho bsm" onclick="reverterOPsParaPreviaEmLote()"
+        title="Reverter itens de volta para a Prévia PCP">↩ Rev. p/ Prévia</button>
+      <button class="btn bdng bsm" onclick="excluirOPsEmLotePendentes()"
+        title="Excluir definitivamente (senha admin)">🗑 Excluir</button>
+      <button class="btn bgho bsm" onclick="toggleHistExcl()" style="margin-left:auto;font-size:10px">
+        📋 Hist. Exclusões <span id="hist-excl-cnt-btn" style="background:#dc2626;color:#fff;border-radius:99px;padding:1px 5px;font-size:9px"></span>
+      </button>
     </div>
     <div class="sec-bd" id="ord-list"></div>
     <!-- Histórico de Exclusões (oculto por padrão) -->
@@ -2409,6 +2415,9 @@ function toggleHistExcl(){
   } else {
     p.style.display='none';
   }
+  // Update badge
+  const btn=document.getElementById('hist-excl-cnt-btn');
+  if(btn) btn.textContent=HIST_EXCL.length>0?HIST_EXCL.length:'';
 }
 function renderHistExcl(){
   const el=document.getElementById('hist-excl-list');
@@ -2443,6 +2452,84 @@ function renderHistExcl(){
         </tr>`).join('')}
       </tbody>
     </table>`;
+}
+
+// ═══════════ REABRIR / CANCELAR OPs ═══════════
+
+function reabrirOP(id){
+  // Reabrir: OP volta para o quadro inferior (Pendente)
+  // Requer senha de admin
+  const op=ORDENS.find(o=>String(o.id)===String(id));
+  if(!op){alert('OP nao encontrada: '+id);return;}
+  if(!verificarSenhaGestor('Reabrir OP '+id)) return;
+  if(!confirm('Reabrir OP '+id+'?\n\nEla voltara para o quadro "Gerir OPs Pendentes" para ser reenviada.')) return;
+  // Revert status and pedido link
+  op.status='Pendente';
+  op.dt_envio=null;
+  op.enviado_por=null;
+  op.etapa_page=null;
+  op.obs=(op.obs?op.obs+' | ':'')+('Reaberta em '+new Date().toLocaleDateString('pt-BR')+' por '+(CUSER?.nome||'?'));
+  // Revert pedido status
+  const peds=(op.pedidos||[op.pedido]).filter(Boolean);
+  peds.forEach(pedNum=>{
+    const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum));
+    if(ped&&ped._op_vinculada===op.id){
+      ped._status_prod=ped._previa_id?'em_previa':'';
+      ped._op_vinculada=null;
+      ped._dt_envio_prod=null;
+    }
+  });
+  saveSingle(LS.ORDENS,ORDENS);
+  saveSingle(LS.PEDIDOS,PEDIDOS);
+  renderOrdens();
+  showToast&&showToast('OP '+id+' reaberta — esta no quadro de pendentes.');
+}
+
+function cancelarOP(id){
+  // Cancelar: move para historico de exclusoes, requer senha admin
+  const op=ORDENS.find(o=>String(o.id)===String(id));
+  if(!op){alert('OP nao encontrada: '+id);return;}
+  if(!verificarSenhaGestor('Cancelar OP '+id)) return;
+  if(!confirm('Cancelar OP '+id+' — '+shortProd(op.produto)+'?\n\nEla sera removida da producao e registrada no Historico de Exclusoes.')) return;
+  _executarExclusaoOP(op);
+  renderOrdens();
+  showToast&&showToast('OP '+id+' cancelada e salva no historico.');
+}
+
+function reabrirEmLote(){
+  const ids=[...document.querySelectorAll('.ck-env:checked')].map(c=>String(c.value));
+  if(ids.length===0){alert('Selecione OPs no quadro superior para reabrir.');return;}
+  const ops=ORDENS.filter(o=>ids.includes(String(o.id||'')));
+  if(!verificarSenhaGestor('Reabrir '+ops.length+' OP(s)')) return;
+  if(!confirm('Reabrir '+ops.length+' OP(s)?\n\nElas voltarao para o quadro "Gerir OPs Pendentes".')) return;
+  ops.forEach(op=>{
+    op.status='Pendente';
+    op.dt_envio=null;op.enviado_por=null;op.etapa_page=null;
+    op.obs=(op.obs?op.obs+' | ':'')+('Reaberta em '+new Date().toLocaleDateString('pt-BR')+' por '+(CUSER?.nome||'?'));
+    const peds=(op.pedidos||[op.pedido]).filter(Boolean);
+    peds.forEach(pedNum=>{
+      const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum));
+      if(ped&&ped._op_vinculada===op.id){
+        ped._status_prod=ped._previa_id?'em_previa':'';
+        ped._op_vinculada=null;ped._dt_envio_prod=null;
+      }
+    });
+  });
+  saveSingle(LS.ORDENS,ORDENS);
+  saveSingle(LS.PEDIDOS,PEDIDOS);
+  renderOrdens();
+  showToast&&showToast(ops.length+' OP(s) reabertas — estao no quadro de pendentes.');
+}
+
+function cancelarEmLote(){
+  const ids=[...document.querySelectorAll('.ck-env:checked')].map(c=>String(c.value));
+  if(ids.length===0){alert('Selecione OPs no quadro superior para cancelar.');return;}
+  const ops=ORDENS.filter(o=>ids.includes(String(o.id||'')));
+  if(!verificarSenhaGestor('Cancelar '+ops.length+' OP(s)')) return;
+  if(!confirm('Cancelar '+ops.length+' OP(s)?\n\nElas serao removidas e registradas no Historico de Exclusoes.')) return;
+  ops.forEach(op=>_executarExclusaoOP(op));
+  renderOrdens();
+  showToast&&showToast(ops.length+' OP(s) canceladas e salvas no historico.');
 }
 // ═══════════ PAINEL OPs ═══════════
 function renderPainel(){
@@ -3455,7 +3542,7 @@ function verificarEtapasSeguintes(op){
   return{bloqueado:false,motivo:''};
 }
 
-function reabrirOPComFiltro(id){
+function reabrirOPComFiltro(id){reabrirOP(id);return;} function reabrirOPComFiltro_OLD(id){
   const op=ORDENS.find(x=>x.id===id);
   if(!op){alert('OP não encontrada.');return;}
 
@@ -6063,20 +6150,17 @@ function genAllExt(grupo,secao){
 // ═══════════ ORDENS ═══════════
 let _ordEdit=null;
 function renderOrdens(){
-  // Fix old OPs that have no id (from previous data format)
+  // ── Auto-fix OPs with no id (old data) ──
   let needSave=false;
   ORDENS.forEach((o,idx)=>{
-    if(!o.id){
-      o.id=gerarNumOP()+'_FX'+idx;
-      o.num_base=o.id;
-      needSave=true;
-    }
+    if(!o.id){o.id=gerarNumOP()+'_FX'+idx;o.num_base=o.id;needSave=true;}
   });
   if(needSave) saveSingle(LS.ORDENS,ORDENS);
-  // Populate operador select
+
+  // ── Populate operador select ──
   const operSel=document.getElementById('ord-oper-sel');
   if(operSel&&operSel.options.length<=1){
-    (USERS||[]).forEach(u=>{
+    (USERS||[]).filter(u=>u.perfil==='operacional'||u.perfil==='producao').forEach(u=>{
       const opt=document.createElement('option');
       opt.value=u.login;opt.textContent=u.nome;
       operSel.appendChild(opt);
@@ -6087,14 +6171,11 @@ function renderOrdens(){
   const turnoFil=document.getElementById('of-turno')?.value||'';
   const q=(document.getElementById('ord-q')?.value||'').toLowerCase();
 
-  // Split OPs: enviadas (Em andamento / com operador) vs pendentes
-  const enviadas = ORDENS.filter(o=>
-    o.status==='Em andamento'||o.status==='Em Andamento'||
-    o.status==='Reaberta'||o.status==='Concluída'
+  // ── Split: ENVIADAS (em andamento/reaberta) vs PENDENTES (aguardando envio) ──
+  const enviadas=ORDENS.filter(o=>
+    o.status==='Em andamento'||o.status==='Em Andamento'||o.status==='Reaberta'
   );
-  const pendentes = ORDENS.filter(o=>
-    o.status==='Pendente'&&!enviadas.includes(o)
-  ).filter(o=>{
+  const pendentes=ORDENS.filter(o=>o.status==='Pendente').filter(o=>{
     if(etapaFil&&!(o.tipo||'').toLowerCase().includes(etapaFil)) return false;
     if(turnoFil&&o.turno&&o.turno!==turnoFil) return false;
     if(q){const t=(o.id||'')+(o.produto||'')+(o.pedido||'');if(!t.toLowerCase().includes(q))return false;}
@@ -6102,111 +6183,147 @@ function renderOrdens(){
   });
 
   const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  setEl('ord-cnt', ORDENS.length);
-  setEl('ord-env-cnt', enviadas.length);
-  setEl('ord-pend-cnt', pendentes.length);
+  setEl('ord-cnt',ORDENS.filter(o=>o.status!=='EXCLUIDA').length);
+  setEl('ord-env-cnt',enviadas.length);
+  setEl('ord-pend-cnt',pendentes.length);
 
-  // Render enviadas panel (compact)
+  const etapaColors={torcedeira:'#a855f7',torcedeira_redir:'#7c3aed',extrusora:'#22c55e',
+    trefila:'#fb923c',buncherfixo:'#06b6d4',individual:'#0d9488'};
+
+  // ── PAINEL SUPERIOR: OPs Enviadas ──
   const envEl=document.getElementById('ord-enviadas-list');
   if(envEl){
     if(enviadas.length===0){
-      envEl.innerHTML='<p style="color:var(--text3);font-size:12px;padding:12px">Nenhuma OP enviada para produção ainda.</p>';
+      envEl.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text3)">
+        <div style="font-size:28px">📭</div>
+        <div style="font-size:12px;margin-top:4px">Nenhuma OP enviada para produção ainda.</div>
+        <div style="font-size:11px;margin-top:2px">Use o painel abaixo → selecione OPs → <strong>Enviar para Produção</strong></div>
+      </div>`;
     } else {
-      const etapaColors={torcedeira:'#a855f7',torcedeira_redir:'#7c3aed',extrusora:'#22c55e',trefila:'#fb923c',buncherfixo:'#06b6d4'};
-      envEl.innerHTML=`<table style="width:100%">
-        <thead><tr style="background:var(--bg2)">
-          <th>OP</th><th>Sub</th><th>Tipo</th><th>Pedido</th><th>Produto</th><th>Seção</th>
-          <th class="num" style="color:var(--orange)">Metros</th>
-          <th>Operador</th><th>Turno</th><th>Status</th><th>Etapa</th><th>Ações</th>
+      envEl.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:var(--navy);color:#fff">
+          <th style="padding:7px 10px;width:32px">
+            <input type="checkbox" title="Selecionar todas"
+              onchange="document.querySelectorAll('.ck-env').forEach(c=>c.checked=this.checked)">
+          </th>
+          <th style="padding:7px 8px;text-align:left">OP</th>
+          <th>Sub</th><th>Tipo</th><th>Pedido(s)</th><th>Produto</th>
+          <th>Seção</th><th class="num" style="color:#fb923c">Metros</th>
+          <th>Operador</th><th>Turno</th><th>Status</th><th>Etapa</th>
+          <th>Enviado em</th><th style="min-width:110px">Ações</th>
         </tr></thead>
-        <tbody>${enviadas.map(o=>{
-          const sc=o.status==='Concluída'?'c-teal':o.status==='Reaberta'?'c-reaberta':'c-blue';
-          const ec=etapaColors[o.tipo]||'#888';
-          const produzido=getMetrosProduzidos(o.id);
-          return`<tr style="${o.status==='Concluída'?'opacity:.6':''}">
-            <td><input type="checkbox" class="ck-env" value="${o.id}"></td>
-            <td class="mono" style="font-size:10px;font-weight:700">${o.id}</td>
-            <td><span class="chip ${o.subordem==='A'?'c-blue':'c-orange'}" style="font-size:9px">${o.subordem||'—'}</span></td>
-            <td><span style="background:${ec}22;color:${ec};border:1px solid ${ec};border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${(o.tipo||'').toUpperCase().slice(0,4)}</span></td>
-            <td class="mono" style="font-size:10px">${(o.pedidos||[o.pedido]).filter(Boolean).join(',')}</td>
-            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">${shortProd(o.produto)}</td>
-            <td style="font-size:10px;font-weight:600">${o.secao||'—'}</td>
-            <td class="num" style="color:var(--orange);font-weight:600">${fm(o.metros||0)}m${produzido>0?`<br><span style="color:var(--green);font-size:9px">✓${fm(produzido)}m</span>`:''}</td>
-            <td style="font-size:10px">${o.operador||'—'}</td>
-            <td style="font-size:10px">${o.turno||'—'}</td>
-            <td><span class="chip ${sc}" style="font-size:9px">${o.status}</span></td>
-            <td style="font-size:10px">${o.etapa||o.tipo||'—'}</td>
-            <td style="white-space:nowrap">
-              <button class="btn bgho bsm" onclick="reabrirOPComFiltro('${o.id}')" title="Reabrir">↩</button>
-              <button class="btn bgrn bsm" onclick="concluirOP('${o.id}')" title="Concluir">✓</button>
-            </td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>`;
+        <tbody>
+          ${enviadas.map(o=>{
+            const ec=etapaColors[o.tipo]||'#888';
+            const sc=o.status==='Reaberta'?'background:#f59e0b;color:#fff':
+                     'background:#2563eb;color:#fff';
+            return`<tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 8px;text-align:center">
+                <input type="checkbox" class="ck-env" value="${o.id}">
+              </td>
+              <td style="padding:6px 8px;font-family:monospace;font-size:10px;font-weight:700">${o.id}</td>
+              <td style="text-align:center">
+                <span class="chip ${o.subordem==='A'?'c-blue':'c-orange'}" style="font-size:9px">${o.subordem||'—'}</span>
+              </td>
+              <td style="text-align:center">
+                <span style="background:${ec}22;color:${ec};border:1px solid ${ec};border-radius:4px;
+                  padding:1px 6px;font-size:9px;font-weight:700">${(o.tipo||'').toUpperCase().slice(0,4)}</span>
+              </td>
+              <td style="font-family:monospace;font-size:10px">${(o.pedidos||[o.pedido]).filter(Boolean).slice(0,2).join(', ')}</td>
+              <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortProd(o.produto)}</td>
+              <td style="font-size:11px;font-weight:600">${o.secao||'—'}</td>
+              <td class="num" style="color:#fb923c;font-weight:600">${fm(o.metros||0)}m</td>
+              <td>${o.operador||'<span style="color:var(--text3)">—</span>'}</td>
+              <td>${o.turno||'—'}</td>
+              <td><span style="${sc};border-radius:99px;padding:2px 8px;font-size:9px;font-weight:600">${o.status}</span></td>
+              <td style="font-size:10px">${o.etapa||o.tipo||'—'}</td>
+              <td style="font-size:10px;white-space:nowrap">${o.dt_envio||'—'}</td>
+              <td style="white-space:nowrap;padding:4px 8px">
+                <button class="btn bgho bsm" style="font-size:10px"
+                  onclick="reabrirOP('${o.id}')" title="Reabrir OP → volta para pendentes">
+                  ↩ Reabrir
+                </button>
+                <button class="btn bdng bsm" style="font-size:10px;margin-left:2px"
+                  onclick="cancelarOP('${o.id}')" title="Cancelar OP (senha admin)">
+                  ✕ Cancelar
+                </button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+      <div style="display:flex;gap:8px;padding:8px 0;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text2);align-self:center">Selecionadas:</span>
+        <button class="btn bgho bsm" onclick="reabrirEmLote()"
+          title="Reabrir selecionadas → voltam para pendentes">↩ Reabrir Selecionadas</button>
+        <button class="btn bdng bsm" onclick="cancelarEmLote()"
+          title="Cancelar selecionadas (senha admin)">✕ Cancelar Selecionadas</button>
+      </div>`;
     }
   }
 
-  // Render pendentes panel (with checkboxes for bulk actions)
+  // ── PAINEL INFERIOR: OPs Pendentes ──
   const listEl=document.getElementById('ord-list');
   if(listEl){
     if(pendentes.length===0){
-      listEl.innerHTML='<p style="color:var(--text3);font-size:12px;padding:12px">Nenhuma OP pendente.</p>';
+      listEl.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text3)">
+        <div style="font-size:28px">✅</div>
+        <div style="font-size:12px;margin-top:4px">Nenhuma OP pendente${etapaFil||turnoFil||q?' com esses filtros':' — todas já foram enviadas para produção'}.</div>
+      </div>`;
     } else {
-      listEl.innerHTML=`<div class="tw ts"><table style="width:100%">
-        <thead><tr>
-          <th><input type="checkbox" onchange="ckAllOrdens(this)"></th>
-          <th>OP</th><th>Sub</th><th>Tipo</th><th>Pedido(s)</th><th>Produto</th>
-          <th>Seção</th><th class="num" style="color:var(--orange)">Metros</th>
-          <th>Prio.</th><th>Operador</th><th>Turno</th><th>Criação</th><th>Entrega</th><th>Ações</th>
+      listEl.innerHTML=`<div class="tw ts"><table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:#374151;color:#fff">
+          <th style="padding:7px 10px;width:32px">
+            <input type="checkbox" title="Selecionar todas" onchange="ckAllOrdens(this)">
+          </th>
+          <th style="padding:7px 8px;text-align:left">OP</th>
+          <th>Sub</th><th>Tipo</th><th>Pedido(s)</th><th>Produto</th>
+          <th>Seção</th><th class="num" style="color:#fb923c">Metros</th>
+          <th>Prio.</th><th>Operador</th><th>Turno</th>
+          <th>Criação</th><th>Entrega</th><th>Ações</th>
         </tr></thead>
-        <tbody>${pendentes.map(o=>{
-          const dtEnt=o.dt_entrega?o.dt_entrega.slice(0,10).split('-').reverse().join('/'):'—';
-          const pc=o.prio_prod==='Urgente'?'c-red':o.prio_prod==='Alta'?'c-orange':'c-gray';
-          const etapaColors={torcedeira:'#a855f7',torcedeira_redir:'#7c3aed',extrusora:'#22c55e',trefila:'#fb923c',buncherfixo:'#06b6d4'};
-          const ec=etapaColors[o.tipo]||'#888';
-          return`<tr>
-            <td><input type="checkbox" class="ck-ord" value="${o.id}"></td>
-            <td class="mono" style="font-size:10px;font-weight:700">${o.id}</td>
-            <td><span class="chip ${o.subordem==='A'?'c-blue':'c-orange'}" style="font-size:9px">${o.subordem||'—'}</span></td>
-            <td><span style="background:${ec}22;color:${ec};border:1px solid ${ec};border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${(o.tipo||'').toUpperCase().slice(0,4)}</span></td>
-            <td class="mono" style="font-size:10px">${(o.pedidos||[o.pedido]).filter(Boolean).join(',')}</td>
-            <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">${shortProd(o.produto)}</td>
-            <td style="font-size:10px;font-weight:600">${o.secao||'—'}</td>
-            <td class="num" style="color:var(--orange);font-weight:600">${fm(o.metros||0)}m</td>
-            <td><span class="chip ${pc}" style="font-size:9px">${o.prio_prod||'Normal'}</span></td>
-            <td style="font-size:10px">${o.operador||'<span style="color:var(--text3)">— sem operador</span>'}</td>
-            <td style="font-size:10px">${o.turno||'—'}</td>
-            <td style="font-size:10px">${o.dt_criacao||''}</td>
-            <td style="font-size:10px">${dtEnt}</td>
-            <td style="white-space:nowrap">
-              <button class="btn bgho bsm" onclick="editOrdem('${o.id}')">✏️</button>
-              <button class="btn bdng bsm" onclick="deleteOrdem('${o.id}')">🗑</button>
-            </td>
-          </tr>`;
-        }).join('')}</tbody>
+        <tbody>
+          ${pendentes.map(o=>{
+            const dtEnt=o.dt_entrega?o.dt_entrega.slice(0,10).split('-').reverse().join('/'):'—';
+            const pc=o.prio_prod==='Urgente'?'c-red':o.prio_prod==='Alta'?'c-orange':'c-gray';
+            const ec=etapaColors[o.tipo]||'#888';
+            return`<tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 8px;text-align:center">
+                <input type="checkbox" class="ck-ord" value="${o.id}">
+              </td>
+              <td style="padding:6px 8px;font-family:monospace;font-size:10px;font-weight:700">${o.id}</td>
+              <td style="text-align:center">
+                <span class="chip ${o.subordem==='A'?'c-blue':'c-orange'}" style="font-size:9px">${o.subordem||'—'}</span>
+              </td>
+              <td style="text-align:center">
+                <span style="background:${ec}22;color:${ec};border:1px solid ${ec};border-radius:4px;
+                  padding:1px 6px;font-size:9px;font-weight:700">${(o.tipo||'').toUpperCase().slice(0,4)}</span>
+              </td>
+              <td style="font-family:monospace;font-size:10px">${(o.pedidos||[o.pedido]).filter(Boolean).slice(0,2).join(', ')}</td>
+              <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortProd(o.produto)}</td>
+              <td style="font-size:11px;font-weight:600">${o.secao||'—'}</td>
+              <td class="num" style="color:#fb923c;font-weight:600">${fm(o.metros||0)}m</td>
+              <td><span class="chip ${pc}" style="font-size:9px">${o.prio_prod||'Normal'}</span></td>
+              <td style="font-size:11px">${o.operador||'<span style="color:var(--text3)">— sem operador</span>'}</td>
+              <td>${o.turno||'—'}</td>
+              <td style="font-size:10px">${o.dt_criacao||''}</td>
+              <td style="font-size:10px">${dtEnt}</td>
+              <td style="white-space:nowrap;padding:4px 8px">
+                <button class="btn bgho bsm" style="font-size:10px"
+                  onclick="editOrdem('${o.id}')">✏️</button>
+                <button class="btn bdng bsm" style="font-size:10px;margin-left:2px"
+                  onclick="deleteOrdem('${o.id}')" title="Excluir (senha admin)">🗑</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
       </table></div>`;
     }
   }
 
-  // Update ord-turno-resumo
-  const resumoEl=document.getElementById('ord-turno-resumo');
-  if(resumoEl){
-    const turnos={};
-    enviadas.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento').forEach(o=>{
-      const t=o.turno||'Sem turno';
-      if(!turnos[t])turnos[t]={ops:0,metros:0,opers:new Set()};
-      turnos[t].ops++;turnos[t].metros+=o.metros||0;
-      if(o.operador)turnos[t].opers.add(o.operador);
-    });
-    if(Object.keys(turnos).length>0){
-      resumoEl.innerHTML=Object.entries(turnos).map(([t,d])=>`
-        <div style="background:var(--navy);color:#fff;border-radius:var(--r);padding:8px 12px">
-          <div style="font-size:12px;font-weight:700">${t}</div>
-          <div style="font-size:11px;opacity:.85">${d.ops} OPs · ${fm(d.metros)}m</div>
-          ${d.opers.size>0?`<div style="font-size:10px;opacity:.7">${[...d.opers].join(', ')}</div>`:''}
-        </div>`).join('');
-    }
-  }
+  // ── Hist excl count update ──
+  const cnt=document.getElementById('hist-excl-cnt');
+  if(cnt) cnt.textContent=HIST_EXCL.length;
 }
 
 function atribuirOperadorSelecionados(){
