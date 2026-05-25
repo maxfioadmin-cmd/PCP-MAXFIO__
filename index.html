@@ -629,9 +629,9 @@ if(typeof QRCode === 'undefined') {
               <th>Prio</th><th>Pedido</th><th>Emissão</th><th>Prev.Fat</th>
               <th>Cliente</th><th>Produto</th><th>Cor</th><th style="min-width:60px">Cód.</th><th>Un.</th><th>Grp</th><th>Seção</th>
               <th class="num">Qtd.Pend.</th><th class="num">Estoque</th><th class="num">Rsv.</th>
-              <th class="num" style="color:var(--orange)">Produzir</th>
-          <th style="color:#7c3aed" title="Pendente menos reservas">A Produzir</th>
-              <th>Cobr.</th><th>Obs./Lance</th><th>Prod.</th><th>Status</th>
+              <th class="num" style="color:var(--orange)">PRODUZIR
+          <div style="font-size:8px;font-weight:400;color:#9333ea">pend−rsv</div></th>
+                        <th>Cobr.</th><th>Obs./Lance</th><th>Prod.</th><th>Status</th>
             </tr></thead>
             <tbody id="ped-tb"></tbody>
           </table>
@@ -7037,10 +7037,19 @@ function renderPCPPage(){
         <input type="date" value="${dtEnt}" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:3px;width:112px"
           onchange="setPCPDtEntrega(${i},this.value)">
       </td>
-      <td class="num">${fm(it[9])}</td>
-      <td class="num" style="color:var(--orange);font-weight:600">
-        <input type="number" value="${it[11]||0}" min="0" step="0.1"
-          style="width:70px;text-align:right;font-size:11px;padding:2px 4px;border:1px solid var(--border);border-radius:3px"
+      <td class="num" style="color:var(--text2)">${fm(it[9])}</td>
+      <td class="num" style="color:#7c3aed;font-size:10px">
+        ${(()=>{
+          const rsvQ=RESERVAS.filter(x=>x.pedido===it[2]&&x.codigo===it[4]).reduce((a,x)=>a+(x.metros||0),0);
+          return rsvQ>0?fm(rsvQ)+'m':'—';
+        })()}
+      </td>
+      <td class="num" style="color:var(--orange);font-weight:700">
+        <input type="number" value="${it._qt_ajustada!==undefined?it._qt_ajustada:(it[11]||0)}" min="0" step="0.1"
+          style="width:75px;text-align:right;font-size:12px;padding:3px 5px;
+            border:2px solid var(--orange);border-radius:4px;font-weight:700;
+            background:#fff7ed"
+          title="Quantidade a produzir (editável: pendente − reserva)"
           onchange="ajustarQtPCP(${i},this.value)">
       </td>
       <td style="min-width:180px">${fluxoBadges(it[12],it[13])}</td>
@@ -8514,7 +8523,7 @@ function salvarNovaOP(){
 <!-- ══ DASHBOARD PEDIDOS ══ -->
 <div id="pg-dashprod" class="pg">
   <div class="pg-hd">
-    <span class="pg-tt">📈 Dashboard — Status dos Pedidos em Produção</span>
+    <span class="pg-tt">📈 Dash Pedidos</span>
     <button class="btn bgho bsm" onclick="renderDashProd()">🔄 Atualizar</button>
   </div>
 
