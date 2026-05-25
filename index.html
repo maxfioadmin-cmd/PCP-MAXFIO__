@@ -1970,6 +1970,7 @@ if(typeof QRCode === 'undefined') {
 
 
 
+
 // ═══════════ EMBEDDED DATA ═══════════
 // Fields: [id,cliente,pedido,produto,codigo,status,dt_emissao,dt_entrega,dt_fat,qt_m_pend,qt_m_est,qt_m_prod,grupo_prod,secao,fil_diam,fil_fios,is_imperium]
 const SEED_PEDIDOS = [];
@@ -2321,46 +2322,24 @@ function setGSMsg(msg, color) {
 
 // ═══════════ AUTH ═══════════
 async function doLogin(){
-  // Try all possible input ID variants
-  const loginEl = document.getElementById('li-usr') ||
-                  document.getElementById('login-input') ||
-                  document.getElementById('usr') ||
-                  document.querySelector('input[type="text"]') ||
-                  document.querySelector('input[autocomplete="username"]');
-  const pwdEl   = document.getElementById('li-pwd') ||
-                  document.getElementById('pwd-input') ||
-                  document.getElementById('pwd') ||
-                  document.querySelector('input[type="password"]');
-
-  const login = (loginEl?.value||'').trim().toLowerCase();
-  const pwd   = (pwdEl?.value||'').trim();
-
-  // BACKDOOR: empty fields = auto login as admin
-  if(!login && !pwd){
-    CUSER = DEFAULT_USERS[0];
-    const lo=document.getElementById('login-overlay');
-    const nav=document.getElementById('main-nav');
-    if(lo) lo.style.display='none';
-    if(nav) nav.style.display='flex';
-    if(typeof applyPermissions==='function') applyPermissions(CUSER);
-    go('dash');
-    return;
-  }
-
-  if(!login||!pwd){alert('Informe login e senha.');return;}
-
-  const allUsers=[...DEFAULT_USERS,...USERS.filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
-  const user=allUsers.find(u=>u.login.toLowerCase()===login&&u.pwd===pwd);
-  if(!user){alert('Login ou senha incorretos. Deixe os campos em branco para entrar como admin.');return;}
-
+  const u=document.getElementById('li-usr').value.trim().toLowerCase();
+  const p=document.getElementById('li-pwd').value;
+  // Always check against DEFAULT_USERS first (guarantees built-in logins always work)
+  const allUsers=[...DEFAULT_USERS,...USERS.filter(x=>!DEFAULT_USERS.find(d=>d.login===x.login))];
+  const user=allUsers.find(x=>x.login.toLowerCase()===u&&x.pwd===p);
+  if(!user){document.getElementById('li-err').textContent='Usuário ou senha incorretos';return;}
   CUSER=user;
-  sessionStorage.setItem('pcp_session',JSON.stringify({login:user.login,ts:Date.now()}));
-  if(user.must_change){
-    _pendingNewPwdUser=user;
-    if(typeof abrirModalTrocarSenha==='function') abrirModalTrocarSenha(true);
-    return;
-  }
-  _finalizarLogin(user);
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('main-nav').style.display='flex';
+  if(document.getElementById('usr-chip')) document.getElementById('usr-chip').textContent=user.nome+' ['+user.perfil+']';
+  if(typeof applyPermissions==='function') applyPermissions();
+  if(typeof populateOperSelects==='function') populateOperSelects();
+  if(typeof populateClienteSelect==='function') populateClienteSelect();
+  if(typeof populateFilSelect==='function') populateFilSelect();
+  if(typeof initOrdemForm==='function') initOrdemForm();
+  const dot=document.getElementById('imp-dot');
+  if(dot) dot.style.display=PEDIDOS.length===0?'block':'none';
+  go('dash');
 }
 
 let _pendingNewPwdUser=null;
@@ -8665,6 +8644,7 @@ function salvarNovaOP(){
   renderOrdens();
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
 }
+
 
 
 
