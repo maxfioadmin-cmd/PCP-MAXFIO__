@@ -736,78 +736,123 @@ if(typeof QRCode === 'undefined') {
 <!-- ══ ORDENS DE PRODUÇÃO ══ -->
 <div id="pg-ordens" class="pg">
   <div class="pg-hd">
-    <span class="pg-tt">⚙️ Produção — Ordens de Produção</span>
-    <button class="btn bsuc" onclick="enviarOPsSelecionadasParaProducao()">🚀 Enviar para Produção</button>
+    <span class="pg-tt">⚙️ Produção — Gestão de Ordens</span>
     <button class="btn bgho bsm" onclick="renderOrdens()">🔄 Atualizar</button>
-    <span id="ord-cnt" class="chip c-blue">0</span>
+    <span id="ord-cnt" class="chip c-blue" style="font-size:11px">0</span>
+    <!-- Toggle: OPs Enviadas -->
+    <button id="btn-toggle-enviadas" class="btn bgho bsm" style="margin-left:auto;font-size:11px"
+      onclick="toggleEnviadas()">
+      📤 OPs Enviadas para Produção <span id="ord-env-cnt"
+        style="background:#2563eb;color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;margin-left:4px">0</span>
+    </button>
   </div>
 
-  <!-- PAINEL SUPERIOR: OPs Enviadas para Produção -->
-  <div class="sec" style="margin-bottom:14px">
-    <div class="sec-hd" style="background:var(--navy);color:#fff;border-radius:var(--r) var(--r) 0 0;padding:12px 16px;margin:-12px -12px 12px">
-      <span style="font-size:16px;font-weight:800;letter-spacing:-.2px">🚀 OPs Enviadas para Produção</span>
-      <span id="ord-env-cnt" class="chip" style="background:rgba(255,255,255,.2);color:#fff">0</span>
-      <span style="font-size:11px;opacity:.7;margin-left:8px">Em andamento ou atribuídas</span>
+  <!-- ── OPs ENVIADAS (colapsado por padrão) ── -->
+  <div id="enviadas-panel" style="display:none;margin-bottom:14px">
+    <div style="background:var(--navy);color:#fff;border-radius:8px 8px 0 0;
+      padding:10px 16px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;font-weight:700">📤 OPs já enviadas para Produção</span>
+      <span style="font-size:11px;opacity:.7">Somente leitura — gerencie no Painel de OPs</span>
+      <button onclick="toggleEnviadas()" style="margin-left:auto;background:none;border:none;
+        color:#fff;cursor:pointer;font-size:18px;line-height:1">✕</button>
     </div>
-    <div id="ord-enviadas-list" style="overflow-x:auto"></div>
+    <div id="ord-enviadas-list" style="overflow-x:auto;border:1px solid var(--border);
+      border-top:none;border-radius:0 0 8px 8px"></div>
   </div>
 
-  <!-- PAINEL INFERIOR: OPs Pendentes para Gerir -->
+  <!-- ── FILTROS ── -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    padding:10px 14px;background:var(--bg2);border-radius:8px;margin-bottom:12px">
+    <select id="of-etapa" onchange="renderOrdens()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+      <option value="">Todas as etapas</option>
+      <option value="torcedeira">🌀 Torcedeira</option>
+      <option value="extrusora">🏭 Extrusora</option>
+      <option value="trefila">🔧 Trefila</option>
+      <option value="buncherfixo">🔩 Buncher</option>
+    </select>
+    <select id="of-turno" onchange="renderOrdens()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+      <option value="">Todos os turnos</option>
+      <option value="T1">T1 (06h–14h)</option>
+      <option value="T2">T2 (14h–22h)</option>
+      <option value="T3">T3 (22h–06h)</option>
+    </select>
+    <select id="of-prio" onchange="renderOrdens()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+      <option value="">Todas as prioridades</option>
+      <option value="Urgente">🔴 Urgente</option>
+      <option value="Alta">🟠 Alta</option>
+      <option value="Normal">⚪ Normal</option>
+    </select>
+    <input id="ord-q" placeholder="🔍 Buscar OP, pedido, produto..."
+      oninput="renderOrdens()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);
+        font-size:12px;flex:1;min-width:180px;max-width:300px">
+  </div>
+
+  <!-- ── PAINEL ÚNICO DE GESTÃO ── -->
   <div class="sec">
-    <div class="sec-hd">
-      <span class="sec-tt" style="font-size:16px;font-weight:800;color:var(--navy)">📋 Gerir OPs Pendentes</span>
-      <span id="ord-pend-cnt" class="chip c-orange">0</span>
-      <!-- Filters -->
-      <select id="of-etapa" onchange="renderOrdens()" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-        <option value="">Todas etapas</option>
-        <option value="torcedeira">Torcedeira</option>
-        <option value="torcedeira_redir">Torcedeira (Redir)</option>
-        <option value="extrusora">Extrusora</option>
-        <option value="trefila">Trefila</option>
-        <option value="buncherfixo">Buncher</option>
-      </select>
-      <select id="of-turno" onchange="renderOrdens()" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-        <option value="">Todos turnos</option>
-        <option value="T1">T1</option><option value="T2">T2</option><option value="T3">T3</option>
-      </select>
-      <input id="ord-q" placeholder="Buscar OP..." oninput="renderOrdens()"
-        style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:150px">
+    <div class="sec-hd" style="flex-wrap:wrap;gap:8px">
+      <span class="sec-tt" style="font-size:15px;font-weight:800;color:var(--navy)">
+        📋 OPs para Gerir
+      </span>
+      <span id="ord-pend-cnt" class="chip c-orange" style="font-size:11px">0</span>
+
+      <!-- Atribuir em lote -->
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:8px">
+        <select id="ord-oper-sel"
+          style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);
+            font-size:11px;min-width:150px">
+          <option value="">👤 Atribuir operador...</option>
+        </select>
+        <select id="ord-turno-sel"
+          style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+          <option value="">⏰ Turno...</option>
+          <option value="T1">T1</option>
+          <option value="T2">T2</option>
+          <option value="T3">T3</option>
+        </select>
+        <button class="btn bpri bsm" onclick="atribuirOperadorSelecionados()">✅ Atribuir</button>
+      </div>
     </div>
-    <!-- Ações em lote para OPs Pendentes -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;background:#f8faff;border:1px solid #e5e7eb;border-radius:var(--r);margin-bottom:10px">
-      <span style="font-size:11px;font-weight:700;color:var(--navy)">Selecionadas (pendentes):</span>
-      <select id="ord-oper-sel" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;min-width:160px">
-        <option value="">Atribuir operador...</option>
-      </select>
-      <select id="ord-turno-sel" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-        <option value="">Turno...</option>
-        <option value="T1">T1 (06h–14h)</option>
-        <option value="T2">T2 (14h–22h)</option>
-        <option value="T3">T3 (22h–06h)</option>
-      </select>
-      <button class="btn bpri bsm" onclick="atribuirOperadorSelecionados()">✅ Atribuir</button>
-      <span style="color:var(--border)">|</span>
-      <button class="btn bsuc" style="padding:6px 14px;font-size:12px;font-weight:700"
-        onclick="enviarOPsSelecionadasParaProducao()">🚀 Enviar para Produção</button>
-      <button class="btn bgho bsm" onclick="reverterOPsParaPreviaEmLote()"
-        title="Reverter itens de volta para a Prévia PCP">↩ Rev. p/ Prévia</button>
-      <button class="btn bdng bsm" onclick="excluirOPsEmLotePendentes()"
-        title="Excluir definitivamente (senha admin)">🗑 Excluir</button>
-      <button class="btn bgho bsm" onclick="toggleHistExcl()" style="margin-left:auto;font-size:10px">
-        📋 Hist. Exclusões <span id="hist-excl-cnt-btn" style="background:#dc2626;color:#fff;border-radius:99px;padding:1px 5px;font-size:9px"></span>
+
+    <!-- Ações principais -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 12px;
+      border-bottom:2px solid var(--border);margin-bottom:10px;align-items:center">
+      <button class="btn bsuc" style="padding:8px 20px;font-size:13px;font-weight:700"
+        onclick="enviarOPsSelecionadasParaProducao()">
+        🚀 Enviar para Produção
+      </button>
+      <button class="btn bwrn bsm" onclick="reabrirParaPreviaEmLote()"
+        title="Reverte OPs para a Prévia PCP (senha admin)">
+        ↩ Reabrir Prévia
+      </button>
+      <button class="btn bdng bsm" onclick="cancelarOPsEmLote()"
+        title="Cancela OPs selecionadas (senha admin)">
+        ✕ Cancelar OPs
+      </button>
+      <button class="btn bgho bsm" onclick="toggleHistExcl()" style="margin-left:auto">
+        📋 Hist. Exclusões
+        <span id="hist-excl-cnt-btn"
+          style="background:#dc2626;color:#fff;border-radius:99px;
+            padding:0 5px;font-size:9px;margin-left:3px"></span>
       </button>
     </div>
-    <div class="sec-bd" id="ord-list"></div>
-    <!-- Histórico de Exclusões (oculto por padrão) -->
-    <div id="hist-excl-panel" style="display:none;margin-top:14px">
-      <div style="background:var(--bg2);border-radius:var(--r);padding:12px">
-        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px">
-          📋 Histórico de OPs Excluídas
-          <span id="hist-excl-cnt" class="chip c-gray" style="font-size:10px">0</span>
-          <button class="btn bgho bsm" style="margin-left:auto" onclick="toggleHistExcl()">✕ Fechar</button>
-        </div>
-        <div id="hist-excl-list"></div>
+
+    <div id="ord-list"></div>
+  </div>
+
+  <!-- Histórico de Exclusões (oculto) -->
+  <div id="hist-excl-panel" style="display:none;margin-top:12px">
+    <div style="background:var(--bg2);border-radius:var(--r);padding:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;
+        display:flex;align-items:center;gap:8px">
+        📋 Histórico de OPs Excluídas / Canceladas
+        <span id="hist-excl-cnt" class="chip c-gray" style="font-size:10px">0</span>
+        <button class="btn bgho bsm" style="margin-left:auto" onclick="toggleHistExcl()">✕ Fechar</button>
       </div>
+      <div id="hist-excl-list"></div>
     </div>
   </div>
 </div>
@@ -2348,62 +2393,11 @@ function mostrarDetalhePV(pvId){
 }
 
 // ═══════════ GERIR OPs EM LOTE ═══════════
-function excluirOPsEmLotePendentes(){
-  // Get all checked checkboxes
-  const cks=[...document.querySelectorAll('.ck-ord:checked')];
-  if(cks.length===0){
-    alert('Selecione ao menos uma OP marcando o checkbox antes de excluir.');
-    return;
-  }
-  const ids=cks.map(c=>c.value).filter(Boolean);
-  const ops=ORDENS.filter(o=>ids.includes(String(o.id||'')));
-  if(ops.length===0){
-    alert('Nenhuma OP encontrada para os IDs selecionados. Tente atualizar a lista.');
-    return;
-  }
-  // Require admin password
-  if(!verificarSenhaGestor('Excluir '+ops.length+' OP(s)')) return;
-  // Simple confirm
-  if(!confirm('Confirmar exclusao de '+ops.length+' OP(s)? Esta acao nao pode ser desfeita.')) return;
-  // Execute exclusion for ALL selected (regardless of status)
-  ops.forEach(op=>_executarExclusaoOP(op));
-  renderOrdens();
-  showToast&&showToast(ops.length+' OP(s) excluidas e salvas no historico de exclusoes.');
-}
+// excluirOPsEmLotePendentes replaced below
 
-function reverterOPsParaPreviaEmLote(){
-  const ids=[...document.querySelectorAll('.ck-ord:checked')].map(c=>c.value);
-  if(ids.length===0){alert('Selecione OPs pendentes primeiro.');return;}
-  
-  const ops=ORDENS.filter(o=>ids.includes(o.id));
-  const emProd=ops.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento'||o.status==='Concluída');
-  if(emProd.length>0){
-    alert(emProd.length+' OP(s) ja estao em producao. Somente OPs pendentes podem ser revertidas.');
-    return;
-  }
-  if(!verificarSenhaGestor('Reverter '+ids.length+' OP(s) para Prévia')) return;
-  if(!confirm(`Reverter ${ids.length} OP(s) para a Prévia PCP?\nOs itens voltarão para edição.`)) return;
-  
-  let restored=0;
-  ops.forEach(op=>{
-    const peds=(op.pedidos||[op.pedido]).filter(Boolean);
-    peds.forEach(pedNum=>{
-      const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum)&&(op.codigo?r[4]===op.codigo:true));
-      if(ped&&!PCP_ITEMS.find(p=>p[2]===ped[2]&&p[4]===ped[4])){
-        PCP_ITEMS.push([...ped]);
-        restored++;
-      }
-    });
-  });
-  ORDENS=ORDENS.filter(o=>!ids.includes(o.id));
-  saveSingle(LS.ORDENS,ORDENS);
-  saveSingle(LS.PREVIAS,PCP_ITEMS);
-  renderOrdens();
-  showToast&&showToast(`✅ ${ids.length} OP(s) revertidas. ${restored} itens voltaram para a Prévia.`);
-  // Switch to prévia tab
-  go('pcp');
-  pcpSub('nova');
-}
+
+// reverterOPsParaPreviaEmLote replaced below
+
 
 function toggleHistExcl(){
   const p=document.getElementById('hist-excl-panel');
@@ -2456,56 +2450,122 @@ function renderHistExcl(){
 
 // ═══════════ REABRIR / CANCELAR OPs ═══════════
 
-function reabrirOP(id){
-  // Reabrir: OP volta para o quadro inferior (Pendente)
-  // Requer senha de admin
-  const op=ORDENS.find(o=>String(o.id)===String(id));
-  if(!op){alert('OP nao encontrada: '+id);return;}
-  if(!verificarSenhaGestor('Reabrir OP '+id)) return;
-  if(!confirm('Reabrir OP '+id+'?\n\nEla voltara para o quadro "Gerir OPs Pendentes" para ser reenviada.')) return;
-  // Revert status and pedido link
-  op.status='Pendente';
-  op.dt_envio=null;
-  op.enviado_por=null;
-  op.etapa_page=null;
-  op.obs=(op.obs?op.obs+' | ':'')+('Reaberta em '+new Date().toLocaleDateString('pt-BR')+' por '+(CUSER?.nome||'?'));
-  // Revert pedido status
-  const peds=(op.pedidos||[op.pedido]).filter(Boolean);
-  peds.forEach(pedNum=>{
-    const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum));
-    if(ped&&ped._op_vinculada===op.id){
-      ped._status_prod=ped._previa_id?'em_previa':'';
-      ped._op_vinculada=null;
-      ped._dt_envio_prod=null;
-    }
+// reabrirOP replaced below
+
+
+// cancelarOP replaced below
+
+
+// reabrirEmLote replaced below
+
+
+// cancelarEmLote replaced below
+
+
+// ═══════════════════════════════════════════
+// GESTÃO DE OPs — Ações
+// ═══════════════════════════════════════════
+
+function reabrirParaPreviaEmLote(){
+  // "Reabrir Prévia": reverter OPs selecionadas para a Prévia PCP
+  // Exige senha de admin
+  const ids=[...document.querySelectorAll('.ck-ord:checked')].map(c=>String(c.value||''));
+  if(ids.length===0){alert('Selecione ao menos uma OP para reabrir.');return;}
+  const ops=ORDENS.filter(o=>ids.includes(String(o.id||'')));
+  if(!verificarSenhaGestor('Reabrir Prévia: '+ops.length+' OP(s)'))return;
+  if(!confirm('Reabrir Prévia: '+ops.length+' OP(s) selecionada(s)?\n\nOs itens voltarão para edição na Prévia PCP.'))return;
+  // Return items to PCP_ITEMS
+  let restored=0;
+  ops.forEach(op=>{
+    const peds=(op.pedidos||[op.pedido]).filter(Boolean);
+    peds.forEach(pedNum=>{
+      const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum));
+      if(ped){
+        // Return to PCP_ITEMS if not already there
+        if(!PCP_ITEMS.find(p=>p[2]===ped[2]&&p[4]===ped[4])){
+          PCP_ITEMS.push([...ped]);
+          restored++;
+        }
+        // Revert pedido status
+        ped._status_prod='';
+        ped._op_vinculada=null;
+        ped._dt_envio_prod=null;
+      }
+    });
+    // Remove OP from ORDENS
+    ORDENS=ORDENS.filter(o=>o.id!==op.id);
   });
   saveSingle(LS.ORDENS,ORDENS);
+  saveSingle(LS.PREVIAS,PCP_ITEMS);
   saveSingle(LS.PEDIDOS,PEDIDOS);
   renderOrdens();
-  showToast&&showToast('OP '+id+' reaberta — esta no quadro de pendentes.');
+  showToast&&showToast(ops.length+' OP(s) revertidas. '+restored+' itens voltaram para a Prévia PCP.');
+  // Navigate to Prévia
+  go('pcp');
+  pcpSub('nova');
 }
 
-function cancelarOP(id){
-  // Cancelar: move para historico de exclusoes, requer senha admin
-  const op=ORDENS.find(o=>String(o.id)===String(id));
-  if(!op){alert('OP nao encontrada: '+id);return;}
-  if(!verificarSenhaGestor('Cancelar OP '+id)) return;
-  if(!confirm('Cancelar OP '+id+' — '+shortProd(op.produto)+'?\n\nEla sera removida da producao e registrada no Historico de Exclusoes.')) return;
-  _executarExclusaoOP(op);
-  renderOrdens();
-  showToast&&showToast('OP '+id+' cancelada e salva no historico.');
-}
-
-function reabrirEmLote(){
-  const ids=[...document.querySelectorAll('.ck-env:checked')].map(c=>String(c.value));
-  if(ids.length===0){alert('Selecione OPs no quadro superior para reabrir.');return;}
+function cancelarOPsEmLote(){
+  // "Cancelar OPs": move para histórico, pergunta o que fazer com o pedido
+  const ids=[...document.querySelectorAll('.ck-ord:checked')].map(c=>String(c.value||''));
+  if(ids.length===0){alert('Selecione ao menos uma OP para cancelar.');return;}
   const ops=ORDENS.filter(o=>ids.includes(String(o.id||'')));
-  if(!verificarSenhaGestor('Reabrir '+ops.length+' OP(s)')) return;
-  if(!confirm('Reabrir '+ops.length+' OP(s)?\n\nElas voltarao para o quadro "Gerir OPs Pendentes".')) return;
+  if(!verificarSenhaGestor('Cancelar '+ops.length+' OP(s)'))return;
+  if(!confirm('Cancelar '+ops.length+' OP(s)?\n\nElas serão removidas e salvas no Histórico de Exclusões.'))return;
+  // Ask what to do with pedidos
+  const hasPedidos=ops.some(o=>(o.pedidos||[o.pedido]).filter(Boolean).length>0);
+  let acaoPedido='manter'; // 'manter' | 'previa' | 'limpar'
+  if(hasPedidos){
+    const resp=prompt(
+      'O que deseja fazer com os pedidos vinculados?\n\n'+
+      '1 = Manter pedidos como estão\n'+
+      '2 = Devolver pedidos para a Prévia PCP\n'+
+      '3 = Limpar status dos pedidos (liberados para novo planejamento)\n\n'+
+      'Digite 1, 2 ou 3:'
+    );
+    if(resp==='2') acaoPedido='previa';
+    else if(resp==='3') acaoPedido='limpar';
+  }
   ops.forEach(op=>{
-    op.status='Pendente';
-    op.dt_envio=null;op.enviado_por=null;op.etapa_page=null;
-    op.obs=(op.obs?op.obs+' | ':'')+('Reaberta em '+new Date().toLocaleDateString('pt-BR')+' por '+(CUSER?.nome||'?'));
+    // Handle pedidos according to choice
+    const peds=(op.pedidos||[op.pedido]).filter(Boolean);
+    peds.forEach(pedNum=>{
+      const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum));
+      if(ped){
+        if(acaoPedido==='previa'){
+          if(!PCP_ITEMS.find(p=>p[2]===ped[2]&&p[4]===ped[4])) PCP_ITEMS.push([...ped]);
+          ped._status_prod='';ped._op_vinculada=null;ped._dt_envio_prod=null;
+        } else if(acaoPedido==='limpar'){
+          ped._status_prod='';ped._op_vinculada=null;ped._dt_envio_prod=null;
+          ped._previa_id=null;
+        } else {
+          // manter: just clear the op link
+          if(ped._op_vinculada===op.id){ped._op_vinculada=null;ped._status_prod='';}
+        }
+      }
+    });
+    // Move to HIST_EXCL
+    _executarExclusaoOP(op);
+  });
+  if(acaoPedido==='previa') saveSingle(LS.PREVIAS,PCP_ITEMS);
+  saveSingle(LS.PEDIDOS,PEDIDOS);
+  renderOrdens();
+  showToast&&showToast(ops.length+' OP(s) canceladas e salvas no histórico.');
+  if(acaoPedido==='previa'){go('pcp');pcpSub('nova');}
+}
+
+// Keep backward compat aliases
+function reverterOPsParaPreviaEmLote(){reabrirParaPreviaEmLote();}
+function excluirOPsEmLotePendentes(){cancelarOPsEmLote();}
+function reabrirEmLote(){
+  // For enviadas panel
+  const ids=[...document.querySelectorAll('.ck-env:checked')].map(c=>String(c.value||''));
+  if(ids.length===0){alert('Selecione OPs no painel de enviadas.');return;}
+  const ops=ORDENS.filter(o=>ids.includes(String(o.id||'')));
+  if(!verificarSenhaGestor('Reabrir '+ops.length+' OP(s)'))return;
+  if(!confirm('Reabrir '+ops.length+' OP(s)? Elas voltarão para o quadro de gestão.'))return;
+  ops.forEach(op=>{
+    op.status='Pendente';op.dt_envio=null;op.enviado_por=null;op.etapa_page=null;
     const peds=(op.pedidos||[op.pedido]).filter(Boolean);
     peds.forEach(pedNum=>{
       const ped=PEDIDOS.find(r=>String(r[2])===String(pedNum));
@@ -2515,22 +2575,12 @@ function reabrirEmLote(){
       }
     });
   });
-  saveSingle(LS.ORDENS,ORDENS);
-  saveSingle(LS.PEDIDOS,PEDIDOS);
+  saveSingle(LS.ORDENS,ORDENS);saveSingle(LS.PEDIDOS,PEDIDOS);
   renderOrdens();
-  showToast&&showToast(ops.length+' OP(s) reabertas — estao no quadro de pendentes.');
+  showToast&&showToast(ops.length+' OP(s) reabertas para gestão.');
 }
+function cancelarEmLote(){cancelarOPsEmLote();}
 
-function cancelarEmLote(){
-  const ids=[...document.querySelectorAll('.ck-env:checked')].map(c=>String(c.value));
-  if(ids.length===0){alert('Selecione OPs no quadro superior para cancelar.');return;}
-  const ops=ORDENS.filter(o=>ids.includes(String(o.id||'')));
-  if(!verificarSenhaGestor('Cancelar '+ops.length+' OP(s)')) return;
-  if(!confirm('Cancelar '+ops.length+' OP(s)?\n\nElas serao removidas e registradas no Historico de Exclusoes.')) return;
-  ops.forEach(op=>_executarExclusaoOP(op));
-  renderOrdens();
-  showToast&&showToast(ops.length+' OP(s) canceladas e salvas no historico.');
-}
 // ═══════════ PAINEL OPs ═══════════
 function renderPainel(){
   const hoje=new Date().toISOString().slice(0,10);
@@ -6150,180 +6200,218 @@ function genAllExt(grupo,secao){
 // ═══════════ ORDENS ═══════════
 let _ordEdit=null;
 function renderOrdens(){
-  // ── Auto-fix OPs with no id (old data) ──
+  // ── Auto-fix OPs with no id ──
   let needSave=false;
-  ORDENS.forEach((o,idx)=>{
-    if(!o.id){o.id=gerarNumOP()+'_FX'+idx;o.num_base=o.id;needSave=true;}
+  ORDENS.forEach((o,ix)=>{
+    if(!o.id){o.id=gerarNumOP()+'_FX'+ix;o.num_base=o.id;needSave=true;}
   });
   if(needSave) saveSingle(LS.ORDENS,ORDENS);
 
   // ── Populate operador select ──
   const operSel=document.getElementById('ord-oper-sel');
   if(operSel&&operSel.options.length<=1){
-    (USERS||[]).filter(u=>u.perfil==='operacional'||u.perfil==='producao').forEach(u=>{
+    (USERS||[]).forEach(u=>{
       const opt=document.createElement('option');
       opt.value=u.login;opt.textContent=u.nome;
       operSel.appendChild(opt);
     });
   }
 
+  // ── Filters ──
   const etapaFil=(document.getElementById('of-etapa')?.value||'').toLowerCase();
   const turnoFil=document.getElementById('of-turno')?.value||'';
+  const prioFil=document.getElementById('of-prio')?.value||'';
   const q=(document.getElementById('ord-q')?.value||'').toLowerCase();
 
-  // ── Split: ENVIADAS (em andamento/reaberta) vs PENDENTES (aguardando envio) ──
+  // ── Split: gestao (pendentes) vs enviadas ──
   const enviadas=ORDENS.filter(o=>
-    o.status==='Em andamento'||o.status==='Em Andamento'||o.status==='Reaberta'
+    o.status==='Em andamento'||o.status==='Em Andamento'||
+    o.status==='Reaberta'||o.status==='Concluída'
   );
-  const pendentes=ORDENS.filter(o=>o.status==='Pendente').filter(o=>{
-    if(etapaFil&&!(o.tipo||'').toLowerCase().includes(etapaFil)) return false;
-    if(turnoFil&&o.turno&&o.turno!==turnoFil) return false;
-    if(q){const t=(o.id||'')+(o.produto||'')+(o.pedido||'');if(!t.toLowerCase().includes(q))return false;}
+  const gestao=ORDENS.filter(o=>o.status==='Pendente').filter(o=>{
+    if(etapaFil&&!(o.tipo||'').toLowerCase().includes(etapaFil))return false;
+    if(turnoFil&&o.turno&&o.turno!==turnoFil)return false;
+    if(prioFil&&(o.prio_prod||'Normal')!==prioFil)return false;
+    if(q){const t=(o.id||'')+(o.produto||'')+(o.pedido||'')+(o.cliente||'');
+      if(!t.toLowerCase().includes(q))return false;}
     return true;
   });
 
   const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  setEl('ord-cnt',ORDENS.filter(o=>o.status!=='EXCLUIDA').length);
-  setEl('ord-env-cnt',enviadas.length);
-  setEl('ord-pend-cnt',pendentes.length);
+  setEl('ord-cnt', ORDENS.filter(o=>o.status!=='EXCLUIDA').length);
+  setEl('ord-env-cnt', enviadas.length);
+  setEl('ord-pend-cnt', gestao.length);
 
-  const etapaColors={torcedeira:'#a855f7',torcedeira_redir:'#7c3aed',extrusora:'#22c55e',
-    trefila:'#fb923c',buncherfixo:'#06b6d4',individual:'#0d9488'};
+  // Update hist excl badge
+  const hb=document.getElementById('hist-excl-cnt-btn');
+  if(hb)hb.textContent=HIST_EXCL.length>0?HIST_EXCL.length:'';
 
-  // ── PAINEL SUPERIOR: OPs Enviadas ──
+  const etapaColors={
+    torcedeira:'#a855f7',torcedeira_redir:'#7c3aed',extrusora:'#22c55e',
+    trefila:'#fb923c',buncherfixo:'#06b6d4',individual:'#0d9488'
+  };
+
+  // ── ENVIADAS PANEL (colapsable) ──
   const envEl=document.getElementById('ord-enviadas-list');
   if(envEl){
     if(enviadas.length===0){
-      envEl.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text3)">
-        <div style="font-size:28px">📭</div>
-        <div style="font-size:12px;margin-top:4px">Nenhuma OP enviada para produção ainda.</div>
-        <div style="font-size:11px;margin-top:2px">Use o painel abaixo → selecione OPs → <strong>Enviar para Produção</strong></div>
-      </div>`;
+      envEl.innerHTML='<p style="padding:12px;color:var(--text3);font-size:12px;text-align:center">Nenhuma OP enviada ainda.</p>';
     } else {
-      envEl.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
-        <thead><tr style="background:var(--navy);color:#fff">
-          <th style="padding:7px 10px;width:32px">
-            <input type="checkbox" title="Selecionar todas"
-              onchange="document.querySelectorAll('.ck-env').forEach(c=>c.checked=this.checked)">
-          </th>
-          <th style="padding:7px 8px;text-align:left">OP</th>
-          <th>Sub</th><th>Tipo</th><th>Pedido(s)</th><th>Produto</th>
-          <th>Seção</th><th class="num" style="color:#fb923c">Metros</th>
+      envEl.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:#1e3a5f;color:#fff">
+          <th style="padding:7px 10px;text-align:left">OP</th>
+          <th>Tipo</th><th>Pedido(s)</th><th>Produto</th>
+          <th class="num" style="color:#fb923c">Metros</th>
           <th>Operador</th><th>Turno</th><th>Status</th><th>Etapa</th>
-          <th>Enviado em</th><th style="min-width:110px">Ações</th>
+          <th>Enviado</th>
         </tr></thead>
         <tbody>
           ${enviadas.map(o=>{
             const ec=etapaColors[o.tipo]||'#888';
-            const sc=o.status==='Reaberta'?'background:#f59e0b;color:#fff':
-                     'background:#2563eb;color:#fff';
-            return`<tr style="border-bottom:1px solid var(--border)">
-              <td style="padding:6px 8px;text-align:center">
-                <input type="checkbox" class="ck-env" value="${o.id}">
-              </td>
-              <td style="padding:6px 8px;font-family:monospace;font-size:10px;font-weight:700">${o.id}</td>
+            return`<tr style="border-bottom:1px solid var(--border);opacity:.85">
+              <td style="padding:6px 10px;font-family:monospace;font-size:10px;font-weight:700">${o.id}</td>
               <td style="text-align:center">
-                <span class="chip ${o.subordem==='A'?'c-blue':'c-orange'}" style="font-size:9px">${o.subordem||'—'}</span>
-              </td>
-              <td style="text-align:center">
-                <span style="background:${ec}22;color:${ec};border:1px solid ${ec};border-radius:4px;
-                  padding:1px 6px;font-size:9px;font-weight:700">${(o.tipo||'').toUpperCase().slice(0,4)}</span>
+                <span style="background:${ec}22;color:${ec};border:1px solid ${ec};
+                  border-radius:4px;padding:1px 5px;font-size:9px;font-weight:700">
+                  ${(o.tipo||'').toUpperCase().slice(0,4)}
+                </span>
               </td>
               <td style="font-family:monospace;font-size:10px">${(o.pedidos||[o.pedido]).filter(Boolean).slice(0,2).join(', ')}</td>
               <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortProd(o.produto)}</td>
-              <td style="font-size:11px;font-weight:600">${o.secao||'—'}</td>
               <td class="num" style="color:#fb923c;font-weight:600">${fm(o.metros||0)}m</td>
-              <td>${o.operador||'<span style="color:var(--text3)">—</span>'}</td>
+              <td>${o.operador||'—'}</td>
               <td>${o.turno||'—'}</td>
-              <td><span style="${sc};border-radius:99px;padding:2px 8px;font-size:9px;font-weight:600">${o.status}</span></td>
+              <td><span style="background:#2563eb;color:#fff;border-radius:99px;
+                padding:2px 8px;font-size:9px;font-weight:600">${o.status}</span></td>
               <td style="font-size:10px">${o.etapa||o.tipo||'—'}</td>
               <td style="font-size:10px;white-space:nowrap">${o.dt_envio||'—'}</td>
-              <td style="white-space:nowrap;padding:4px 8px">
-                <button class="btn bgho bsm" style="font-size:10px"
-                  onclick="reabrirOP('${o.id}')" title="Reabrir OP → volta para pendentes">
-                  ↩ Reabrir
-                </button>
-                <button class="btn bdng bsm" style="font-size:10px;margin-left:2px"
-                  onclick="cancelarOP('${o.id}')" title="Cancelar OP (senha admin)">
-                  ✕ Cancelar
-                </button>
-              </td>
             </tr>`;
           }).join('')}
         </tbody>
-      </table></div>
-      <div style="display:flex;gap:8px;padding:8px 0;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--text2);align-self:center">Selecionadas:</span>
-        <button class="btn bgho bsm" onclick="reabrirEmLote()"
-          title="Reabrir selecionadas → voltam para pendentes">↩ Reabrir Selecionadas</button>
-        <button class="btn bdng bsm" onclick="cancelarEmLote()"
-          title="Cancelar selecionadas (senha admin)">✕ Cancelar Selecionadas</button>
-      </div>`;
+      </table>`;
     }
   }
 
-  // ── PAINEL INFERIOR: OPs Pendentes ──
+  // ── GESTÃO PANEL (single table) ──
   const listEl=document.getElementById('ord-list');
-  if(listEl){
-    if(pendentes.length===0){
-      listEl.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text3)">
-        <div style="font-size:28px">✅</div>
-        <div style="font-size:12px;margin-top:4px">Nenhuma OP pendente${etapaFil||turnoFil||q?' com esses filtros':' — todas já foram enviadas para produção'}.</div>
-      </div>`;
-    } else {
-      listEl.innerHTML=`<div class="tw ts"><table style="width:100%;border-collapse:collapse;font-size:11px">
-        <thead><tr style="background:#374151;color:#fff">
-          <th style="padding:7px 10px;width:32px">
-            <input type="checkbox" title="Selecionar todas" onchange="ckAllOrdens(this)">
-          </th>
-          <th style="padding:7px 8px;text-align:left">OP</th>
-          <th>Sub</th><th>Tipo</th><th>Pedido(s)</th><th>Produto</th>
-          <th>Seção</th><th class="num" style="color:#fb923c">Metros</th>
-          <th>Prio.</th><th>Operador</th><th>Turno</th>
-          <th>Criação</th><th>Entrega</th><th>Ações</th>
-        </tr></thead>
-        <tbody>
-          ${pendentes.map(o=>{
-            const dtEnt=o.dt_entrega?o.dt_entrega.slice(0,10).split('-').reverse().join('/'):'—';
-            const pc=o.prio_prod==='Urgente'?'c-red':o.prio_prod==='Alta'?'c-orange':'c-gray';
-            const ec=etapaColors[o.tipo]||'#888';
-            return`<tr style="border-bottom:1px solid var(--border)">
-              <td style="padding:6px 8px;text-align:center">
-                <input type="checkbox" class="ck-ord" value="${o.id}">
-              </td>
-              <td style="padding:6px 8px;font-family:monospace;font-size:10px;font-weight:700">${o.id}</td>
-              <td style="text-align:center">
-                <span class="chip ${o.subordem==='A'?'c-blue':'c-orange'}" style="font-size:9px">${o.subordem||'—'}</span>
-              </td>
-              <td style="text-align:center">
-                <span style="background:${ec}22;color:${ec};border:1px solid ${ec};border-radius:4px;
-                  padding:1px 6px;font-size:9px;font-weight:700">${(o.tipo||'').toUpperCase().slice(0,4)}</span>
-              </td>
-              <td style="font-family:monospace;font-size:10px">${(o.pedidos||[o.pedido]).filter(Boolean).slice(0,2).join(', ')}</td>
-              <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortProd(o.produto)}</td>
-              <td style="font-size:11px;font-weight:600">${o.secao||'—'}</td>
-              <td class="num" style="color:#fb923c;font-weight:600">${fm(o.metros||0)}m</td>
-              <td><span class="chip ${pc}" style="font-size:9px">${o.prio_prod||'Normal'}</span></td>
-              <td style="font-size:11px">${o.operador||'<span style="color:var(--text3)">— sem operador</span>'}</td>
-              <td>${o.turno||'—'}</td>
-              <td style="font-size:10px">${o.dt_criacao||''}</td>
-              <td style="font-size:10px">${dtEnt}</td>
-              <td style="white-space:nowrap;padding:4px 8px">
-                <button class="btn bgho bsm" style="font-size:10px"
-                  onclick="editOrdem('${o.id}')">✏️</button>
-                <button class="btn bdng bsm" style="font-size:10px;margin-left:2px"
-                  onclick="deleteOrdem('${o.id}')" title="Excluir (senha admin)">🗑</button>
-              </td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table></div>`;
-    }
+  if(!listEl)return;
+
+  if(gestao.length===0){
+    listEl.innerHTML=`<div style="text-align:center;padding:32px;color:var(--text3)">
+      <div style="font-size:36px">📭</div>
+      <div style="font-size:14px;font-weight:600;margin-top:8px">
+        ${ORDENS.filter(o=>o.status==='Pendente').length===0
+          ? 'Nenhuma OP pendente — todas foram enviadas para produção.'
+          : 'Nenhuma OP com esses filtros.'}
+      </div>
+      ${enviadas.length>0?`<button class="btn bgho bsm" style="margin-top:12px" onclick="toggleEnviadas()">
+        Ver ${enviadas.length} OP(s) já enviadas ↗
+      </button>`:''}
+    </div>`;
+    return;
   }
 
-  // ── Hist excl count update ──
-  const cnt=document.getElementById('hist-excl-cnt');
-  if(cnt) cnt.textContent=HIST_EXCL.length;
+  listEl.innerHTML=`<div class="tw ts"><table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead>
+      <tr style="background:#1a2e5a;color:#fff">
+        <th style="padding:9px 10px;width:36px">
+          <input type="checkbox" title="Selecionar todas" onchange="ckAllOrdens(this)"
+            style="width:15px;height:15px;cursor:pointer">
+        </th>
+        <th style="padding:9px 8px;text-align:left">OP</th>
+        <th>Sub</th>
+        <th>Tipo</th>
+        <th>Pedido(s)</th>
+        <th>Produto</th>
+        <th>Seção</th>
+        <th class="num" style="color:#fb923c">Metros</th>
+        <th>Prio.</th>
+        <th>Operador</th>
+        <th>Turno</th>
+        <th>Obs.</th>
+        <th>Entrega</th>
+        <th style="min-width:70px">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${gestao.map(o=>{
+        const dtEnt=o.dt_entrega?o.dt_entrega.slice(0,10).split('-').reverse().join('/'):'—';
+        const pc=o.prio_prod==='Urgente'?'c-red':o.prio_prod==='Alta'?'c-orange':'c-gray';
+        const ec=etapaColors[o.tipo]||'#888';
+        const hoje=new Date().toISOString().slice(0,10);
+        const atrasada=o.dt_entrega&&o.dt_entrega<hoje;
+        return`<tr style="border-bottom:1px solid var(--border);
+          ${atrasada?'background:#fff5f5':''};transition:.1s"
+          onmouseover="this.style.background='#f0f4ff'"
+          onmouseout="this.style.background='${atrasada?'#fff5f5':''}'">
+          <td style="padding:8px 10px;text-align:center">
+            <input type="checkbox" class="ck-ord" value="${o.id}"
+              style="width:15px;height:15px;cursor:pointer">
+          </td>
+          <td style="padding:8px;font-family:monospace;font-size:11px;font-weight:700;
+            color:var(--navy)">
+            ${o.id}
+            ${o.previa_id?`<div style="font-size:9px;color:var(--text3);font-weight:400">${o.previa_id}</div>`:''}
+          </td>
+          <td style="text-align:center">
+            <span class="chip ${o.subordem==='A'?'c-blue':'c-orange'}" style="font-size:9px">
+              ${o.subordem||'—'}
+            </span>
+          </td>
+          <td style="text-align:center">
+            <span style="background:${ec}22;color:${ec};border:1px solid ${ec};
+              border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700">
+              ${(o.tipo||'').toUpperCase().slice(0,4)}
+            </span>
+          </td>
+          <td style="font-family:monospace;font-size:11px">
+            ${(o.pedidos||[o.pedido]).filter(Boolean).slice(0,2).join(', ')}
+          </td>
+          <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;
+            white-space:nowrap;font-size:12px" title="${o.produto||''}">
+            ${shortProd(o.produto)}
+          </td>
+          <td style="font-size:12px;font-weight:600">${o.secao||'—'}</td>
+          <td class="num" style="color:#fb923c;font-weight:700;font-size:12px">
+            ${fm(o.metros||0)}m
+          </td>
+          <td>
+            <span class="chip ${pc}" style="font-size:10px">${o.prio_prod||'Normal'}</span>
+          </td>
+          <td style="font-size:11px">
+            ${o.operador
+              ?`<span style="color:var(--navy);font-weight:600">${o.operador}</span>`
+              :`<span style="color:var(--text3)">— sem operador</span>`}
+          </td>
+          <td style="font-size:11px">${o.turno||'—'}</td>
+          <td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;
+            white-space:nowrap;color:var(--text2)" title="${o.obs||''}">
+            ${o.obs||'—'}
+          </td>
+          <td style="font-size:11px;white-space:nowrap;
+            ${atrasada?'color:#dc2626;font-weight:700':''}">
+            ${dtEnt}${atrasada?' ⚠':''}
+          </td>
+          <td style="padding:4px 8px;white-space:nowrap">
+            <button class="btn bgho bsm" style="font-size:10px;padding:3px 7px"
+              onclick="editOrdem('${o.id}')" title="Editar OP">✏️</button>
+            <button class="btn bdng bsm" style="font-size:10px;padding:3px 7px;margin-left:2px"
+              onclick="deleteOrdem('${o.id}')" title="Excluir OP (senha admin)">🗑</button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function toggleEnviadas(){
+  const p=document.getElementById('enviadas-panel');
+  if(!p)return;
+  p.style.display=p.style.display==='none'?'block':'none';
+  if(p.style.display==='block'){
+    renderOrdens(); // refresh enviadas list
+    p.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
 }
 
 function atribuirOperadorSelecionados(){
