@@ -570,7 +570,6 @@ if(typeof QRCode === 'undefined') {
     <div class="fg"><label>Usuário</label><input id="li-usr" type="text" placeholder="usuario" autocomplete="username"></div>
     <div class="fg"><label>Senha</label><input id="li-pwd" type="password" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();doLogin();}"></div>
     <button class="btn bpri" style="width:100%;justify-content:center;padding:8px" onclick="doLogin()">Entrar</button>
-    <button onclick="limparBaseDados()" style="width:100%;margin-top:8px;padding:7px;background:#fff0f0;border:1px solid #dc2626;border-radius:6px;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer">🗑 Limpar base de pedidos e OPs</button>
     <div class="login-err" id="li-err"></div>
 <div style="text-align:center;margin-top:10px">
   <button onclick="localStorage.removeItem('pcp_users');// reload removed" style="font-size:10px;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline">↺ Resetar usuários</button>
@@ -752,6 +751,8 @@ if(typeof QRCode === 'undefined') {
 
 <!-- ══ IMPORTAR ══ -->
 <div id="pg-import" class="pg">
+<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:10px 12px;margin-bottom:14px;font-size:11px;color:#166534;line-height:1.6"><strong>Como funciona a sincronização:</strong><br>📊 <strong>Google Sheets</strong> = fonte dos pedidos — importe quando receber pedidos novos do comercial.<br>⚡ <strong>Supabase</strong> = memória compartilhada — salva automaticamente OPs, reservas, apontamentos e tudo que é editado no sistema, sincronizando todos os usuários em tempo real.</div>
+
   <!-- ══ SUPABASE ══ -->
   <div class="sec" style="border-left:4px solid #3ECF8E;margin-bottom:16px">
     <div class="sec-hd">
@@ -779,23 +780,36 @@ create policy "Acesso total" on pcp_sync
   for all using (true) with check (true);
 alter publication supabase_realtime add table pcp_sync;</div>
       </details>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div class="fg">
-          <label>Project URL</label>
-          <input id="sb-url-input" placeholder="https://xxxx.supabase.co" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+      <div id="sb-locked-area" style="position:relative">
+        <div id="sb-lock-overlay" style="position:absolute;inset:0;background:rgba(255,255,255,.7);border-radius:var(--r);z-index:10;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)">
+          <div style="text-align:center">
+            <div style="font-size:28px;margin-bottom:6px">🔒</div>
+            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px">Acesso restrito — somente Admin</div>
+            <div style="display:flex;gap:6px;justify-content:center">
+              <input id="sb-admin-pwd" type="password" placeholder="Senha admin" style="padding:6px 10px;border:2px solid var(--border);border-radius:var(--r);font-size:12px;width:160px" onkeydown="if(event.key==='Enter')desbloquearConfig('sb')">
+              <button class="btn bpri bsm" onclick="desbloquearConfig('sb')">Desbloquear</button>
+            </div>
+            <div id="sb-lock-err" style="font-size:11px;color:#dc2626;margin-top:6px"></div>
+          </div>
         </div>
-        <div class="fg">
-          <label>Chave anon (public)</label>
-          <input id="sb-key-input" type="password" placeholder="eyJhbGciOiJIUzI1NiIs..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="fg">
+            <label>Project URL</label>
+            <input id="sb-url-input" placeholder="https://xxxx.supabase.co" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+          </div>
+          <div class="fg">
+            <label>Chave anon (public)</label>
+            <input id="sb-key-input" type="password" placeholder="eyJhbGciOiJIUzI1NiIs..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+          </div>
         </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn bpri" onclick="confirmarSalvarConfig('sb', salvarSupabaseConfig)" style="font-weight:700">💾 Salvar e Conectar</button>
+          <button class="btn bgho" onclick="sbUploadAll()">⬆️ Subir dados locais → Supabase</button>
+          <button class="btn bgho" onclick="sbLoad().then(function(){if(typeof renderAll==='function')renderAll()})">⬇️ Baixar do Supabase</button>
+          <button class="btn bdng bsm" onclick="confirmarSalvarConfig('sb', limparBaseDados)" style="margin-left:auto">🗑 Limpar Base</button>
+        </div>
+        <div id="sb-config-msg" style="margin-top:8px;font-size:11px"></div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bpri" onclick="salvarSupabaseConfig()" style="font-weight:700">💾 Salvar e Conectar</button>
-        <button class="btn bgho" onclick="sbUploadAll()">⬆️ Subir dados locais → Supabase</button>
-        <button class="btn bgho" onclick="sbLoad().then(function(){if(typeof renderAll==='function')renderAll()})">⬇️ Baixar do Supabase</button>
-        <button class="btn bdng bsm" onclick="limparBaseDados&&limparBaseDados()" style="margin-left:auto">🗑 Limpar Base</button>
-      </div>
-      <div id="sb-config-msg" style="margin-top:8px;font-size:11px"></div>
     </div>
   </div>
 
@@ -869,6 +883,7 @@ alter publication supabase_realtime add table pcp_sync;</div>
   <div class="sec" style="margin-bottom:14px">
     <div class="sec-hd">
       <span class="sec-tt">🔄 Importação Automática — Google Sheets</span>
+      <span style="font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:99px;font-weight:600">Fonte dos pedidos — mantém</span>
       <span id="csv-status" style="font-size:11px;color:var(--text2)">Planilha configurada</span>
     </div>
     <div class="sec-bd">
@@ -895,11 +910,24 @@ alter publication supabase_realtime add table pcp_sync;</div>
         Cole aqui a <strong>URL do Web App</strong> do Google Apps Script para habilitar sincronização na nuvem.<br>
         <span style="color:var(--text3)">Extensões → Apps Script → Implantar → Nova implantação → App da Web → URL gerada</span>
       </p>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-        <input id="gs-url-input" placeholder="https://script.google.com/macros/s/XXXXXXX/exec"
-          style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;font-family:monospace">
-        <button class="btn bpri" onclick="salvarGSConfig()">💾 Salvar</button>
-        <button class="btn bgho" onclick="testarGS()">🔌 Testar</button>
+      <div id="gs-locked-area" style="position:relative">
+        <div id="gs-lock-overlay" style="position:absolute;inset:0;background:rgba(255,255,255,.7);border-radius:var(--r);z-index:10;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)">
+          <div style="text-align:center">
+            <div style="font-size:28px;margin-bottom:6px">🔒</div>
+            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px">Acesso restrito — somente Admin</div>
+            <div style="display:flex;gap:6px;justify-content:center">
+              <input id="gs-admin-pwd" type="password" placeholder="Senha admin" style="padding:6px 10px;border:2px solid var(--border);border-radius:var(--r);font-size:12px;width:160px" onkeydown="if(event.key==='Enter')desbloquearConfig('gs')">
+              <button class="btn bpri bsm" onclick="desbloquearConfig('gs')">Desbloquear</button>
+            </div>
+            <div id="gs-lock-err" style="font-size:11px;color:#dc2626;margin-top:6px"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+          <input id="gs-url-input" placeholder="https://script.google.com/macros/s/XXXXXXX/exec"
+            style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;font-family:monospace">
+          <button class="btn bpri" onclick="confirmarSalvarConfig('gs', salvarGSConfig)">💾 Salvar</button>
+          <button class="btn bgho" onclick="testarGS()">🔌 Testar</button>
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn bgho bsm" onclick="uploadParaGS()">⬆ Subir tudo → Sheets</button>
@@ -2072,6 +2100,7 @@ alter publication supabase_realtime add table pcp_sync;</div>
 
 
 
+
 // ═══════════ EMBEDDED DATA ═══════════
 // Fields: [id,cliente,pedido,produto,codigo,status,dt_emissao,dt_entrega,dt_fat,qt_m_pend,qt_m_est,qt_m_prod,grupo_prod,secao,fil_diam,fil_fios,is_imperium]
 const SEED_PEDIDOS = [];
@@ -2382,6 +2411,43 @@ function salvarSupabaseConfig() {
   if (msg) { msg.textContent = '✅ Salvo! Conectando...'; msg.style.color = '#16a34a'; }
   initSupabase(url, key);
   setTimeout(function() { if (typeof sbLoad === 'function') sbLoad().then(function() { if (typeof renderAll==='function') renderAll(); }); }, 800);
+}
+
+
+// ═══════════════ CONTROLE DE ACESSO — CONFIGURAÇÕES ═══════════════
+function desbloquearConfig(prefix) {
+  var pwdEl = document.getElementById(prefix + '-admin-pwd');
+  var errEl = document.getElementById(prefix + '-lock-err');
+  var overlay = document.getElementById(prefix + '-lock-overlay');
+  if (!pwdEl || !overlay) return;
+  var pwd = pwdEl.value;
+  // Verifica contra senha do usuário admin (ou qualquer admin logado)
+  var allU = [...DEFAULT_USERS, ...USERS.filter(u => !DEFAULT_USERS.find(d => d.login === u.login))];
+  var adminUser = allU.find(u => u.perfil === 'admin' && u.pwd === pwd);
+  if (!adminUser) {
+    if (errEl) { errEl.textContent = 'Senha incorreta.'; }
+    pwdEl.style.borderColor = '#dc2626';
+    setTimeout(function() { pwdEl.style.borderColor = ''; }, 1500);
+    return;
+  }
+  overlay.style.display = 'none';
+  pwdEl.value = '';
+  if (errEl) errEl.textContent = '';
+  // Re-bloqueia após 5 minutos de inatividade
+  clearTimeout(window['_lockTimer_' + prefix]);
+  window['_lockTimer_' + prefix] = setTimeout(function() {
+    overlay.style.display = 'flex';
+  }, 5 * 60 * 1000);
+}
+
+function confirmarSalvarConfig(prefix, fn) {
+  var overlay = document.getElementById(prefix + '-lock-overlay');
+  if (overlay && overlay.style.display !== 'none') {
+    alert('Desbloqueie com a senha admin primeiro.');
+    return;
+  }
+  if (!confirm('Confirmar alteração nas configurações?')) return;
+  if (typeof fn === 'function') fn();
 }
 
 function saveSingle(k, v) {
@@ -8809,6 +8875,7 @@ function salvarNovaOP(){
   renderOrdens();
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
 }
+
 
 
 
