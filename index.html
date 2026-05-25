@@ -731,8 +731,8 @@ tr:hover td{background:var(--bg3)}
 
   <!-- PAINEL SUPERIOR: OPs Enviadas para Produção -->
   <div class="sec" style="margin-bottom:14px">
-    <div class="sec-hd" style="background:var(--navy);color:#fff;border-radius:var(--r) var(--r) 0 0;padding:10px 14px;margin:-12px -12px 12px">
-      <span style="font-size:13px;font-weight:700">🚀 OPs Enviadas para Produção</span>
+    <div class="sec-hd" style="background:var(--navy);color:#fff;border-radius:var(--r) var(--r) 0 0;padding:12px 16px;margin:-12px -12px 12px">
+      <span style="font-size:16px;font-weight:800;letter-spacing:-.2px">🚀 OPs Enviadas para Produção</span>
       <span id="ord-env-cnt" class="chip" style="background:rgba(255,255,255,.2);color:#fff">0</span>
       <span style="font-size:11px;opacity:.7;margin-left:8px">Em andamento ou atribuídas</span>
     </div>
@@ -742,7 +742,7 @@ tr:hover td{background:var(--bg3)}
   <!-- PAINEL INFERIOR: OPs Pendentes para Gerir -->
   <div class="sec">
     <div class="sec-hd">
-      <span class="sec-tt">📋 Gerir OPs Pendentes</span>
+      <span class="sec-tt" style="font-size:16px;font-weight:800;color:var(--navy)">📋 Gerir OPs Pendentes</span>
       <span id="ord-pend-cnt" class="chip c-orange">0</span>
       <!-- Filters -->
       <select id="of-etapa" onchange="renderOrdens()" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
@@ -1232,55 +1232,48 @@ tr:hover td{background:var(--bg3)}
 <div id="pg-painel" class="pg">
   <div class="pg-hd">
     <span class="pg-tt">🏭 Painel de OPs em Andamento</span>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn bgho bsm" onclick="go('trefila')"     style="background:rgba(251,146,60,.15);color:#ea580c">🔧 Trefila</button>
-      <button class="btn bgho bsm" onclick="go('buncherfixo')" style="background:rgba(168,85,247,.15);color:#9333ea">🔩 Buncher</button>
-      <button class="btn bgho bsm" onclick="go('buncherredir')" style="background:rgba(14,165,233,.15);color:#0284c7">🌀 Torcedeira</button>
-      <button class="btn bgho bsm" onclick="go('extrusora')"   style="background:rgba(34,197,94,.15);color:#16a34a">🏭 Extrusora</button>
-    </div>
     <button class="btn bgho bsm" onclick="renderPainel()">🔄 Atualizar</button>
-    <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
+    <button class="btn bgho bsm" onclick="go('ordens')">⚙️ Gerir OPs</button>
   </div>
-  <!-- KPIs -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    <div class="kcard"><div class="kv" id="pan-nand">0</div><div class="kl">Em Andamento</div></div>
-    <div class="kcard"><div class="kv" id="pan-npend">0</div><div class="kl">Pendentes</div></div>
-    <div class="kcard"><div class="kv c-orange" id="pan-mtot">0m</div><div class="kl">Total Metros</div></div>
-    <div class="kcard"><div class="kv" id="pan-nop">0</div><div class="kl">Total OPs Hoje</div></div>
-    <div class="kcard" style="border:2px solid #f59e0b;display:none"><div class="kv" id="pan-nreab" style="color:#92400e">0</div><div class="kl">⚠ Reabertas</div></div>
-  </div>
-  <!-- Filtros -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-    <input id="pan-op-q" placeholder="🔍 Número da OP..." oninput="renderPainel()"
-      style="padding:6px 10px;border:2px solid var(--navy);border-radius:var(--r);font-size:11px;width:170px;font-family:monospace">
-    <select id="pan-turno" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-      <option value="">Todos os turnos</option>
-      <option value="T1">T1 (06h-14h)</option>
-      <option value="T2">T2 (14h-22h)</option>
-      <option value="T3">T3 (22h-06h)</option>
-    </select>
-    <select id="pan-oper" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-      <option value="">Todos os operadores</option>
-    </select>
-    <select id="pan-st" onchange="renderPainel()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
-      <option value="">Todos os status</option>
-      <option value="Em andamento">Em andamento</option>
-      <option value="Pendente">Pendente</option>
-      <option value="Reaberta">Reaberta</option>
-      <option value="Concluída">Concluída</option>
-    </select>
-    <input id="pan-q" placeholder="Produto / pedido..." oninput="renderPainel()"
-      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:180px">
-  </div>
-  <!-- Cards por turno/operador -->
-  <div id="painel-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px"></div>
-  <!-- Tabela completa -->
-  <div class="sec" style="margin-top:14px">
-    <div class="sec-hd"><span class="sec-tt">Lista Completa</span><span class="chip c-blue" id="pan-cnt">0</span></div>
-    <div id="painel-list" class="sec-bd tw ts"></div>
-  </div>
-</div>
 
+  <!-- Filters bar -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;background:var(--bg2);padding:8px 12px;border-radius:var(--r)">
+    <select id="pan-turno" onchange="renderPainel()" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos os turnos</option>
+      <option value="T1">T1 (06h–14h)</option>
+      <option value="T2">T2 (14h–22h)</option>
+      <option value="T3">T3 (22h–06h)</option>
+    </select>
+    <select id="pan-oper" onchange="renderPainel()" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;min-width:140px">
+      <option value="">Todos operadores</option>
+    </select>
+    <select id="pan-st" onchange="renderPainel()" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+      <option value="">Todos status</option>
+      <option value="Em andamento">Em Andamento</option>
+      <option value="Concluída">Concluída</option>
+      <option value="Pendente">Pendente</option>
+    </select>
+    <input type="date" id="pan-data" onchange="renderPainel()" style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+    <input id="pan-q" placeholder="Buscar OP/produto..." oninput="renderPainel()"
+      style="padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;width:180px">
+  </div>
+
+  <!-- Sub-tabs by etapa -->
+  <div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:2px solid var(--border);overflow-x:auto">
+    <button id="pan-sub-geral" class="stab on" onclick="painelSub('geral')">📊 Visão Geral</button>
+    <button id="pan-sub-trefila" class="stab" onclick="painelSub('trefila')" style="color:#ea580c">🔧 Trefila</button>
+    <button id="pan-sub-buncher" class="stab" onclick="painelSub('buncher')" style="color:#0891b2">🔩 Buncher</button>
+    <button id="pan-sub-torcedeira" class="stab" onclick="painelSub('torcedeira')" style="color:#7c3aed">🌀 Torcedeira</button>
+    <button id="pan-sub-extrusora" class="stab" onclick="painelSub('extrusora')" style="color:#16a34a">🏭 Extrusora</button>
+  </div>
+
+  <!-- Tab content panels -->
+  <div id="pan-tab-geral"></div>
+  <div id="pan-tab-trefila" style="display:none"></div>
+  <div id="pan-tab-buncher" style="display:none"></div>
+  <div id="pan-tab-torcedeira" style="display:none"></div>
+  <div id="pan-tab-extrusora" style="display:none"></div>
+</div>
 
 <!-- ══ TREFILA ══ -->
 <div id="pg-trefila" class="pg">
@@ -2447,136 +2440,368 @@ function renderHistExcl(){
 }
 // ═══════════ PAINEL OPs ═══════════
 function renderPainel(){
+  const hoje=new Date().toISOString().slice(0,10);
+  // Active sub-tab
+  const sub=window._painelSub||'geral';
+
+  // Sub-tab buttons
+  ['geral','trefila','buncher','torcedeira','extrusora'].forEach(t=>{
+    const el=document.getElementById('pan-sub-'+t);
+    if(el) el.classList.toggle('on', t===sub);
+  });
+  ['geral','trefila','buncher','torcedeira','extrusora'].forEach(t=>{
+    const el=document.getElementById('pan-tab-'+t);
+    if(el) el.style.display=t===sub?'block':'none';
+  });
+
   const turnoFil=document.getElementById('pan-turno')?.value||'';
-  const operFil =document.getElementById('pan-oper') ?.value||'';
-  const stFil   =document.getElementById('pan-st')   ?.value||'';
-  const q       =(document.getElementById('pan-q')   ?.value||'').toLowerCase();
-  const opFil   =(document.getElementById('pan-op-q')?.value||'').toLowerCase();
+  const operFil=document.getElementById('pan-oper')?.value||'';
+  const stFil=document.getElementById('pan-st')?.value||'';
+  const dateFil=document.getElementById('pan-data')?.value||'';
+  const q=(document.getElementById('pan-q')?.value||'').toLowerCase();
 
   // Populate operador select
   const operSel=document.getElementById('pan-oper');
   if(operSel&&operSel.options.length<=1){
-    const opers=[...new Set(ORDENS.map(o=>o.operador).filter(Boolean))];
-    opers.forEach(op=>{const opt=document.createElement('option');opt.value=op;opt.textContent=op;operSel.appendChild(opt);});
+    [...new Set(ORDENS.map(o=>o.operador).filter(Boolean))].sort().forEach(op=>{
+      const opt=document.createElement('option');opt.value=op;opt.textContent=op;
+      operSel.appendChild(opt);
+    });
   }
 
-  const hoje=new Date().toISOString().slice(0,10);
-  let rows=ORDENS.filter(o=>{
+  const etapaColors={
+    trefila:'#ea580c', buncherfixo:'#0891b2',
+    torcedeira:'#a855f7', torcedeira_redir:'#7c3aed',
+    extrusora:'#16a34a', individual:'#0d9488'
+  };
+
+  // Filter OPs for active
+  const opsAtivas=ORDENS.filter(o=>{
+    if(o.status==='Pendente'&&sub==='geral') return false;
+    const s=o.status||'';
+    if(stFil&&s!==stFil)return false;
     if(turnoFil&&o.turno!==turnoFil)return false;
     if(operFil&&o.operador!==operFil)return false;
-    if(stFil&&o.status!==stFil)return false;
-    if(q){const txt=(o.id||'')+(o.produto||'')+(o.pedido||'')+(o.cliente||'');if(!txt.toLowerCase().includes(q))return false;}
-    if(opFil&&!String(o.id||'').toLowerCase().includes(opFil)&&!String(o.num_base||'').toLowerCase().includes(opFil))return false;
+    if(dateFil&&o.dt_envio!==dateFil&&o.dt_criacao!==dateFil)return false;
+    if(q){const t=(o.id||'')+(o.produto||'')+(o.pedido||'')+(o.cliente||'');if(!t.toLowerCase().includes(q))return false;}
     return true;
   });
 
-  // KPIs
-  const nAnd=ORDENS.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento').length;
-  const nPend=ORDENS.filter(o=>o.status==='Pendente').length;
-  const nReab=ORDENS.filter(o=>o.status==='Reaberta').length;
-  const mTot=rows.reduce((a,o)=>a+(o.metros||0),0);
-  const nHoje=ORDENS.filter(o=>o.dt_criacao===hoje).length;
-  const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  setEl('pan-nand',nAnd);setEl('pan-npend',nPend);
-  setEl('pan-mtot',fm(mTot)+'m');setEl('pan-nop',nHoje);
-  setEl('pan-cnt',rows.length);
-  // Show reaberta badge
-  const reabEl=document.getElementById('pan-nreab');
-  if(reabEl){reabEl.textContent=nReab;const kc=reabEl.closest?.('.kcard');if(kc)kc.style.display=nReab>0?'block':'none';}
+  // ── VISÃO GERAL ──
+  const gelEl=document.getElementById('pan-tab-geral');
+  if(gelEl&&sub==='geral'){
+    const andando=ORDENS.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento');
+    const conc=ORDENS.filter(o=>o.status==='Concluída');
+    const pend=ORDENS.filter(o=>o.status==='Pendente');
 
-  // Cards by turno+operador (Em andamento only)
-  const cards=document.getElementById('painel-cards');
-  const emAndamento=rows.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento'||o.status==='Reaberta');
-  if(cards){
-    if(emAndamento.length===0){
-      cards.innerHTML='<div style="color:var(--text3);font-size:12px;padding:12px;grid-column:1/-1">Nenhuma OP em andamento.</div>';
-    }else{
-      const grupos={};
-      emAndamento.forEach(o=>{
-        const k=(o.turno||'Sem turno')+'||'+(o.operador||'Sem operador');
-        if(!grupos[k])grupos[k]={turno:o.turno||'Sem turno',oper:o.operador||'Sem operador',ops:[],metros:0};
-        grupos[k].ops.push(o);grupos[k].metros+=o.metros||0;
-      });
-      cards.innerHTML=Object.values(grupos).sort((a,b)=>b.ops.length-a.ops.length).map(g=>`
-        <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-          <div style="background:var(--navy);color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-weight:700;font-size:13px">${g.turno}</div>
-              <div style="font-size:11px;opacity:.85">👤 ${g.oper}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:16px;font-weight:700">${g.ops.length} OPs</div>
-              <div style="font-size:11px;opacity:.85">${fm(g.metros)}m</div>
-            </div>
-          </div>
-          <div style="padding:8px;max-height:280px;overflow-y:auto">
-            ${g.ops.map(o=>{
-              const tipoCls=o.tipo==='torcedeira'||o.tipo==='torcedeira_redir'?'c-blue':'c-orange';
-              const isReab=o.status==='Reaberta';
-              const produzido=getMetrosProduzidos(o.id);
-              return`<div style="display:flex;align-items:center;gap:5px;padding:5px 4px;border-bottom:1px solid var(--border);font-size:11px;${isReab?'background:#fef3c7;':''}${o.prio_prod==='Urgente'?'border-left:3px solid var(--red)':o.prio_prod==='Alta'?'border-left:3px solid var(--orange)':''}">
-                <input type="checkbox" class="ck-painel-op" value="${o.id}" style="flex-shrink:0">
-                <span class="chip ${tipoCls}" style="font-size:8px;flex-shrink:0">${(o.tipo||'').toUpperCase().slice(0,4)}</span>
-                <span class="mono" style="font-weight:700;font-size:10px">${o.id}</span>
-                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.produto||''}">${shortProd(o.produto)}</span>
-                <span style="color:var(--orange);font-weight:600;flex-shrink:0">${fm(o.metros)}m</span>
-                ${produzido>0?`<span style="color:var(--green);font-size:9px">${fm(produzido)}✓</span>`:''}
-                ${isReab?`<span class="chip c-reaberta" style="font-size:8px">REAB.</span>`:''}
-                <button class="btn bgho bsm" style="padding:2px 5px;flex-shrink:0" onclick="reabrirOPComFiltro('${o.id}')" title="Reabrir/Reverter">↩</button>
-                <button class="btn bgrn bsm" style="padding:2px 5px;flex-shrink:0" onclick="concluirOP('${o.id}')" title="Concluir">✓</button>
+    // Group by etapa
+    const byEtapa={};
+    andando.forEach(o=>{
+      const e=o.tipo||'OP';
+      if(!byEtapa[e])byEtapa[e]={ops:[],metros:0,operadores:new Set(),turnos:new Set()};
+      byEtapa[e].ops.push(o);
+      byEtapa[e].metros+=o.metros||0;
+      if(o.operador)byEtapa[e].operadores.add(o.operador);
+      if(o.turno)byEtapa[e].turnos.add(o.turno);
+    });
+
+    // Group by turno
+    const byTurno={};
+    andando.forEach(o=>{
+      const t=o.turno||'Sem turno';
+      if(!byTurno[t])byTurno[t]={ops:[],metros:0};
+      byTurno[t].ops.push(o);
+      byTurno[t].metros+=o.metros||0;
+    });
+
+    // Group by operador
+    const byOper={};
+    andando.forEach(o=>{
+      const op=o.operador||'Sem operador';
+      if(!byOper[op])byOper[op]={ops:[],metros:0};
+      byOper[op].ops.push(o);
+      byOper[op].metros+=o.metros||0;
+    });
+
+    const etapaLabels={trefila:'🔧 Trefila',buncherfixo:'🔩 Buncher',
+      torcedeira:'🌀 Torcedeira',torcedeira_redir:'🌀 Torcedeira Redir',
+      extrusora:'🏭 Extrusora'};
+
+    gelEl.innerHTML=`
+    <!-- KPI CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px">
+      <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:8px;padding:12px 14px">
+        <div style="font-size:11px;color:var(--text2)">Em Andamento</div>
+        <div style="font-size:28px;font-weight:800;color:#2563eb">${andando.length}</div>
+        <div style="font-size:10px;color:var(--text3)">${fm(andando.reduce((a,o)=>a+(o.metros||0),0))}m</div>
+      </div>
+      <div style="background:#f0fdf4;border-left:4px solid #16a34a;border-radius:8px;padding:12px 14px">
+        <div style="font-size:11px;color:var(--text2)">Concluídas</div>
+        <div style="font-size:28px;font-weight:800;color:#16a34a">${conc.length}</div>
+        <div style="font-size:10px;color:var(--text3)">${fm(conc.reduce((a,o)=>a+(o.metros||0),0))}m</div>
+      </div>
+      <div style="background:#fefce8;border-left:4px solid #ca8a04;border-radius:8px;padding:12px 14px">
+        <div style="font-size:11px;color:var(--text2)">Pendentes</div>
+        <div style="font-size:28px;font-weight:800;color:#ca8a04">${pend.length}</div>
+        <div style="font-size:10px;color:var(--text3)">aguardando envio</div>
+      </div>
+      <div style="background:#faf5ff;border-left:4px solid #7c3aed;border-radius:8px;padding:12px 14px">
+        <div style="font-size:11px;color:var(--text2)">Operadores ativos</div>
+        <div style="font-size:28px;font-weight:800;color:#7c3aed">${Object.keys(byOper).filter(k=>k!=='Sem operador').length}</div>
+        <div style="font-size:10px;color:var(--text3)">${Object.keys(byTurno).join(', ')||'—'}</div>
+      </div>
+    </div>
+
+    <!-- ETAPAS x TURNO GRID (like Data Studio page 1) -->
+    <div class="g2" style="margin-bottom:20px">
+      <!-- By Etapa -->
+      <div class="sec">
+        <div class="sec-hd" style="background:var(--navy);color:#fff;border-radius:var(--r) var(--r) 0 0;padding:10px 14px;margin:-12px -12px 12px">
+          <span style="font-size:13px;font-weight:700">📊 OPs por Etapa de Produção</span>
+        </div>
+        ${Object.keys(byEtapa).length===0
+          ? '<p style="color:var(--text3);text-align:center;padding:16px">Nenhuma OP em andamento</p>'
+          : Object.entries(byEtapa).map(([etapa,d])=>{
+              const ec=etapaColors[etapa]||'#888';
+              const label=etapaLabels[etapa]||etapa;
+              return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+                <div style="width:8px;height:8px;border-radius:50%;background:${ec};flex-shrink:0"></div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:700;color:${ec}">${label}</div>
+                  <div style="font-size:11px;color:var(--text2)">${[...d.operadores].join(', ')||'—'}</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:18px;font-weight:700;color:${ec}">${d.ops.length}</div>
+                  <div style="font-size:10px;color:var(--text3)">${fm(d.metros)}m</div>
+                </div>
               </div>`;
-            }).join('')}
-          </div>
-        </div>`).join('');
-    }
-  }
+            }).join('')
+        }
+      </div>
 
-  // Full table
-  const list=document.getElementById('painel-list');
-  if(list){
-    if(rows.length===0){list.innerHTML='<p style="color:var(--text3);font-size:11px;padding:10px">Nenhuma OP encontrada.</p>';return;}
-    list.innerHTML=`<table style="width:100%">
-      <thead><tr>
-        <th><input type="checkbox" onchange="document.querySelectorAll('.ck-painel-op2').forEach(c=>c.checked=this.checked)"></th>
-        <th>OP</th><th>Sub</th><th>Tipo</th><th>Pedido(s)</th><th>Produto</th>
-        <th>Seção</th><th class="num">Metros</th><th class="num">Produzido</th>
-        <th>Prio.</th><th>Operador</th><th>Turno</th><th>Status</th><th>Entrega</th><th>Ações</th>
-      </tr></thead>
-      <tbody>${rows.map(o=>{
-        const dtEnt=o.dt_entrega?o.dt_entrega.slice(0,10).split('-').reverse().join('/'):'—';
-        const sc=o.status==='Concluída'?'c-teal':o.status==='Em andamento'||o.status==='Em Andamento'?'c-blue':o.status==='Reaberta'?'c-reaberta':'c-gray';
-        const pc=o.prio_prod==='Urgente'?'c-red':o.prio_prod==='Alta'?'c-orange':'c-gray';
-        const produzido=getMetrosProduzidos(o.id);
-        const rowBg=o.status==='Reaberta'?'background:#fef3c7':o.status==='Concluída'?'background:#f5f5f5;opacity:.6':'';
-        const checkBloq=verificarEtapasSeguintes(o).bloqueado;
-        return`<tr style="${rowBg}">
-          <td><input type="checkbox" class="ck-painel-op2" value="${o.id}"></td>
-          <td class="mono" style="font-size:10px;font-weight:700">${o.num_base||o.id}</td>
-          <td><span class="chip ${o.subordem==='A'?'c-blue':'c-orange'}" style="font-size:9px">${o.subordem||'—'}</span></td>
-          <td style="font-size:10px">${o.tipo||'—'}</td>
-          <td class="mono" style="font-size:10px">${(o.pedidos||[o.pedido]).filter(Boolean).join(', ')}</td>
-          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px" title="${o.produto||''}">${shortProd(o.produto)}</td>
-          <td class="mono" style="font-size:10px;font-weight:600">${o.secao||'—'}</td>
-          <td class="num" style="color:var(--orange);font-weight:600">${fm(o.metros||0)}m</td>
-          <td class="num" style="color:${produzido>0?'var(--green)':'var(--text3)'}">${produzido>0?fm(produzido)+'m':'—'}</td>
-          <td><span class="chip ${pc}" style="font-size:9px">${o.prio_prod||'Normal'}</span></td>
-          <td style="font-size:10px">${o.operador||'—'}</td>
-          <td style="font-size:10px">${o.turno||'—'}</td>
-          <td><span class="chip ${sc}" style="font-size:9px">${o.status||'Pendente'}</span></td>
-          <td style="font-size:10px">${dtEnt}</td>
-          <td style="white-space:nowrap">
-            ${!checkBloq?`<button class="btn bgho bsm" onclick="reabrirOPComFiltro('${o.id}')" title="Reabrir / Reverter para Prévia">↩ Reabrir</button>`:'<span style="font-size:9px;color:var(--text3)">🔒 bloqueado</span>'}
-            <button class="btn bgrn bsm" onclick="concluirOP('${o.id}')">✓</button>
-          </td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table>
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
-      <button class="btn bgho bsm" onclick="reabrirOPsEmLote()">↩ Reabrir selecionadas</button>
-      <button class="btn" style="background:#7c3aed;color:#fff" onclick="reverterSelecionadasParaPrevia()">🔄 Reverter selecionadas para Prévia</button>
-      <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
+      <!-- By Turno -->
+      <div class="sec">
+        <div class="sec-hd" style="background:#1a2e5a;color:#fff;border-radius:var(--r) var(--r) 0 0;padding:10px 14px;margin:-12px -12px 12px">
+          <span style="font-size:13px;font-weight:700">⏰ OPs por Turno e Operador</span>
+        </div>
+        ${Object.keys(byTurno).length===0
+          ? '<p style="color:var(--text3);text-align:center;padding:16px">Nenhuma OP em andamento</p>'
+          : Object.entries(byTurno).sort((a,b)=>a[0].localeCompare(b[0])).map(([turno,d])=>{
+              const tColors={T1:'#ea580c',T2:'#2563eb',T3:'#7c3aed'};
+              const tc=tColors[turno]||'#888';
+              const byOp={};
+              d.ops.forEach(o=>{const op=o.operador||'Sem op';if(!byOp[op])byOp[op]=0;byOp[op]++;});
+              return`<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <span style="background:${tc};color:#fff;border-radius:6px;padding:2px 10px;font-size:12px;font-weight:700">${turno}</span>
+                  <span style="font-size:13px;font-weight:600">${d.ops.length} OPs · ${fm(d.metros)}m</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px">
+                  ${Object.entries(byOp).map(([op,n])=>`
+                    <span style="background:var(--bg2);border-radius:4px;padding:2px 8px;font-size:11px">
+                      ${op}: <strong>${n}</strong>
+                    </span>`).join('')}
+                </div>
+              </div>`;
+            }).join('')
+        }
+      </div>
+    </div>
+
+    <!-- OP TABLE (all active) -->
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-tt">📋 Todas as OPs Ativas</span>
+        <span class="chip c-blue">${andando.length}</span>
+        <button class="btn bgho bsm" onclick="renderPainel()" style="margin-left:auto">🔄</button>
+        <button class="btn bgho bsm" onclick="exportarListaOPsPDF()">📄 PDF</button>
+      </div>
+      ${andando.length===0
+        ? '<p style="color:var(--text3);text-align:center;padding:20px">Nenhuma OP em andamento. Use ⚙️ Produção → Enviar para Produção.</p>'
+        : `<div class="tw ts"><table style="width:100%">
+            <thead><tr style="background:var(--bg2)">
+              <th>OP</th><th>Etapa</th><th>Pedido</th><th>Produto</th>
+              <th>Seção</th><th class="num" style="color:var(--orange)">Metros</th>
+              <th>Operador</th><th>Turno</th><th>Status</th><th>Envio</th><th>Ações</th>
+            </tr></thead>
+            <tbody>${andando.map(o=>{
+              const ec=etapaColors[o.tipo]||'#888';
+              const produzido=getMetrosProduzidos(o.id);
+              const pct=o.metros>0?Math.round(produzido/o.metros*100):0;
+              return`<tr style="border-bottom:1px solid var(--border)">
+                <td class="mono" style="font-size:10px;font-weight:700">${o.id}</td>
+                <td><span style="background:${ec}22;color:${ec};border:1px solid ${ec};border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${(o.tipo||'').toUpperCase().slice(0,4)}</span></td>
+                <td class="mono" style="font-size:10px">${(o.pedidos||[o.pedido]).filter(Boolean).slice(0,2).join(',')}</td>
+                <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">${shortProd(o.produto)}</td>
+                <td style="font-size:11px;font-weight:600">${o.secao||'—'}</td>
+                <td class="num" style="color:var(--orange);font-weight:600">${fm(o.metros||0)}m${pct>0?`<span style="color:var(--green);font-size:9px;display:block">✓${pct}%</span>`:''}</td>
+                <td style="font-size:11px">${o.operador||'<span style="color:var(--text3)">—</span>'}</td>
+                <td style="font-size:11px">${o.turno||'—'}</td>
+                <td><span class="chip c-blue" style="font-size:9px">${o.status}</span></td>
+                <td style="font-size:10px">${o.dt_envio||'—'}</td>
+                <td style="white-space:nowrap">
+                  <button class="btn bgho bsm" onclick="reabrirOPComFiltro('${o.id}')" title="Reabrir">↩</button>
+                  <button class="btn bgrn bsm" onclick="concluirOP('${o.id}')" title="Concluir">✓</button>
+                </td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>`
+      }
     </div>`;
   }
+
+  // ── PER-ETAPA TABS ──
+  const etapaMap={
+    trefila:['trefila'],
+    buncher:['buncherfixo'],
+    torcedeira:['torcedeira','torcedeira_redir'],
+    extrusora:['extrusora','individual']
+  };
+  const etapaNames={
+    trefila:{label:'🔧 Trefila',color:'#ea580c',bg:'#fff7ed'},
+    buncher:{label:'🔩 Buncher / Encordoamento',color:'#0891b2',bg:'#ecfeff'},
+    torcedeira:{label:'🌀 Torcedeira / Torção',color:'#7c3aed',bg:'#faf5ff'},
+    extrusora:{label:'🏭 Extrusora / Encape',color:'#16a34a',bg:'#f0fdf4'}
+  };
+
+  Object.entries(etapaMap).forEach(([etapa,tipos])=>{
+    const tabEl=document.getElementById('pan-tab-'+etapa);
+    if(!tabEl||sub!==etapa)return;
+    const meta=etapaNames[etapa];
+    const opsEtapa=ORDENS.filter(o=>tipos.includes(o.tipo||'')).filter(o=>{
+      if(turnoFil&&o.turno!==turnoFil)return false;
+      if(operFil&&o.operador!==operFil)return false;
+      if(stFil&&o.status!==stFil)return false;
+      return true;
+    });
+    const andEtapa=opsEtapa.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento');
+    const concEtapa=opsEtapa.filter(o=>o.status==='Concluída');
+    const pendEtapa=opsEtapa.filter(o=>o.status==='Pendente');
+
+    // Group by turno for this etapa
+    const byTurnoEtapa={};
+    opsEtapa.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento').forEach(o=>{
+      const t=o.turno||'Sem turno';
+      if(!byTurnoEtapa[t])byTurnoEtapa[t]=[];
+      byTurnoEtapa[t].push(o);
+    });
+
+    tabEl.innerHTML=`
+      <!-- ETAPA HEADER -->
+      <div style="background:${meta.bg};border:2px solid ${meta.color};border-radius:10px;padding:14px 18px;margin-bottom:16px">
+        <div style="font-size:18px;font-weight:800;color:${meta.color};margin-bottom:8px">${meta.label}</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div style="text-align:center">
+            <div style="font-size:24px;font-weight:800;color:${meta.color}">${andEtapa.length}</div>
+            <div style="font-size:11px;color:var(--text2)">Em andamento</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:24px;font-weight:800;color:#16a34a">${concEtapa.length}</div>
+            <div style="font-size:11px;color:var(--text2)">Concluídas</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:24px;font-weight:800;color:#ca8a04">${pendEtapa.length}</div>
+            <div style="font-size:11px;color:var(--text2)">Pendentes</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:24px;font-weight:800;color:${meta.color}">${fm(opsEtapa.reduce((a,o)=>a+(o.metros||0),0))}m</div>
+            <div style="font-size:11px;color:var(--text2)">Total metros</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPs POR TURNO (like Data Studio cards) -->
+      ${Object.entries(byTurnoEtapa).length===0
+        ? (opsEtapa.length===0
+            ? `<div style="text-align:center;padding:32px;color:var(--text3)">
+                <div style="font-size:32px">📭</div>
+                <div style="font-size:14px;font-weight:600;margin-top:8px">Nenhuma OP para ${meta.label}</div>
+                <p style="font-size:11px">Envie OPs para produção em ⚙️ Produção</p>
+              </div>`
+            : `<p style="color:var(--text3);text-align:center;padding:16px">Nenhuma OP em andamento</p>`)
+        : Object.entries(byTurnoEtapa).sort((a,b)=>a[0].localeCompare(b[0])).map(([turno,ops])=>{
+            const tColors={T1:'#ea580c',T2:'#2563eb',T3:'#7c3aed'};
+            const tc=tColors[turno]||'#374151';
+            return`<div style="margin-bottom:16px">
+              <div style="background:${tc};color:#fff;padding:8px 14px;border-radius:8px 8px 0 0;
+                display:flex;align-items:center;gap:10px">
+                <span style="font-size:14px;font-weight:700">${turno}</span>
+                <span style="opacity:.8;font-size:12px">${ops.length} OPs · ${fm(ops.reduce((a,o)=>a+(o.metros||0),0))}m</span>
+                <span style="margin-left:auto;font-size:11px;opacity:.7">${[...new Set(ops.map(o=>o.operador).filter(Boolean))].join(' · ')||'— sem operador'}</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;background:var(--bg2);padding:10px;border-radius:0 0 8px 8px">
+                ${ops.map(o=>{
+                  const produzido=getMetrosProduzidos(o.id);
+                  const pct=o.metros>0?Math.round(produzido/o.metros*100):0;
+                  return`<div style="background:var(--bg);border:2px solid ${meta.color}33;border-radius:8px;padding:10px 12px">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                      <span class="mono" style="font-size:10px;font-weight:700;color:${meta.color}">${o.id}</span>
+                      <span class="chip c-blue" style="font-size:8px;margin-left:auto">${o.status}</span>
+                    </div>
+                    <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">${shortProd(o.produto)}</div>
+                    <div style="display:flex;gap:8px;font-size:10px;color:var(--text2);flex-wrap:wrap;margin-bottom:6px">
+                      <span>📋 ${(o.pedidos||[o.pedido]).filter(Boolean).join(',')}</span>
+                      <span>📏 ${o.secao||'—'}</span>
+                      <span style="color:var(--orange);font-weight:600">${fm(o.metros||0)}m</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:4px">
+                      <span style="font-size:10px;color:var(--text2)">👤 ${o.operador||'—'}</span>
+                      <div style="flex:1;background:#e5e7eb;border-radius:99px;height:5px;margin-left:6px;overflow:hidden">
+                        <div style="width:${pct}%;height:100%;background:${meta.color};border-radius:99px"></div>
+                      </div>
+                      <span style="font-size:9px;color:var(--text3)">${pct}%</span>
+                    </div>
+                    <div style="display:flex;gap:4px;margin-top:6px">
+                      <button class="btn bgho bsm" style="flex:1;font-size:10px" onclick="reabrirOPComFiltro('${o.id}')">↩</button>
+                      <button class="btn bgrn bsm" style="flex:1;font-size:10px" onclick="concluirOP('${o.id}')">✓ Concluir</button>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+          }).join('')
+      }
+
+      <!-- PENDENTES for this etapa -->
+      ${pendEtapa.length>0?`
+      <div style="margin-top:12px">
+        <div style="font-size:12px;font-weight:700;color:#ca8a04;margin-bottom:8px">⏳ OPs Pendentes nesta etapa (${pendEtapa.length})</div>
+        <table style="width:100%;font-size:11px">
+          <thead><tr style="background:var(--bg2)">
+            <th style="padding:6px 8px;text-align:left">OP</th><th>Produto</th>
+            <th class="num">Metros</th><th>Operador</th><th>Turno</th><th>Prio.</th>
+          </tr></thead>
+          <tbody>${pendEtapa.map(o=>`
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px;font-family:monospace;font-size:10px">${o.id}</td>
+              <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px">${shortProd(o.produto)}</td>
+              <td class="num">${fm(o.metros||0)}m</td>
+              <td>${o.operador||'<span style="color:var(--text3)">—</span>'}</td>
+              <td>${o.turno||'—'}</td>
+              <td><span class="chip c-orange" style="font-size:9px">${o.prio_prod||'Normal'}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`:''}
+    `;
+  });
+}
+
+function painelSub(t){
+  window._painelSub=t;
+  renderPainel();
+}
+
+function concluirOP(id){
+  const op=ORDENS.find(o=>o.id===id);
+  if(!op)return;
+  if(!confirm('Marcar OP '+id+' como Concluida?'))return;
+  op.status='Concluída';
+  op.dt_conclusao=new Date().toISOString().slice(0,10);
+  saveSingle(LS.ORDENS,ORDENS);
+  renderPainel();
+  renderOrdens();
+  showToast&&showToast('OP '+id+' concluida!');
 }
 
 function reverterSelecionadasParaPrevia(){
@@ -3835,8 +4060,16 @@ function enviarOPsSelecionadasParaProducao(){
   });
   saveSingle(LS.ORDENS,ORDENS);
   saveSingle(LS.PEDIDOS,PEDIDOS);
-  showToast&&showToast(toSend.length+' OP(s) enviadas!');
-  setTimeout(()=>{renderOrdens();go('painel');setTimeout(()=>renderPainel&&renderPainel(),100);},100);
+  showToast&&showToast(toSend.length+' OP(s) enviadas para producao!');
+  // Navigate to Painel and show the correct etapa sub-tab
+  const firstEtapa=toSend[0]?.tipo;
+  const etapaSubMap={trefila:'trefila',buncherfixo:'buncher',torcedeira:'torcedeira',
+    torcedeira_redir:'torcedeira',extrusora:'extrusora'};
+  window._painelSub = etapaSubMap[firstEtapa]||'geral';
+  setTimeout(()=>{
+    go('painel');
+    setTimeout(()=>{renderPainel&&renderPainel();},150);
+  },100);
 }
 
 function ckAllOrdens(el){
@@ -4137,7 +4370,7 @@ function go(id){
     historico:renderHistorico,
     comercial:renderComercial,
     engenharia:()=>{renderEngenharia();renderFichasTecnicas();},
-    painel:renderPainel,
+    painel:()=>{window._painelSub=window._painelSub||'geral';renderPainel();},
     trefila:renderTrefila,
     buncherfixo:renderBuncherFixo,
     buncherredir:renderBuncherRedir,
