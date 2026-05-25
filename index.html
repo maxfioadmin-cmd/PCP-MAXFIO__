@@ -737,6 +737,8 @@ if(typeof QRCode === 'undefined') {
 <div id="pg-ordens" class="pg">
   <div class="pg-hd">
     <span class="pg-tt">⚙️ Produção — Gestão de Ordens</span>
+    <button class="btn bpri" style="padding:7px 16px;font-weight:700"
+      onclick="abrirModalNovaOP()">＋ Nova OP Manual</button>
     <button class="btn bgho bsm" onclick="renderOrdens()">🔄 Atualizar</button>
     <span id="ord-cnt" class="chip c-blue" style="font-size:11px">0</span>
     <!-- Toggle: OPs Enviadas -->
@@ -4563,7 +4565,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   try{APONTAMENTOS=JSON.parse(localStorage.getItem('pcp_apontamentos')||'[]');}catch(e){APONTAMENTOS=[];}
   try{HIST_EXCL=JSON.parse(localStorage.getItem('pcp_hist_excl')||'[]');}catch(e){HIST_EXCL=[];}
   // Move all modals to body level so they're visible regardless of parent display:none
-  ['modal-reservar','sgq-modal','modal-gerar-ops'].forEach(id=>{
+  ['modal-reservar','sgq-modal','modal-gerar-ops','modal-nova-op'].forEach(id=>{
     const el=document.getElementById(id);
     if(el&&el.parentNode!==document.body) document.body.appendChild(el);
   });
@@ -4918,10 +4920,10 @@ const PERFIS_DEF = {
 const ABAS_PERFIL = {
   admin:       'todas', // dashprod included via 'todas'
   gestor:      ['dashprod','dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','reserva','engenharia','usuarios','historico','comercial','import','diario'],
-  logistica:   ['dash','reserva','painel','ordens'],
-  comercial:   ['dash','pedidos','comercial'],
-  producao:    ['dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','engenharia','historico','import','diario'],
-  operacional: ['dash','painel','trefila','buncherfixo','buncherredir','extrusora','lotes','diario'],
+  logistica:   ['dashprod','dash','reserva','painel','ordens'],
+  comercial:   ['dashprod','dash','pedidos','comercial'],
+  producao:    ['dashprod','dash','pedidos','pcp','ordens','painel','trefila','buncherfixo','buncherredir','extrusora','engenharia','historico','import','diario'],
+  operacional: ['dashprod','dash','painel','trefila','buncherfixo','buncherredir','extrusora','lotes','diario'],
 };
 const WRITE_PERFIL = {
   admin:      'tudo',
@@ -7865,6 +7867,244 @@ function _parseDateStr(s){
   return s.slice(0,10);
 }
 
+
+// ═══════════════════════════════════════════
+// NOVA OP MANUAL
+// ═══════════════════════════════════════════
+
+function abrirModalNovaOP(){
+  const modal=document.getElementById('modal-nova-op');
+  if(!modal)return;
+  // Reset form
+  ['nop-tipo','nop-prio','nop-pedidos','nop-cliente','nop-produto','nop-codigo',
+   'nop-secao','nop-metros','nop-grupo','nop-operador','nop-turno','nop-dt-entrega','nop-obs'
+  ].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){if(el.tagName==='SELECT')el.value='';else el.value='';}
+  });
+  document.getElementById('nop-prio').value='Normal';
+  document.getElementById('nop-preview').style.display='none';
+  document.getElementById('nop-extra-fields').style.display='none';
+
+  // Populate operadores select grouped by turno
+  const operSel=document.getElementById('nop-operador');
+  if(operSel){
+    operSel.innerHTML='<option value="">— Selecione —</option>';
+    const allUsers=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+    const ops=allUsers.filter(u=>u.perfil==='operacional'&&u.turno);
+    ['T1','T2','T3'].forEach(t=>{
+      const grpOps=ops.filter(u=>u.turno===t);
+      if(!grpOps.length)return;
+      const grp=document.createElement('optgroup');
+      const hora={T1:'06:00-16:00',T2:'11:00-20:48',T3:'21:00-06:00'}[t];
+      grp.label=t+' ('+hora+')';
+      grpOps.forEach(u=>{
+        const opt=document.createElement('option');
+        opt.value=u.login;
+        opt.textContent=u.nome+(u.setor?' — '+u.setor:'');
+        opt.setAttribute('data-turno',t);
+        opt.setAttribute('data-etapa',u.etapa||'');
+        grp.appendChild(opt);
+      });
+      operSel.appendChild(grp);
+    });
+  }
+
+  // If current user is operacional, pre-fill
+  if(CUSER?.perfil==='operacional'){
+    if(operSel) operSel.value=CUSER.login;
+    const turnoEl=document.getElementById('nop-turno');
+    if(turnoEl&&CUSER.turno) turnoEl.value=CUSER.turno;
+  }
+
+  modal.style.display='flex';
+  setTimeout(()=>document.getElementById('nop-tipo')?.focus(),100);
+}
+
+function fecharModalNovaOP(){
+  const modal=document.getElementById('modal-nova-op');
+  if(modal) modal.style.display='none';
+}
+
+function nopTipoChanged(){
+  const tipo=document.getElementById('nop-tipo')?.value||'';
+  const extra=document.getElementById('nop-extra-fields');
+  const operSel=document.getElementById('nop-operador');
+  if(!extra)return;
+
+  // Auto-filter operators by etapa
+  if(operSel&&tipo){
+    [...operSel.querySelectorAll('option')].forEach(opt=>{
+      const optEtapa=opt.getAttribute('data-etapa')||'';
+      if(opt.value==='')return;
+      opt.style.display=(optEtapa===tipo||!optEtapa)?'':'none';
+    });
+  }
+
+  // Show extra fields by etapa
+  const extraFields={
+    trefila:`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label>Diâmetro do filamento (mm)</label>
+          <input id="nop-fil-diam" type="number" step="0.01" placeholder="0.28"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+        <div class="fg"><label>Quantidade de bobinas</label>
+          <input id="nop-qtd-bob" type="number" min="1" value="1"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+      </div>`,
+    buncherfixo:`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label>Diâmetro (mm)</label>
+          <input id="nop-fil-diam" type="number" step="0.01" placeholder="0.36"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+        <div class="fg"><label>Nº de fios</label>
+          <input id="nop-fil-fios" type="number" min="1" placeholder="ex: 536"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+      </div>`,
+    torcedeira:`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label>Diâmetro (mm)</label>
+          <input id="nop-fil-diam" type="number" step="0.01" placeholder="0.36"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+        <div class="fg"><label>Nº de fios</label>
+          <input id="nop-fil-fios" type="number" min="1" placeholder="ex: 536"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+      </div>`,
+    torcedeira_redir:`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label>Diâmetro (mm)</label>
+          <input id="nop-fil-diam" type="number" step="0.01" placeholder="0.36"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+        <div class="fg"><label>Nº de fios</label>
+          <input id="nop-fil-fios" type="number" min="1"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+      </div>`,
+    extrusora:`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label>Grupo / Linha de extrusão</label>
+          <input id="nop-ext-grupo" placeholder="ex: HEPR, FLEX, EPR"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+        <div class="fg"><label>Cor do cabo</label>
+          <input id="nop-ext-cor" placeholder="ex: PRETO, AZUL"
+            style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px"></div>
+      </div>`,
+  };
+
+  if(tipo&&extraFields[tipo]){
+    extra.style.display='block';
+    extra.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">Detalhes da etapa:</div>'+extraFields[tipo];
+  } else {
+    extra.style.display='none';
+  }
+}
+
+function nopPreview(){
+  const tipo=document.getElementById('nop-tipo')?.value||'';
+  const prod=document.getElementById('nop-produto')?.value||'';
+  const metros=parseFloat(document.getElementById('nop-metros')?.value)||0;
+  const sec=document.getElementById('nop-secao')?.value||'';
+  const ped=document.getElementById('nop-pedidos')?.value||'';
+  const oper=document.getElementById('nop-operador')?.value||'';
+  const turno=document.getElementById('nop-turno')?.value||'';
+  const prio=document.getElementById('nop-prio')?.value||'Normal';
+
+  if(!tipo||!prod||metros<=0){
+    alert('Preencha pelo menos: Etapa, Produto e Metros para visualizar.');
+    return;
+  }
+  const allUsers=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const operUser=allUsers.find(u=>u.login===oper);
+  const etapaColors={trefila:'#fb923c',buncherfixo:'#06b6d4',torcedeira:'#a855f7',torcedeira_redir:'#7c3aed',extrusora:'#22c55e'};
+  const ec=etapaColors[tipo]||'#888';
+  const prev=document.getElementById('nop-preview');
+  if(prev){
+    prev.style.display='block';
+    prev.innerHTML=`
+      <div style="font-size:11px;opacity:.8;margin-bottom:6px">Prévia da OP que será criada:</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+        <div><div style="font-size:10px;opacity:.7">Nº OP</div>
+          <div style="font-family:monospace;font-weight:700">${gerarNumOP()+'_PREV'}</div></div>
+        <div><div style="font-size:10px;opacity:.7">Etapa</div>
+          <div style="background:${ec};color:#fff;border-radius:4px;padding:1px 8px;font-size:11px;font-weight:700">${tipo.toUpperCase().slice(0,4)}</div></div>
+        <div><div style="font-size:10px;opacity:.7">Produto</div>
+          <div style="font-weight:600">${prod.slice(0,40)}</div></div>
+        <div><div style="font-size:10px;opacity:.7">Metros</div>
+          <div style="color:#fb923c;font-weight:700">${fm(metros)}m</div></div>
+        ${ped?`<div><div style="font-size:10px;opacity:.7">Pedido(s)</div><div style="font-family:monospace">${ped}</div></div>`:''}
+        ${operUser?`<div><div style="font-size:10px;opacity:.7">Operador</div><div>${operUser.nome} / ${turno}</div></div>`:''}
+        <div><div style="font-size:10px;opacity:.7">Prio.</div>
+          <div>${prio}</div></div>
+      </div>`;
+  }
+}
+
+function salvarNovaOP(){
+  const tipo=document.getElementById('nop-tipo')?.value||'';
+  const prod=(document.getElementById('nop-produto')?.value||'').trim();
+  const metros=parseBRNumber(document.getElementById('nop-metros')?.value||'0');
+  if(!tipo){alert('Selecione a Etapa / Máquina.');return;}
+  if(!prod){alert('Informe a descrição do Produto.');return;}
+  if(metros<=0){alert('Informe os Metros a Produzir (maior que zero).');return;}
+
+  const cod=(document.getElementById('nop-codigo')?.value||'').trim();
+  const sec=(document.getElementById('nop-secao')?.value||'').trim();
+  const grupo=(document.getElementById('nop-grupo')?.value||'').trim();
+  const peds=(document.getElementById('nop-pedidos')?.value||'').split(/[,;\s]+/).map(s=>s.trim()).filter(Boolean);
+  const cliente=(document.getElementById('nop-cliente')?.value||'').trim();
+  const operLogin=document.getElementById('nop-operador')?.value||'';
+  const turno=document.getElementById('nop-turno')?.value||'';
+  const dtEnt=document.getElementById('nop-dt-entrega')?.value||'';
+  const obs=(document.getElementById('nop-obs')?.value||'').trim();
+  const prio=document.getElementById('nop-prio')?.value||'Normal';
+  const hoje=new Date().toISOString().slice(0,10);
+
+  const allUsers=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const operUser=allUsers.find(u=>u.login===operLogin);
+
+  // Extra etapa fields
+  const filDiam=parseFloat(document.getElementById('nop-fil-diam')?.value)||0;
+  const filFios=parseInt(document.getElementById('nop-fil-fios')?.value)||0;
+  const extGrupo=(document.getElementById('nop-ext-grupo')?.value||'').trim();
+  const extCor=(document.getElementById('nop-ext-cor')?.value||'').trim();
+
+  const numBase=gerarNumOP();
+  const etapaLabels={trefila:'TREFILA',buncherfixo:'BUNCHER',torcedeira:'TORCEDEIRA',
+    torcedeira_redir:'TORCEDEIRA (REDIR)',extrusora:'EXTRUSORA'};
+
+  const op={
+    id:numBase,
+    num_base:numBase,
+    subordem:'',
+    produto:prod,
+    codigo:cod,
+    cor:extCor||'',
+    grupo:grupo||extGrupo||etapaLabels[tipo]||tipo.toUpperCase(),
+    secao:sec,
+    fil_diam:filDiam,
+    fil_fios:filFios,
+    metros:metros,
+    pedido:peds[0]||'',
+    pedidos:peds,
+    cliente:cliente,
+    status:'Pendente',
+    tipo:tipo,
+    etapa:etapaLabels[tipo]||tipo.toUpperCase(),
+    prio_prod:prio,
+    operador:operUser?.nome||operLogin||'',
+    turno:turno||operUser?.turno||'',
+    dt_criacao:hoje,
+    dt_entrega:dtEnt,
+    obs:obs,
+    avulsa:true, // flag: OP criada manualmente
+  };
+
+  ORDENS.unshift(op);
+  saveSingle(LS.ORDENS,ORDENS);
+  fecharModalNovaOP();
+  renderOrdens();
+  showToast&&showToast('OP '+numBase+' criada com sucesso!');
+}
+
 </script>
 <!-- ══ DIÁRIO DE PRODUÇÃO ══ -->
 <div id="pg-diario" class="pg">
@@ -8079,6 +8319,66 @@ function _parseDateStr(s){
 </div>
 
 
+
+<!-- ══ DASHBOARD PEDIDOS ══ -->
+<div id="pg-dashprod" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">📈 Dashboard — Status dos Pedidos em Produção</span>
+    <button class="btn bgho bsm" onclick="renderDashProd()">🔄 Atualizar</button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div id="dp-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px"></div>
+
+  <!-- 4 quadrants -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px">
+
+    <div class="sec" style="border-top:4px solid #dc2626;background:#fff5f5">
+      <div class="sec-hd" style="background:#fef2f2">
+        <span class="sec-tt" style="color:#dc2626;font-size:14px">⚠️ Atrasados sem PCP</span>
+        <span id="dp-cnt-atrasados" class="chip c-red">0</span>
+      </div>
+      <div class="sec-bd" id="dp-list-atrasados" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+
+    <div class="sec" style="border-top:4px solid #2563eb;background:#f8faff">
+      <div class="sec-hd" style="background:#eff6ff">
+        <span class="sec-tt" style="color:#2563eb;font-size:14px">🔵 Em Produção</span>
+        <span id="dp-cnt-producao" class="chip c-blue">0</span>
+      </div>
+      <div class="sec-bd" id="dp-list-producao" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+
+    <div class="sec" style="border-top:4px solid #7c3aed;background:#faf5ff">
+      <div class="sec-hd" style="background:#f5f3ff">
+        <span class="sec-tt" style="color:#7c3aed;font-size:14px">▶️ Produção Iniciada</span>
+        <span id="dp-cnt-iniciada" class="chip c-purple">0</span>
+      </div>
+      <div class="sec-bd" id="dp-list-iniciada" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+
+    <div class="sec" style="border-top:4px solid #0d9488;background:#f0fdfa">
+      <div class="sec-hd" style="background:#ccfbf1">
+        <span class="sec-tt" style="color:#0d9488;font-size:14px">✅ Finalizados</span>
+        <span id="dp-cnt-finalizado" class="chip c-teal">0</span>
+      </div>
+      <div class="sec-bd" id="dp-list-finalizado" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="g2">
+    <div class="sec">
+      <div class="sec-hd"><span class="sec-tt">Status dos Pedidos</span></div>
+      <div style="height:220px;position:relative"><canvas id="dp-ch-status"></canvas></div>
+    </div>
+    <div class="sec">
+      <div class="sec-hd"><span class="sec-tt">OPs em Andamento por Etapa</span></div>
+      <div style="height:220px;position:relative"><canvas id="dp-ch-etapa"></canvas></div>
+    </div>
+  </div>
+</div>
+
 <!-- MODALS (body level) -->
 <!-- ══ MODAL GERAR OPs ══ -->
 <div id="modal-gerar-ops" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
@@ -8117,4 +8417,170 @@ function _parseDateStr(s){
 </div>
 
 
+
+<!-- ══ MODAL NOVA OP MANUAL ══ -->
+<div id="modal-nova-op" style="display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;
+  overflow-y:auto;padding:20px">
+  <div style="background:#fff;border-radius:12px;width:700px;max-width:97vw;
+    box-shadow:0 8px 40px rgba(0,0,0,.25);margin:auto">
+
+    <!-- Header -->
+    <div style="background:#1a2e5a;color:#fff;border-radius:12px 12px 0 0;
+      padding:14px 20px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px;font-weight:800">➕ Nova Ordem de Produção Manual</span>
+      <button onclick="fecharModalNovaOP()"
+        style="margin-left:auto;background:none;border:none;color:#fff;
+          font-size:22px;cursor:pointer;line-height:1">✕</button>
+    </div>
+
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Identificação -->
+      <div style="background:#f8faff;border-radius:8px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:#1a2e5a;margin-bottom:10px;
+          display:flex;align-items:center;gap:8px">
+          <span style="background:#1a2e5a;color:#fff;border-radius:50%;width:22px;height:22px;
+            display:inline-flex;align-items:center;justify-content:center;font-size:11px">1</span>
+          Identificação da OP
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="fg">
+            <label>Etapa / Máquina <span style="color:#dc2626">*</span></label>
+            <select id="nop-tipo" onchange="nopTipoChanged()"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+              <option value="">— Selecione a etapa —</option>
+              <option value="trefila">🔧 Trefila</option>
+              <option value="buncherfixo">🔩 Buncher / Encordoamento</option>
+              <option value="torcedeira">🌀 Torcedeira (Encordoamento)</option>
+              <option value="torcedeira_redir">🌀 Torcedeira (Redirecionar)</option>
+              <option value="extrusora">🏭 Extrusora / Encape</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Prioridade</label>
+            <select id="nop-prio"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+              <option value="Normal">⚪ Normal</option>
+              <option value="Alta">🟠 Alta</option>
+              <option value="Urgente">🔴 Urgente</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Pedido(s) vinculado(s)</label>
+            <input id="nop-pedidos" placeholder="ex: 14215, 14216"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+          </div>
+          <div class="fg">
+            <label>Cliente</label>
+            <input id="nop-cliente" placeholder="Nome do cliente"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+          </div>
+        </div>
+      </div>
+
+      <!-- Produto -->
+      <div style="background:#f0fdf4;border-radius:8px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:10px;
+          display:flex;align-items:center;gap:8px">
+          <span style="background:#16a34a;color:#fff;border-radius:50%;width:22px;height:22px;
+            display:inline-flex;align-items:center;justify-content:center;font-size:11px">2</span>
+          Especificação do Produto
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div class="fg" style="grid-column:span 2">
+            <label>Produto / Descrição <span style="color:#dc2626">*</span></label>
+            <input id="nop-produto" placeholder="ex: CABO FLEX 6mm PRETO"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+          </div>
+          <div class="fg">
+            <label>Código</label>
+            <input id="nop-codigo" placeholder="ex: F001"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+          </div>
+          <div class="fg">
+            <label>Seção / Bitola</label>
+            <input id="nop-secao" placeholder="ex: 6 ou Ø0.36/536f"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+          </div>
+          <div class="fg">
+            <label>Metros a Produzir <span style="color:#dc2626">*</span></label>
+            <input id="nop-metros" type="number" min="1" step="0.1" placeholder="0"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+          </div>
+          <div class="fg">
+            <label>Grupo</label>
+            <input id="nop-grupo" placeholder="ex: FLEXIVEL, HEPR"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+          </div>
+        </div>
+        <div id="nop-extra-fields" style="display:none;margin-top:10px">
+          <!-- Extra fields shown by etapa -->
+        </div>
+      </div>
+
+      <!-- Operador / Turno -->
+      <div style="background:#faf5ff;border-radius:8px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:#7c3aed;margin-bottom:10px;
+          display:flex;align-items:center;gap:8px">
+          <span style="background:#7c3aed;color:#fff;border-radius:50%;width:22px;height:22px;
+            display:inline-flex;align-items:center;justify-content:center;font-size:11px">3</span>
+          Atribuição
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div class="fg">
+            <label>Operador</label>
+            <select id="nop-operador"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+              <option value="">— Selecione —</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Turno</label>
+            <select id="nop-turno"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+              <option value="">— Selecione —</option>
+              <option value="T1">T1 — Manhã (06:00–16:00)</option>
+              <option value="T2">T2 — Intermediário (11:00–20:48)</option>
+              <option value="T3">T3 — Noturno (21:00–06:00)</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Data de Entrega</label>
+            <input id="nop-dt-entrega" type="date"
+              style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">
+          </div>
+        </div>
+      </div>
+
+      <!-- Obs -->
+      <div class="fg">
+        <label>Observações</label>
+        <textarea id="nop-obs" rows="2"
+          placeholder="Informações adicionais, referências, instruções especiais..."
+          style="width:100%;padding:7px;border:1px solid var(--border);border-radius:var(--r);
+            font-size:13px;resize:vertical"></textarea>
+      </div>
+
+      <!-- Preview OP -->
+      <div id="nop-preview" style="display:none;background:#1a2e5a;color:#fff;
+        border-radius:8px;padding:12px 16px;font-size:12px"></div>
+
+      <!-- Actions -->
+      <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:6px;
+        border-top:1px solid var(--border)">
+        <button class="btn bdng" onclick="fecharModalNovaOP()" style="padding:9px 20px">
+          Cancelar
+        </button>
+        <button class="btn bgho" onclick="nopPreview()" style="padding:9px 20px">
+          👁 Visualizar
+        </button>
+        <button class="btn bsuc" onclick="salvarNovaOP()" style="padding:9px 24px;
+          font-size:14px;font-weight:700">
+          ✅ Criar Ordem de Produção
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 </body></html>
