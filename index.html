@@ -951,9 +951,13 @@ alter publication supabase_realtime add table pcp_sync;</div>
       <span class="sec-tt">Pedidos Pendentes</span>
       <span class="chip c-blue" id="ped-cnt">0</span>
       <span id="prio-bdg" style="display:flex;gap:4px;flex-wrap:wrap"></span>
+      <span id="sent-bdg" style="display:flex;gap:4px;flex-wrap:wrap"></span>
       <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap">
         <button class="btn bgho bsm" id="btn-grp-cli" onclick="toggleGrpMode('cli')">⊞ Por Cliente</button>
+        <button class="btn bgho bsm" id="btn-grp-prod" onclick="toggleGrpMode('prod')">📦 Por Produto</button>
+        <button class="btn bgho bsm" id="btn-grp-prio" onclick="toggleGrpMode('prio')">🎯 Por Prioridade</button>
         <button class="btn bgho bsm" id="btn-grp-dat" onclick="toggleGrpMode('dat')">📅 Por Data</button>
+        <button class="btn bgho bsm" id="btn-grp-sent" onclick="toggleGrpMode('sent')">🚦 Por Status Entrega</button>
         <span id="sel-info" style="font-size:11px;color:var(--text2);display:none"><span id="sel-cnt">0</span> selecionados</span>
         <button class="btn bgho bsm" onclick="selecionarTodosFiltrados()">☑ Selec. todos</button>
         <button class="btn bgho bsm" id="btn-filter-obs" onclick="toggleObsFilter()" title="Mostrar só pedidos com instrução de lance/bobina">🔗 Só c/ Lance</button>
@@ -985,12 +989,21 @@ alter publication supabase_realtime add table pcp_sync;</div>
         <select id="ps-f" onchange="renderPed()"><option value="">Todos</option><option value="p">Necessita produção</option><option value="ok">Coberto</option></select>
         <select id="ps-prio" onchange="renderPed()" style="width:165px">
           <option value="">Todas prioridades</option>
-          <option value="P1">🟡 P1 — Atrasado &gt;5d</option>
-          <option value="P2">🟡 P2 — Atrasado 1–5d</option>
-          <option value="P3">🟢 P3 — 0–5d futuro</option>
-          <option value="P4">🔵 P4 — &gt;5d futuro</option>
-          <option value="P0">⚪ Sem data</option>
+          <option value="P1">🔴 P1 — Atrasado</option>
+          <option value="P2">🟠 P2 — Atrasado 1–5d</option>
+          <option value="P3">🟢 P3 — até 7 dias</option>
+          <option value="P4">🔵 P4 — Programado</option>
+          <option value="P0">⚫ P0 — Comercial</option>
         </select>
+        <select id="ps-sent" onchange="renderPed()" style="width:160px">
+          <option value="">Status de Entrega</option>
+          <option value="atrasado">⚠️ Atrasado</option>
+          <option value="parcial">🔸 Parcial</option>
+          <option value="adiado">⏸️ Adiado</option>
+          <option value="atendido">✅ Atendido</option>
+          <option value="cancelado">🚫 Cancelado</option>
+        </select>
+        <input type="text" id="ps-prod" placeholder="Filtrar produto..." style="width:160px" oninput="renderPed()">
         <select id="ps-tipo" onchange="renderPed()">
           <option value="">Todos tipos</option>
           <option value="maxfio">MAXFIO</option>
@@ -1079,29 +1092,25 @@ alter publication supabase_realtime add table pcp_sync;</div>
         </table></div>
       </div>
     </div>
-    <div class="g2">
-      <div class="sec">
-        <div class="sec-hd"><span class="sec-tt">🔩 Buncher Necessário</span>
-          <button class="btn bgho bsm" style="margin-left:auto" onclick="resetBEdit()">↩</button>
-          <button class="btn bgrn bsm" onclick="genAllTorcedeira()">⚡ Gerar Todas</button>
-        </div>
-        <div class="sec-bd" id="pcp-bsum"></div>
-      </div>
-      <div class="sec">
-        <div class="sec-hd"><span class="sec-tt">🏭 Extrusora/Torção Necessária</span>
-          <button class="btn bgho bsm" style="margin-left:auto" onclick="resetEEdit()">↩</button>
-          <button class="btn bgrn bsm" onclick="genAllExt()">⚡ Gerar Todas</button>
-        </div>
-        <div class="sec-bd" id="pcp-esum"></div>
-      </div>
-    </div>
+
   </div>
   <!-- HISTÓRICO -->
   <div id="pcp-hist" style="display:none">
     <div class="sec"><div class="sec-hd"><span class="sec-tt">Histórico de Prévias</span><span class="chip c-blue" id="phcnt">0</span>
+      <button class="btn bgho bsm" onclick="pcpSub('pc-hist')">📋 Histórico PC</button>
       <button class="btn bgho bsm" style="margin-left:auto" onclick="pcpSub('consol')">⚡ Consolidar selecionadas</button>
       <button class="btn bgho bsm" onclick="exportPrevias()">⬇ CSV</button>
     </div><div class="sec-bd" id="pcp-hlist"></div></div>
+  </div>
+  <!-- HISTÓRICO PC PRÉVIAS -->
+  <div id="pcp-pc-hist" style="display:none">
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-tt">📋 Histórico de Prévias — Numeração PC</span>
+        <span class="chip c-blue" id="pc-hist-cnt">0</span>
+      </div>
+      <div class="sec-bd" id="pc-hist-list"></div>
+    </div>
   </div>
   <!-- CONSOLIDAR -->
   <div id="pcp-consol" style="display:none">
@@ -2084,19 +2093,13 @@ alter publication supabase_realtime add table pcp_sync;</div>
     <button class="btn bsuc bsm" onclick="salvarComercial()">💾 Salvar</button>
   </div>
   <!-- Filters -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-    <input id="com-q" placeholder="Buscar cliente..." oninput="renderComercial()"
-      style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:220px">
-    <select id="com-fprio" onchange="renderComercial()" style="padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-      <option value="">Todas as prioridades</option>
-      <option value="CRITICO">🔴 Crítico</option>
-      <option value="ALTA">🟠 Alta</option>
-      <option value="NORMAL">
+  <di
+
+
 
 
 
 <script>
-
 
 
 
@@ -2111,12 +2114,13 @@ const FILS=[['FLEXIVEL','1',0.28,14],['FLEXIVEL','1,5',0.28,22],['FLEXIVEL','2,5
 const FIL_IDX={};FILS.forEach(([g,c,d,f])=>{FIL_IDX[g+'|'+c]=[d,f];});
 
 // ═══════════ LS KEYS ═══════════
-const LS={PEDIDOS:'pcp_pedidos',HIST:'pcp_hist',HIST_EXCL:'pcp_hist_excl',ORDENS:'pcp_ordens',LOTES:'pcp_lotes',TORCEDEIRA:'pcp_torcedeira',PREVIAS:'pcp_previas',RESERVAS:'pcp_reservas',USUARIOS:'pcp_users',NC:'pcp_nc',RSV_REVISOES:'pcp_rsv_revisoes',COMERCIAL:'pcp_comercial',PC_MAP:'pcp_pc_map',SNAPSHOTS:'pcp_snapshots',APONTAMENTOS:'pcp_apontamentos'};
+const LS={PEDIDOS:'pcp_pedidos',PC_PREVIAS:'pcp_pc_previas',HIST:'pcp_hist',HIST_EXCL:'pcp_hist_excl',ORDENS:'pcp_ordens',LOTES:'pcp_lotes',TORCEDEIRA:'pcp_torcedeira',PREVIAS:'pcp_previas',RESERVAS:'pcp_reservas',USUARIOS:'pcp_users',NC:'pcp_nc',RSV_REVISOES:'pcp_rsv_revisoes',COMERCIAL:'pcp_comercial',PC_MAP:'pcp_pc_map',SNAPSHOTS:'pcp_snapshots',APONTAMENTOS:'pcp_apontamentos'};
 
 // ═══════════ STATE ═══════════
 let PEDIDOS=[],HIST=[],ORDENS=[],LOTES=[],TORCEDEIRA=[],PREVIAS=[],RESERVAS=[],USERS=[],SNAPSHOTS=[];
 let RSV_REVISOES={};
-let HIST_EXCL=[]; // historico de OPs excluidas
+let HIST_EXCL=[];
+let PC_PREVIAS=[]; // historico de OPs excluidas
 let COMERCIAL={};
 let APONTAMENTOS=[]; // lotes detalhados com status por etapa
 let PCP_ITEMS=[],PCP_BEDIT=null,PCP_EEDIT=null,pcpSel=new Set(),consolSel=new Set();
@@ -5539,11 +5543,43 @@ function getPrio(r){
   if(days<=7)return'P3';
   return'P4';
 }
+
+// ═══ STATUS DE ENTREGA ═══
+function getStatusEntrega(r){
+  const status = String(r[5]||'').toLowerCase();
+  const today  = new Date().toISOString().slice(0,10);
+  const dtEnt  = r[7]||r[8]||'';
+  const pend   = r[9]||0;
+  const est    = r[10]||0;
+  const prod   = r[11]||0;
+  // Cancelado
+  if(status==='cancelado'||status==='encerrado')
+    return{label:'Cancelado',icon:'🚫',bg:'#e5e7eb',fg:'#6b7280',border:'#d1d5db'};
+  // Faturado = Atendido
+  if(status==='faturado'||(prod>=pend&&pend>0))
+    return{label:'Atendido',icon:'✅',bg:'#1e3a5f',fg:'#fff',border:'#1e40af'};
+  // Atrasado: data de entrega passou e ainda tem pendente
+  if(dtEnt&&dtEnt<today&&pend>0)
+    return{label:'Atrasado',icon:'⚠️',bg:'#fef08a',fg:'#854d0e',border:'#eab308'};
+  // Adiado: Suspenso ou Bloqueado
+  if(status==='suspenso'||status==='bloqueado')
+    return{label:'Adiado',icon:'⏸️',bg:'#ede9fe',fg:'#5b21b6',border:'#7c3aed'};
+  // Parcial: tem estoque mas não cobre tudo
+  if(est>0&&est<pend)
+    return{label:'Parcial',icon:'🔸',bg:'#fce7f3',fg:'#9d174d',border:'#ec4899'};
+  return null;
+}
+
 function prioChip(r){
   const p=getPrio(r);
-  if(p==='P0') return`<span class="chip" style="background:#dc2626;color:#fef08a;font-size:9px;font-weight:900;border:1.5px solid #fef08a">P0</span>`;
-  const cls={P1:'c-red',P2:'c-orange',P3:'c-yellow',P4:'c-gray'}[p]||'c-gray';
-  return`<span class="chip ${cls}" style="font-size:9px">${p}</span>`;
+  const cfg={
+    P0:{bg:'#dc2626',fg:'#fef08a',border:'#fef08a',icon:'🔴'},
+    P1:{bg:'#dc2626',fg:'#fff',border:'#b91c1c',icon:'🔴'},
+    P2:{bg:'#ea580c',fg:'#fff',border:'#c2410c',icon:'🟠'},
+    P3:{bg:'#16a34a',fg:'#fff',border:'#15803d',icon:'🟢'},
+    P4:{bg:'#38bdf8',fg:'#0c4a6e',border:'#0ea5e9',icon:'🔵'},
+  }[p]||{bg:'#6b7280',fg:'#fff',border:'#4b5563',icon:'⚪'};
+  return`<span class="chip" style="background:${cfg.bg};color:${cfg.fg};border:1px solid ${cfg.border};font-size:9px;font-weight:700;min-width:22px;text-align:center" title="${p}">${p}</span>`;
 }
 function shortProd(s){
   return String(s||'').replace(/CABO ELETRICO /i,'').replace(/MAXFIO/i,'').replace(/450\/750V/i,'').replace(/NBR\d+/i,'').trim().slice(0,40);
@@ -6832,6 +6868,8 @@ function pedFilt(){
   const emA  =document.getElementById('ps-em-a') ?.value||'';
   const fdD  =document.getElementById('ps-fd')   ?.value||'';
   const fdA  =document.getElementById('ps-fa')   ?.value||'';
+  const prod =document.getElementById('ps-prod') ?.value||'';
+  const stEnt=document.getElementById('ps-sent') ?.value||'';
 
   let rows=PEDIDOS.filter(r=>{
     if(q && !r[1].toLowerCase().includes(q) && !r[3].toLowerCase().includes(q) && !String(r[4]).toLowerCase().includes(q) && !String(r[2]).includes(q)) return false;
@@ -6848,28 +6886,224 @@ function pedFilt(){
     if(emA && (r[6]||'') > emA) return false;
     if(fdD && (r[8]||r[7]||'') < fdD) return false;
     if(fdA && (r[8]||r[7]||'') > fdA) return false;
+    if(prod && !String(r[3]||'').toLowerCase().includes(prod.toLowerCase())) return false;
+    if(stEnt){
+      const se=getStatusEntrega(r);
+      const seLabel=se?se.label.toLowerCase():'';
+      if(stEnt==='atrasado'&&seLabel!=='atrasado') return false;
+      if(stEnt==='parcial'&&seLabel!=='parcial') return false;
+      if(stEnt==='adiado'&&seLabel!=='adiado') return false;
+      if(stEnt==='cancelado'&&seLabel!=='cancelado') return false;
+      if(stEnt==='atendido'&&seLabel!=='atendido') return false;
+    }
     return true;
   });
   rows.sort((a,b)=>{const p={'P1':0,'P2':1,'P3':2,'P4':3};return(p[getPrio(a)]||4)-(p[getPrio(b)]||4);});
   return rows;
 }
+
+// ═══ NUMERAÇÃO E HISTÓRICO DE PRÉVIAS PC ═══
+function gerarNumeracaoPC(){
+  const now=new Date();
+  const dd=String(now.getDate()).padStart(2,'0');
+  const mm=String(now.getMonth()+1).padStart(2,'0');
+  const aa=String(now.getFullYear());
+  const base='PC'+dd+mm+aa;
+  const same=PC_PREVIAS.filter(p=>p.id&&p.id.startsWith(base));
+  const seq=(same.length+1);
+  return base+'_'+seq;
+}
+
+function salvarPCPrevia(items, opsGeradas){
+  const id=gerarNumeracaoPC();
+  const now=new Date().toISOString();
+  const entry={
+    id,
+    data:now,
+    usuario:CUSER?CUSER.nome:'—',
+    itens:items.length,
+    ops:opsGeradas||0,
+    clientes:[...new Set(items.map(r=>r[1].split('(')[0].trim()))],
+    produtos:[...new Set(items.map(r=>r[3]))],
+    items:items.map(r=>({id:r[0],pedido:r[2],produto:r[3],codigo:r[4],cliente:r[1],qtPend:r[9],qtProd:r[11]})),
+  };
+  PC_PREVIAS.unshift(entry);
+  saveSingle(LS.PC_PREVIAS, PC_PREVIAS);
+  return id;
+}
+
+function renderHistoricoPC(){
+  const el=document.getElementById('pc-hist-list');
+  if(!el)return;
+  if(PC_PREVIAS.length===0){el.innerHTML='<p style="color:var(--text3);font-size:12px">Nenhuma prévia gerada ainda.</p>';return;}
+  el.innerHTML=PC_PREVIAS.map(p=>{
+    const dt=new Date(p.data).toLocaleString('pt-BR');
+    const clis=(p.clientes||[]).slice(0,3).join(', ')+(p.clientes&&p.clientes.length>3?'...':'');
+    return`<div class="sec" style="margin-bottom:8px">
+      <div class="sec-hd" style="cursor:pointer" onclick="togglePCDetail('${p.id}')">
+        <span class="chip c-blue" style="font-size:10px">${p.id}</span>
+        <span style="font-size:11px;font-weight:600">${dt}</span>
+        <span style="font-size:11px;color:var(--text2)">${p.usuario}</span>
+        <span class="chip c-gray" style="font-size:9px">${p.itens} pedidos · ${p.ops} OPs</span>
+        <span style="font-size:10px;color:var(--text2);margin-left:4px">${clis}</span>
+        <div style="margin-left:auto;display:flex;gap:4px">
+          <button class="btn bgho bsm" onclick="event.stopPropagation();gerarPDFPrevia('${p.id}')">📄 PDF</button>
+        </div>
+      </div>
+      <div id="pc-detail-${p.id}" style="display:none;padding:10px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <thead><tr style="background:#f1f5f9">
+            <th style="padding:4px 8px;text-align:left">Pedido</th>
+            <th style="padding:4px 8px;text-align:left">Cliente</th>
+            <th style="padding:4px 8px;text-align:left">Produto</th>
+            <th style="padding:4px 8px;text-align:left">Código</th>
+            <th style="padding:4px 8px;text-align:right">Qt.Pend</th>
+            <th style="padding:4px 8px;text-align:right">Qt.Prod</th>
+          </tr></thead>
+          <tbody>${(p.items||[]).map(it=>`<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:3px 8px" class="mono">${it.pedido}</td>
+            <td style="padding:3px 8px">${(it.cliente||'').split('(')[0].trim()}</td>
+            <td style="padding:3px 8px">${it.produto||''}</td>
+            <td style="padding:3px 8px" class="mono">${it.codigo||''}</td>
+            <td style="padding:3px 8px;text-align:right">${it.qtPend>0?fm(it.qtPend):'—'}</td>
+            <td style="padding:3px 8px;text-align:right">${it.qtProd>0?fm(it.qtProd):'—'}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePCDetail(id){
+  const el=document.getElementById('pc-detail-'+id);
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function gerarPDFPrevia(id){
+  const p=PC_PREVIAS.find(x=>x.id===id);
+  if(!p){alert('Prévia não encontrada.');return;}
+  const dt=new Date(p.data).toLocaleString('pt-BR');
+  const rows=(p.items||[]).map(it=>`
+    <tr>
+      <td>${it.pedido||''}</td>
+      <td>${(it.cliente||'').split('(')[0].trim()}</td>
+      <td>${it.produto||''}</td>
+      <td>${it.codigo||''}</td>
+      <td style="text-align:right">${it.qtPend>0?(it.qtPend/1000).toFixed(3):''}</td>
+      <td style="text-align:right">${it.qtProd>0?(it.qtProd/1000).toFixed(3):''}</td>
+    </tr>`).join('');
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="utf-8">
+    <title>Prévia ${p.id}</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:11px;margin:20px}
+      h2{color:#1a2e5a;margin-bottom:4px}
+      .sub{color:#666;font-size:10px;margin-bottom:16px}
+      table{width:100%;border-collapse:collapse;margin-top:10px}
+      th{background:#1a2e5a;color:#fff;padding:6px 8px;text-align:left;font-size:10px}
+      td{padding:4px 8px;border-bottom:1px solid #eee;font-size:10px}
+      tr:nth-child(even) td{background:#f8fafc}
+      .footer{margin-top:20px;font-size:9px;color:#999;border-top:1px solid #eee;padding-top:8px}
+      @media print{button{display:none}}
+    </style>
+  </head><body>
+    <h2>MAXFIO — Prévia PCP: ${p.id}</h2>
+    <div class="sub">Gerada em: ${dt} | Usuário: ${p.usuario} | ${p.itens} pedidos | ${p.ops} OPs</div>
+    <button onclick="window.print()" style="padding:6px 14px;background:#1a2e5a;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-bottom:12px">🖨️ Imprimir / Salvar PDF</button>
+    <table>
+      <thead><tr>
+        <th>Pedido</th><th>Cliente</th><th>Produto</th><th>Código</th>
+        <th style="text-align:right">Qt.Pend (km)</th><th style="text-align:right">Qt.Prod (km)</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="footer">MAXFIO Sistema PCP · ${p.id} · Impresso em: ${new Date().toLocaleString('pt-BR')}</div>
+  </body></html>`);
+  win.document.close();
+}
+
 function renderPed(){
   const rows=pedFilt();
   const tb=document.getElementById('ped-tb');if(!tb)return;
   document.getElementById('ped-cnt').textContent=rows.length;
   // Priority badges
-  const p1=rows.filter(r=>getPrio(r)==='P1').length;
-  const p2=rows.filter(r=>getPrio(r)==='P2').length;
-  const p3=rows.filter(r=>getPrio(r)==='P3').length;
+  const pCounts={P0:0,P1:0,P2:0,P3:0,P4:0};
+  rows.forEach(r=>{const p=getPrio(r);if(pCounts[p]!==undefined)pCounts[p]++;});
   const bdg=document.getElementById('prio-bdg');
-  if(bdg)bdg.innerHTML=[p1?`<span class="chip c-red">P1: ${p1}</span>`:'',p2?`<span class="chip c-orange">P2: ${p2}</span>`:'',p3?`<span class="chip c-yellow">P3: ${p3}</span>`:''  ].join('');
+  if(bdg) bdg.innerHTML=[
+    pCounts.P0?`<span class="chip" style="background:#dc2626;color:#fef08a;font-size:9px">P0: ${pCounts.P0}</span>`:'',
+    pCounts.P1?`<span class="chip" style="background:#dc2626;color:#fff;font-size:9px">🔴 P1: ${pCounts.P1}</span>`:'',
+    pCounts.P2?`<span class="chip" style="background:#ea580c;color:#fff;font-size:9px">🟠 P2: ${pCounts.P2}</span>`:'',
+    pCounts.P3?`<span class="chip" style="background:#16a34a;color:#fff;font-size:9px">🟢 P3: ${pCounts.P3}</span>`:'',
+    pCounts.P4?`<span class="chip" style="background:#38bdf8;color:#0c4a6e;font-size:9px">🔵 P4: ${pCounts.P4}</span>`:'',
+  ].filter(Boolean).join('');
+
+  // Status Entrega summary
+  const seCounts={Atrasado:0,Parcial:0,Adiado:0,Cancelado:0,Atendido:0};
+  rows.forEach(r=>{const se=getStatusEntrega(r);if(se&&seCounts[se.label]!==undefined)seCounts[se.label]++;});
+  const seBdg=document.getElementById('sent-bdg');
+  if(seBdg) seBdg.innerHTML=[
+    seCounts.Atrasado?`<span class="chip" style="background:#fef08a;color:#854d0e;font-size:9px">⚠️ Atr: ${seCounts.Atrasado}</span>`:'',
+    seCounts.Parcial?`<span class="chip" style="background:#fce7f3;color:#9d174d;font-size:9px">🔸 Parc: ${seCounts.Parcial}</span>`:'',
+    seCounts.Adiado?`<span class="chip" style="background:#ede9fe;color:#5b21b6;font-size:9px">⏸ Adj: ${seCounts.Adiado}</span>`:'',
+  ].filter(Boolean).join('');
+
+  const COLSPAN=21;
+  function grpHeader(label,count,tot,color){
+    return`<tr style="background:${color}22;border-left:3px solid ${color}">
+      <td colspan="${COLSPAN}" style="padding:5px 10px;font-weight:700;font-size:11px;color:${color}">
+        ${label} <span class="chip" style="background:${color};color:#fff;font-size:9px">${count}</span>
+        ${tot?`<span style="color:var(--orange);font-weight:400;font-size:10px;margin-left:6px">${fm(tot)}m pendente</span>`:''}
+        <span style="float:right;cursor:pointer;font-size:10px;color:var(--text3)" onclick="this.closest('tr').nextElementSibling&&(this.closest('tr').nextElementSibling.style.display=this.closest('tr').nextElementSibling.style.display==='none'?'':'none')">▾ recolher</span>
+      </td></tr>`;
+  }
+  function makeGroup(groups, labelFn, colorFn){
+    return Object.entries(groups).map(([k,rs])=>{
+      const tot=rs.reduce((a,r)=>a+(r[9]||0),0);
+      const hdr=grpHeader(labelFn(k,rs),rs.length,tot,colorFn(k,rs));
+      return hdr+rs.map(r=>pedRow(r)).join('');
+    }).join('');
+  }
+
   if(_pedGrp==='cli'){
     const groups={};
-    rows.forEach(r=>{const k=r[1];if(!groups[k])groups[k]=[];groups[k].push(r);});
-    tb.innerHTML=Object.entries(groups).map(([cli,rs])=>{
-      const tot=rs.reduce((a,r)=>a+(r[11]||0),0);
-      return`<tr style="background:var(--bg2)"><td colspan="16" style="padding:6px 10px;font-weight:600;font-size:11px">${cli.split('(')[0].trim()} <span class="chip c-blue">${rs.length}</span> <span style="color:var(--orange)">${fm(tot)}m</span></td></tr>`+
-      rs.map(r=>pedRow(r)).join('');
+    rows.forEach(r=>{const k=r[1].split('(')[0].trim();if(!groups[k])groups[k]=[];groups[k].push(r);});
+    tb.innerHTML=makeGroup(groups,(k)=>k,(k)=>'#2563eb');
+  } else if(_pedGrp==='prod'){
+    const groups={};
+    rows.forEach(r=>{const k=r[3]||'—';if(!groups[k])groups[k]=[];groups[k].push(r);});
+    tb.innerHTML=makeGroup(groups,(k)=>k,(k)=>'#7c3aed');
+  } else if(_pedGrp==='prio'){
+    const order=['P0','P1','P2','P3','P4'];
+    const groups={};
+    order.forEach(p=>{groups[p]=rows.filter(r=>getPrio(r)===p);});
+    const colors={P0:'#dc2626',P1:'#dc2626',P2:'#ea580c',P3:'#16a34a',P4:'#38bdf8'};
+    tb.innerHTML=order.filter(p=>groups[p].length>0).map(p=>{
+      const rs=groups[p];
+      const tot=rs.reduce((a,r)=>a+(r[9]||0),0);
+      return grpHeader(`${p} — ${rs[0]?['','','P0 Comercial','P1 Atrasado>5d','P2 Atrasado 1-5d','P3 até 7 dias','P4 Programado'][['P0','P1','P2','P3','P4'].indexOf(p)+1]:''}`,rs.length,tot,colors[p])+rs.map(r=>pedRow(r)).join('');
+    }).join('');
+  } else if(_pedGrp==='dat'){
+    const groups={};
+    rows.forEach(r=>{const dt=(r[8]||r[7]||'—').slice(0,7);if(!groups[dt])groups[dt]=[];groups[dt].push(r);});
+    const sortedKeys=Object.keys(groups).sort();
+    const today=new Date().toISOString().slice(0,7);
+    tb.innerHTML=sortedKeys.map(k=>{
+      const rs=groups[k];const tot=rs.reduce((a,r)=>a+(r[9]||0),0);
+      const late=k<today;const label=k==='—'?'Sem data':k;
+      return grpHeader(label,rs.length,tot,late?'#dc2626':'#2563eb')+rs.map(r=>pedRow(r)).join('');
+    }).join('');
+  } else if(_pedGrp==='sent'){
+    const order=['Atrasado','Parcial','Adiado','Atendido','Cancelado','—'];
+    const colors={'Atrasado':'#eab308','Parcial':'#ec4899','Adiado':'#7c3aed','Atendido':'#1e3a5f','Cancelado':'#6b7280','—':'#94a3b8'};
+    const groups={'Atrasado':[],'Parcial':[],'Adiado':[],'Atendido':[],'Cancelado':[],'—':[]};
+    rows.forEach(r=>{const se=getStatusEntrega(r);const k=se?se.label:'—';if(groups[k])groups[k].push(r);else groups['—'].push(r);});
+    tb.innerHTML=order.filter(k=>groups[k].length>0).map(k=>{
+      const rs=groups[k];const tot=rs.reduce((a,r)=>a+(r[9]||0),0);
+      const se=getStatusEntrega(rs[0]);
+      const icon=se?se.icon:'📦';
+      return grpHeader(`${icon} ${k}`,rs.length,tot,colors[k])+rs.map(r=>pedRow(r)).join('');
     }).join('');
   } else {
     tb.innerHTML=rows.slice(0,500).map(r=>pedRow(r)).join('');
@@ -6920,6 +7154,7 @@ function pedRow(r){
     ${obsCell}
     <td>${statusChip(r[5])}</td>
     ${(()=>{const sp=getStatusProd(r);return sp?`<td><span class="chip" style="background:${sp.color}22;color:${sp.color};border:1px solid ${sp.color};font-size:9px;font-weight:600">${sp.label}</span>${sp.extra?`<br><span class="mono" style="font-size:8px;color:var(--text3)">${sp.extra}</span>`:''}</td>`:'<td style="color:var(--text3)">—</td>';})()}
+    ${(()=>{const se=getStatusEntrega(r);return se?`<td><span style="background:${se.bg};color:${se.fg};border:1px solid ${se.border};border-radius:4px;font-size:9px;font-weight:600;padding:1px 5px;white-space:nowrap">${se.icon} ${se.label}</span></td>`:'<td style="color:var(--text3);font-size:10px">—</td>';})()}
   </tr>`;
 }
 function ckAll(el){document.querySelectorAll('.ck-ped').forEach(c=>c.checked=el.checked);atualizarSelInfo();}
@@ -8875,6 +9110,9 @@ function salvarNovaOP(){
   renderOrdens();
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
 }
+
+
+
 
 
 
