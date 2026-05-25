@@ -1,6 +1,32 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+(function(){
+  var BUILD='1779743396';
+  var stored=localStorage.getItem('pcp_build');
+  if(stored!==BUILD){
+    // Clear everything
+    localStorage.clear();
+    sessionStorage.clear();
+    // Unregister any service workers
+    if(navigator.serviceWorker){
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        regs.forEach(function(r){r.unregister();});
+      });
+    }
+    // Clear caches API
+    if(window.caches){
+      caches.keys().then(function(keys){
+        keys.forEach(function(k){caches.delete(k);});
+      });
+    }
+    localStorage.setItem('pcp_build',BUILD);
+    window.location.reload(true);
+  }
+})();
+</script>
+
 <meta charset="UTF-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -347,7 +373,7 @@ function engBuscaFluxo(){
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>PCP MAXFIO v9.5</title>
+<title>PCP MAXFIO v10 [1779743396]</title>
   <meta name="build" content="1779742124">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -594,11 +620,6 @@ if(typeof QRCode === 'undefined') {
   <div class="nt" id="nt-painel"     onclick="go('painel')">🏭 Painel OPs</div>
   <!-- ETAPAS submenu as dropdown under Painel OPs -->
   <div class="nt-group" style="position:relative;display:inline-block">
-    <div class="nt" id="nt-etapas" onclick="toggleEtapasMenu()" style="gap:4px">
-      ⚙️ Etapas ▾
-    </div>
-    <div id="etapas-dropdown" style="display:none;position:absolute;top:100%;left:0;z-index:500;background:var(--navy2);border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,.3);min-width:150px">
-      <div class="nt" id="nt-trefila"     onclick="closeEtapasMenu();go('trefila')"     style="border-bottom:1px solid rgba(255,255,255,.1)">🔧 Trefila</div>
       <div class="nt" id="nt-buncherfixo" onclick="closeEtapasMenu();go('buncherfixo')" style="border-bottom:1px solid rgba(255,255,255,.1)">🔩 Buncher</div>
       <div class="nt" id="nt-buncherredir" onclick="closeEtapasMenu();go('buncherredir')" style="border-bottom:1px solid rgba(255,255,255,.1)">🌀 Torcedeira</div>
       <div class="nt" id="nt-extrusora"   onclick="closeEtapasMenu();go('extrusora')">🏭 Extrusora</div>
