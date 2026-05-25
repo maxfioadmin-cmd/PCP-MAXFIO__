@@ -347,7 +347,7 @@ function engBuscaFluxo(){
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>PCP MAXFIO v9.1</title>
+<title>PCP MAXFIO v9.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -2103,6 +2103,8 @@ alter publication supabase_realtime add table pcp_sync;</div>
 
 
 <script>
+
+
 
 
 
@@ -5291,6 +5293,15 @@ setInterval(()=>{const d=new Date();document.getElementById('nav-clock').textCon
 
 // ═══════════ INIT ═══════════
 window.addEventListener('DOMContentLoaded',()=>{
+  // ─── VERSÃO / CACHE BUST ───
+  const _APP_VER='9.2';
+  const _storedVer=sessionStorage.getItem('pcp_app_ver');
+  if(_storedVer && _storedVer!==_APP_VER){
+    sessionStorage.clear();
+    window.location.reload(true);
+    return;
+  }
+  sessionStorage.setItem('pcp_app_ver',_APP_VER);
   const _sbCfg=loadSupabaseConfig();
   if(_sbCfg){
     initSupabase(_sbCfg.url,_sbCfg.key);
@@ -8166,9 +8177,10 @@ function hcSub(){}
 // ═══════════ USUÁRIOS ═══════════
 let _usrEdit=null;
 function renderUsuarios(){
-  const el=document.getElementById('usr-list');if(!el)return;
+  const el=document.getElementById('usr-list');if(!el){console.warn('usr-list not found');return;}
   // Combina DEFAULT_USERS + USERS sem duplicar
-  const allU=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const allU=[...DEFAULT_USERS,...(USERS||[]).filter(function(u){return !DEFAULT_USERS.find(function(d){return d.login===u.login;});})];
+  console.log('[usuarios] DEFAULT_USERS:',DEFAULT_USERS.length,'USERS:',USERS.length,'allU:',allU.length);
   const cnt=document.getElementById('usr-cnt');if(cnt)cnt.textContent=allU.length;
   if(allU.length===0){el.innerHTML='<p style="color:var(--text3);font-size:12px">Nenhum usuário cadastrado.</p>';return;}
   el.innerHTML=allU.map(u=>{
@@ -8191,7 +8203,7 @@ function renderUsuarios(){
   }).join('');
 }
 function editarUsuario(login){
-  const allU=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const allU=[...DEFAULT_USERS,...(USERS||[]).filter(function(u){return !DEFAULT_USERS.find(function(d){return d.login===u.login;});})];
   const u=allU.find(x=>x.login===login);if(!u)return;
   // Garante que o usuário existe em USERS para poder editar
   if(!USERS.find(x=>x.login===login)) USERS.push({...u});
@@ -9119,6 +9131,8 @@ function salvarNovaOP(){
   renderOrdens();
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
 }
+
+
 
 
 
