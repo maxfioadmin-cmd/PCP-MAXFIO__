@@ -4382,250 +4382,191 @@ function salvarPreviaHistorico(opsGeradas){
 function renderDashProd(){
   const today=new Date().toISOString().slice(0,10);
 
-  // ── Categorize all pedidos with pending quantity ──
-  const semProd=[], emAndamento=[], parcial=[], noPrazo=[], finalizados=[];
+  // ── Categorize ──
+  const semProd=[],emAnd=[],parcial=[],noPrazo=[];
 
   PEDIDOS.forEach(r=>{
     if((r[11]||0)<=0) return;
-    const sp    = getStatusProd(r);
-    const prio  = getPrio(r);
-    const dtRef = r[8]||r[7]||'';
-    const diasAtraso = dtRef ? Math.floor((new Date(today)-new Date(dtRef))/86400000) : 0;
-    const rsv   = RESERVAS.filter(x=>x.pedido===r[2]&&x.codigo===r[4]).reduce((a,x)=>a+(x.metros||0),0);
-    const label = sp?.label||'';
-
-    const item = {r, diasAtraso, prio, rsv, sp};
-
-    if(label.includes('Finaliz')){
-      finalizados.push(item);
-    } else if(label.includes('Em Produção')||label.includes('OP Gerada')){
-      emAndamento.push(item);
-    } else if(label.includes('Prévia')){
-      // In preview — no production yet
-      if(diasAtraso>0) semProd.push(item);
-      else noPrazo.push(item);
+    const sp=getStatusProd(r);
+    const prio=getPrio(r);
+    const dtRef=r[8]||r[7]||'';
+    const atrasado=dtRef&&dtRef<today;
+    const dias=atrasado?Math.floor((new Date(today)-new Date(dtRef))/86400000):0;
+    const label=sp?sp.label:'';
+    const item={r,dias,prio,atrasado};
+    if(label.includes('Em Produ')||label.includes('OP Gerada')){
+      emAnd.push(item);
+    } else if(atrasado){
+      semProd.push(item);
     } else {
-      // No OP at all
-      if(diasAtraso>0) semProd.push(item);
-      else noPrazo.push(item);
+      noPrazo.push(item);
     }
   });
 
-  // Partial = has production but not concluded (some OPs done, some not)
-  emAndamento.forEach(item=>{
+  // Parcial: tem OP concluida E OP ainda aberta
+  const parcialIds=new Set();
+  emAnd.forEach(item=>{
     const r=item.r;
     const ops=ORDENS.filter(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(r[2])));
     const concl=ops.filter(o=>o.status==='Concluída').length;
-    if(concl>0 && concl<ops.length) parcial.push(item);
+    if(concl>0&&concl<ops.length){parcial.push(item);parcialIds.add(r[2]);}
   });
 
-  // Sort atrasados by days desc then by prio
   const priOrd={P0:0,P1:1,P2:2,P3:3,P4:4};
-  semProd.sort((a,b)=>b.diasAtraso-a.diasAtraso||(priOrd[a.prio]||9)-(priOrd[b.prio]||9));
+  semProd.sort((a,b)=>b.dias-a.dias||(priOrd[a.prio]||9)-(priOrd[b.prio]||9));
 
-  // ── KPI bar ──
+  const setTxt=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+
+  // ── KPIs ──
   const kpiEl=document.getElementById('dp-kpis');
   if(kpiEl){
-    const totPend=PEDIDOS.filter(r=>(r[11]||0)>0).length;
-    const mSemProd=semProd.reduce((a,x)=>a+(x.r[11]||0),0);
-    const mAndamento=emAndamento.reduce((a,x)=>a+(x.r[11]||0),0);
-    const mFin=finalizados.reduce((a,x)=>a+(x.r[11]||0),0);
-    kpiEl.innerHTML=[
-      {icon:'📦',label:'Total Pedidos',n:totPend,sub:'',bg:'#f8faff',border:'#94a3b8',c:'#475569'},
-      {icon:'⚠️',label:'Sem Produção',n:semProd.length,sub:fm(mSemProd)+'m',bg:'#fff5f5',border:'#dc2626',c:'#dc2626'},
-      {icon:'🔵',label:'Em Produção',n:emAndamento.length,sub:fm(mAndamento)+'m',bg:'#eff6ff',border:'#2563eb',c:'#2563eb'},
-      {icon:'🟡',label:'Parcial',n:parcial.length,sub:'concl. parcial',bg:'#fffbeb',border:'#d97706',c:'#d97706'},
-      {icon:'🟢',label:'No Prazo',n:noPrazo.length,sub:'sem atraso',bg:'#f0fdf4',border:'#16a34a',c:'#16a34a'},
-      {icon:'✅',label:'Finalizados',n:finalizados.length,sub:fm(mFin)+'m',bg:'#f0fdfa',border:'#0d9488',c:'#0d9488'},
-    ].map(k=>`
-      <div style="background:${k.bg};border:2px solid ${k.border};border-radius:10px;
-        padding:14px 16px;text-align:center">
-        <div style="font-size:26px">${k.icon}</div>
-        <div style="font-size:11px;font-weight:700;color:${k.c};margin:4px 0;
-          text-transform:uppercase;letter-spacing:.3px">${k.label}</div>
-        <div style="font-size:38px;font-weight:900;color:${k.c};line-height:1">${k.n}</div>
-        ${k.sub?`<div style="font-size:11px;color:var(--text2);margin-top:4px">${k.sub}</div>`:''}
-      </div>`).join('');
+    const kpis=[
+      {icon:'⚠️',label:'Atrasados sem Prod.',n:semProd.length,
+        m:semProd.reduce((a,x)=>a+(x.r[11]||0),0),bg:'#fff5f5',bo:'#dc2626',c:'#dc2626'},
+      {icon:'🔵',label:'Em Produção',n:emAnd.length,
+        m:emAnd.reduce((a,x)=>a+(x.r[11]||0),0),bg:'#eff6ff',bo:'#2563eb',c:'#2563eb'},
+      {icon:'🟡',label:'Parcial',n:parcial.length,
+        m:0,bg:'#fffbeb',bo:'#d97706',c:'#d97706'},
+      {icon:'🟢',label:'No Prazo',n:noPrazo.length,
+        m:noPrazo.reduce((a,x)=>a+(x.r[11]||0),0),bg:'#f0fdf4',bo:'#16a34a',c:'#16a34a'},
+    ];
+    kpiEl.innerHTML=kpis.map(k=>
+      '<div style="background:'+k.bg+';border:2px solid '+k.bo+';border-radius:10px;'+
+      'padding:14px;text-align:center">'+
+      '<div style="font-size:24px">'+k.icon+'</div>'+
+      '<div style="font-size:11px;font-weight:700;color:'+k.c+';text-transform:uppercase;margin:4px 0">'+k.label+'</div>'+
+      '<div style="font-size:36px;font-weight:900;color:'+k.c+';line-height:1">'+k.n+'</div>'+
+      (k.m?'<div style="font-size:11px;color:#6b7280;margin-top:4px">'+fm(k.m)+'m</div>':'')+
+      '</div>'
+    ).join('');
   }
 
-  // ── Helper: priority badge ──
-  const prioBadge=(p)=>{
-    const m={P0:'#dc2626',P1:'#ea580c',P2:'#d97706',P3:'#2563eb',P4:'#6b7280'};
-    const c=m[p]||'#888';
-    return`<span style="background:${c};color:#fff;border-radius:3px;
-      padding:1px 6px;font-size:9px;font-weight:700">${p}</span>`;
-  };
+  // ── Helpers ──
+  const priColors={P0:'#dc2626',P1:'#ea580c',P2:'#d97706',P3:'#2563eb',P4:'#6b7280'};
+  const badge=(p)=>'<span style="background:'+( priColors[p]||'#888')+'22;color:'+(priColors[p]||'#888')+';border:1px solid '+(priColors[p]||'#888')+';border-radius:3px;padding:0 5px;font-size:9px;font-weight:700">'+p+'</span>';
+  const atrBadge=(d)=>d>0?'<span style="background:#dc2626;color:#fff;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">'+d+'d</span>':'';
 
-  // ── Helper: item row ──
-  const itemRow=(x,bc)=>{
-    const r=x.r;
-    const dtFmt=(r[8]||r[7]||'').slice(0,10).split('-').reverse().join('/');
-    const ops=ORDENS.filter(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(r[2])));
-    const opId=ops[0]?.id||'';
-    return`<div style="padding:8px 12px;border-bottom:1px solid var(--border);
-      border-left:4px solid ${bc}">
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
-        <span style="font-family:monospace;font-weight:800;font-size:13px;
-          background:${getPedColor(r[2])};padding:1px 7px;border-radius:4px">${r[2]}</span>
-        ${prioBadge(x.prio)}
-        ${x.diasAtraso>0?`<span style="background:#dc2626;color:#fff;border-radius:3px;
-          padding:1px 5px;font-size:10px;font-weight:700">${x.diasAtraso}d atraso</span>`:''}
-        <span style="flex:1;font-size:11px;font-weight:600;color:var(--navy);
-          overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-          ${String(r[1]||'').split('(')[0].trim().slice(0,30)}</span>
-        <span style="color:#ea580c;font-weight:700;font-size:13px">${fm(r[11]||0)}m</span>
-      </div>
-      <div style="font-size:10px;color:var(--text2)">
-        ${shortProd(r[3])} · ${dtFmt}
-        ${opId?`· <span class="mono" style="color:#2563eb">${opId}</span>`:''}
-        ${x.rsv>0?`· <span style="color:#7c3aed">rsv:${fm(x.rsv)}m</span>`:''}
-      </div>
-    </div>`;
+  const row=(item,bc)=>{
+    const r=item.r;
+    const dt=(r[8]||r[7]||'').slice(0,10).split('-').reverse().join('/');
+    const rsv=RESERVAS.filter(x=>x.pedido===r[2]&&x.codigo===r[4]&&x.status!=='Estornado').reduce((a,x)=>a+(x.metros||0),0);
+    const aProd=Math.max(0,(r[11]||0)-rsv);
+    return '<div style="padding:8px 12px;border-bottom:1px solid var(--border);border-left:4px solid '+bc+'">'+
+      '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">'+
+      '<span style="font-family:monospace;font-weight:800;font-size:13px;background:'+getPedColor(r[2])+';padding:1px 7px;border-radius:4px">'+r[2]+'</span>'+
+      badge(item.prio)+atrBadge(item.dias)+
+      '<span style="flex:1;font-size:11px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[1]||'').split('(')[0].trim().slice(0,28)+'</span>'+
+      '<span style="color:'+bc+';font-weight:700;font-size:13px">'+fm(r[11]||0)+'m</span>'+
+      (rsv>0?'<span style="color:#9333ea;font-size:10px">−'+fm(rsv)+'rsv='+fm(aProd)+'m</span>':'')+
+      '</div>'+
+      '<div style="font-size:10px;color:var(--text2)">'+shortProd(r[3])+' · '+dt+'</div>'+
+      '</div>';
   };
 
   // ── Q1: Atrasados sem produção ──
   const q1=document.getElementById('dp-list-atrasados');
-  const c1=document.getElementById('dp-cnt-atrasados');
-  if(c1) c1.textContent=semProd.length;
+  setTxt('dp-cnt-atrasados', semProd.length);
   if(q1){
-    if(semProd.length===0){
+    if(!semProd.length){
       q1.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">✅ Nenhum pedido atrasado sem produção</div>';
     } else {
-      // Group by prioridade
       const byPrio={};
       semProd.forEach(x=>{if(!byPrio[x.prio])byPrio[x.prio]=[];byPrio[x.prio].push(x);});
       q1.innerHTML=Object.entries(byPrio)
         .sort((a,b)=>(priOrd[a[0]]||9)-(priOrd[b[0]]||9))
         .map(([p,items])=>{
-          const pc={P0:'#dc2626',P1:'#ea580c',P2:'#d97706',P3:'#2563eb',P4:'#6b7280'}[p]||'#888';
-          return`<div style="background:${pc}11;border-bottom:2px solid ${pc}33;
-            padding:5px 10px;font-size:11px;font-weight:700;color:${pc};
-            display:flex;align-items:center;gap:6px">
-            ${p} — ${items.length} pedido(s)
-            <span style="opacity:.6">${items.reduce((a,x)=>a+(x.r[11]||0),0).toFixed(0)}m</span>
-          </div>
-          ${items.map(x=>itemRow(x,pc)).join('')}`;
+          const pc=priColors[p]||'#888';
+          return '<div style="background:'+pc+'11;padding:5px 10px;font-size:11px;font-weight:700;color:'+pc+';border-bottom:2px solid '+pc+'33">'+
+            p+' — '+items.length+' pedido(s) · '+items.reduce((a,x)=>a+(x.r[11]||0),0).toFixed(0)+'m</div>'+
+            items.map(x=>row(x,pc)).join('');
         }).join('');
     }
   }
 
-  // ── Q2: Parcialmente finalizados ──
+  // ── Q2: Parcial ──
   const q2=document.getElementById('dp-list-producao');
-  const c2=document.getElementById('dp-cnt-producao');
-  if(c2) c2.textContent=parcial.length;
+  setTxt('dp-cnt-producao', parcial.length);
   if(q2){
-    if(parcial.length===0){
+    if(!parcial.length){
       q2.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">Nenhum pedido parcialmente finalizado</div>';
     } else {
-      q2.innerHTML=parcial.map(x=>{
-        const r=x.r;
+      q2.innerHTML=parcial.map(item=>{
+        const r=item.r;
         const ops=ORDENS.filter(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(r[2])));
         const concl=ops.filter(o=>o.status==='Concluída').length;
         const total=ops.length;
         const pct=Math.round(concl/total*100);
-        return`<div style="padding:8px 12px;border-bottom:1px solid var(--border);
-          border-left:4px solid #d97706">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-family:monospace;font-weight:800;font-size:13px;
-              background:${getPedColor(r[2])};padding:1px 7px;border-radius:4px">${r[2]}</span>
-            ${prioBadge(x.prio)}
-            <span style="flex:1;font-size:11px;font-weight:600;color:var(--navy)">${String(r[1]||'').split('(')[0].trim().slice(0,28)}</span>
-            <span style="color:#d97706;font-weight:700">${concl}/${total} OPs</span>
-          </div>
-          <div style="background:#e5e7eb;border-radius:99px;height:6px;overflow:hidden;margin-bottom:4px">
-            <div style="width:${pct}%;height:100%;background:#d97706;border-radius:99px"></div>
-          </div>
-          <div style="font-size:10px;color:var(--text2)">${shortProd(r[3])} · faltam ${total-concl} etapas</div>
-        </div>`;
+        const bc='#d97706';
+        return '<div style="padding:9px 12px;border-bottom:1px solid var(--border);border-left:4px solid '+bc+'">'+
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'+
+          '<span style="font-family:monospace;font-weight:800;font-size:13px;background:'+getPedColor(r[2])+';padding:1px 7px;border-radius:4px">'+r[2]+'</span>'+
+          badge(item.prio)+
+          '<span style="flex:1;font-size:11px;font-weight:600;color:var(--navy)">'+String(r[1]||'').split('(')[0].trim().slice(0,28)+'</span>'+
+          '<span style="color:'+bc+';font-weight:700">'+concl+'/'+total+' OPs</span>'+
+          '</div>'+
+          '<div style="background:#e5e7eb;border-radius:99px;height:5px;overflow:hidden;margin-bottom:3px">'+
+          '<div style="width:'+pct+'%;height:100%;background:'+bc+'"></div></div>'+
+          '<div style="font-size:10px;color:var(--text2)">'+shortProd(r[3])+' · faltam '+(total-concl)+' etapas</div>'+
+          '</div>';
       }).join('');
     }
   }
 
   // ── Q3: Em produção com previsão ──
   const q3=document.getElementById('dp-list-iniciada');
-  const c3=document.getElementById('dp-cnt-iniciada');
-  const emAndSemParcial=emAndamento.filter(x=>!parcial.includes(x));
-  if(c3) c3.textContent=emAndSemParcial.length;
+  setTxt('dp-cnt-iniciada', emAnd.length);
   if(q3){
-    if(emAndSemParcial.length===0){
+    if(!emAnd.length){
       q3.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">Nenhuma produção em andamento</div>';
     } else {
-      q3.innerHTML=emAndSemParcial.map(x=>{
-        const r=x.r;
+      q3.innerHTML=emAnd.map(item=>{
+        const r=item.r;
         const ops=ORDENS.filter(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(r[2]))&&(o.status==='Em andamento'||o.status==='Em Andamento'));
-        const mProd=APONTAMENTOS.filter(a=>ops.some(o=>o.id===a.op_id)).reduce((a,ap)=>a+(ap.metros||0),0);
-        const mTotal=r[11]||0;
-        const pct=mTotal>0?Math.min(100,Math.round(mProd/mTotal*100)):0;
-        const dtRef=r[8]||r[7]||'';
-        // Previsão: linear extrapolation
-        let prev='—';
-        if(pct>5&&ops[0]?.dt_envio){
-          const daysElapsed=Math.max(1,Math.floor((new Date(today)-new Date(ops[0].dt_envio))/86400000));
-          const daysTotal=Math.round(daysElapsed/(pct/100));
-          const dtPrev=new Date(new Date(ops[0].dt_envio).getTime()+daysTotal*86400000);
-          prev=dtPrev.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
-        } else if(ops[0]?.dt_entrega){
-          prev=ops[0].dt_entrega.slice(0,10).split('-').reverse().join('/');
-        }
+        const op=ops[0];
+        const dtRef=op?op.dt_envio:'';
+        let prev=op?((op.dt_entrega||'').slice(0,10).split('-').reverse().join('/')):'—';
         const bc='#2563eb';
-        return`<div style="padding:8px 12px;border-bottom:1px solid var(--border);
-          border-left:4px solid ${bc}">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-family:monospace;font-weight:800;font-size:13px;
-              background:${getPedColor(r[2])};padding:1px 7px;border-radius:4px">${r[2]}</span>
-            ${prioBadge(x.prio)}
-            ${x.diasAtraso>0?`<span style="background:#dc2626;color:#fff;border-radius:3px;padding:1px 5px;font-size:9px">${x.diasAtraso}d</span>`:''}
-            <span style="flex:1;font-size:11px;font-weight:600;color:var(--navy);
-              overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${String(r[1]||'').split('(')[0].trim().slice(0,28)}</span>
-            <span style="color:${bc};font-weight:700;font-size:12px">${fm(mTotal)}m</span>
-          </div>
-          <div style="background:#dbeafe;border-radius:99px;height:6px;overflow:hidden;margin-bottom:4px">
-            <div style="width:${pct}%;height:100%;background:${bc};border-radius:99px"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2)">
-            <span>${shortProd(r[3])}</span>
-            <span>⏱ Prev. ${prev} · ${pct}%</span>
-          </div>
-        </div>`;
+        return '<div style="padding:9px 12px;border-bottom:1px solid var(--border);border-left:4px solid '+bc+'">'+
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'+
+          '<span style="font-family:monospace;font-weight:800;font-size:13px;background:'+getPedColor(r[2])+';padding:1px 7px;border-radius:4px">'+r[2]+'</span>'+
+          badge(item.prio)+atrBadge(item.dias)+
+          '<span style="flex:1;font-size:11px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[1]||'').split('(')[0].trim().slice(0,28)+'</span>'+
+          '<span style="color:'+bc+';font-weight:700;font-size:13px">'+fm(r[11]||0)+'m</span>'+
+          '</div>'+
+          '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2)">'+
+          '<span>'+shortProd(r[3])+'</span>'+
+          '<span>⏱ Prev. '+prev+(op?' · OP: '+op.id:'')+'</span>'+
+          '</div>'+
+          '</div>';
       }).join('');
     }
   }
 
-  // ── Q4: No prazo (sem atraso, sem produção) ──
+  // ── Q4: No prazo ──
   const q4=document.getElementById('dp-list-finalizado');
-  const c4=document.getElementById('dp-cnt-finalizado');
-  if(c4) c4.textContent=noPrazo.length;
+  setTxt('dp-cnt-finalizado', noPrazo.length);
   if(q4){
-    if(noPrazo.length===0){
+    if(!noPrazo.length){
       q4.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">Nenhum pedido no prazo sem produção</div>';
     } else {
-      q4.innerHTML=noPrazo.map(x=>itemRow(x,'#16a34a')).join('');
+      q4.innerHTML=noPrazo.map(x=>row(x,'#16a34a')).join('');
     }
   }
 
-  // ── Q5: OPs Status resumo (novo) ──
+  // ── Q5: OPs resumo ──
   const q5=document.getElementById('dp-ops-resumo');
   if(q5){
-    const opsCount={Pendente:0,'Em andamento':0,'Concluída':0,Reaberta:0};
-    ORDENS.forEach(o=>{
-      const s=o.status||'Pendente';
-      if(opsCount[s]!==undefined) opsCount[s]++;
-    });
-    const colors={Pendente:'#d97706','Em andamento':'#2563eb','Concluída':'#16a34a',Reaberta:'#7c3aed'};
-    const icons={Pendente:'⏳','Em andamento':'🔵','Concluída':'✅',Reaberta:'🔄'};
-    q5.innerHTML=Object.entries(opsCount).map(([s,n])=>`
-      <div onclick="go('painel')" style="cursor:pointer;background:${colors[s]}11;
-        border:2px solid ${colors[s]}44;border-radius:8px;padding:10px 14px;
-        display:flex;align-items:center;gap:10px;transition:.15s"
-        onmouseover="this.style.background='${colors[s]}22'"
-        onmouseout="this.style.background='${colors[s]}11'">
-        <span style="font-size:22px">${icons[s]}</span>
-        <div style="flex:1">
-          <div style="font-size:11px;font-weight:700;color:${colors[s]}">${s}</div>
-          <div style="font-size:26px;font-weight:900;color:${colors[s]};line-height:1">${n}</div>
-        </div>
-        <span style="font-size:18px;color:${colors[s]};opacity:.5">→</span>
-      </div>`).join('');
+    const st={Pendente:0,'Em andamento':0,'Concluída':0,Reaberta:0};
+    ORDENS.forEach(o=>{const s=o.status||'Pendente';if(st[s]!==undefined)st[s]++;});
+    const cols={Pendente:'#d97706','Em andamento':'#2563eb','Concluída':'#16a34a',Reaberta:'#7c3aed'};
+    const icns={Pendente:'⏳','Em andamento':'🔵','Concluída':'✅',Reaberta:'🔄'};
+    q5.innerHTML=Object.entries(st).map(([s,n])=>
+      '<div onclick="go(\'painel\')" style="cursor:pointer;background:'+cols[s]+'11;border:2px solid '+cols[s]+'44;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px">'+
+      '<span style="font-size:22px">'+icns[s]+'</span>'+
+      '<div style="flex:1"><div style="font-size:11px;font-weight:700;color:'+cols[s]+'">'+s+'</div>'+
+      '<div style="font-size:26px;font-weight:900;color:'+cols[s]+';line-height:1">'+n+'</div></div>'+
+      '<span style="font-size:18px;color:'+cols[s]+';opacity:.5">→</span></div>'
+    ).join('');
   }
 
   // ── Charts ──
@@ -4634,52 +4575,35 @@ function renderDashProd(){
       const el=document.getElementById(id);
       if(el&&el._chart){el._chart.destroy();el._chart=null;}
     });
-
-    const stEl=document.getElementById('dp-ch-status');
-    if(stEl){
-      const stCtx=stEl.getContext('2d');
-      stEl._chart=new Chart(stCtx,{
+    const s1=document.getElementById('dp-ch-status');
+    if(s1&&s1.getContext){
+      s1._chart=new Chart(s1.getContext('2d'),{
         type:'doughnut',
-        data:{
-          labels:['Sem Produção','Em Produção','No Prazo','Finalizados'],
-          datasets:[{
-            data:[semProd.length,emAndamento.length,noPrazo.length,finalizados.length],
-            backgroundColor:['#dc2626','#2563eb','#16a34a','#0d9488'],
-            borderWidth:2,borderColor:'#fff'
-          }]
-        },
-        options:{responsive:true,maintainAspectRatio:false,
-          cutout:'65%',
-          plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}},
-            tooltip:{callbacks:{label:(c)=>c.label+': '+c.raw}}}}
+        data:{labels:['Sem Prod.','Em Prod.','No Prazo'],
+          datasets:[{data:[semProd.length,emAnd.length,noPrazo.length],
+            backgroundColor:['#dc2626','#2563eb','#16a34a'],borderWidth:2,borderColor:'#fff'}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+          plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}
       });
     }
-
-    const etEl=document.getElementById('dp-ch-etapa');
-    if(etEl){
-      const etCtx=etEl.getContext('2d');
-      const etapa={};
+    const s2=document.getElementById('dp-ch-etapa');
+    if(s2&&s2.getContext){
+      const et={};
       ORDENS.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento').forEach(o=>{
         const e=(o.etapa||o.tipo||'OP').toUpperCase().slice(0,8);
-        if(!etapa[e])etapa[e]=0; etapa[e]++;
+        if(!et[e])et[e]=0;et[e]++;
       });
-      const labels=Object.keys(etapa);
-      const vals=Object.values(etapa);
-      etEl._chart=new Chart(etCtx,{
+      s2._chart=new Chart(s2.getContext('2d'),{
         type:'bar',
-        data:{
-          labels,
-          datasets:[{label:'OPs em Andamento',data:vals,
-            backgroundColor:['#a855f7','#7c3aed','#22c55e','#fb923c','#06b6d4','#2563eb'],
-            borderRadius:6}]
-        },
+        data:{labels:Object.keys(et),
+          datasets:[{label:'OPs',data:Object.values(et),
+            backgroundColor:['#a855f7','#7c3aed','#22c55e','#fb923c','#06b6d4'],borderRadius:6}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:false}},
-          scales:{y:{ticks:{stepSize:1},grid:{color:'rgba(0,0,0,.05)'}},
-            x:{grid:{display:false}}}}
+          scales:{y:{ticks:{stepSize:1},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
       });
     }
-  }catch(e){console.warn('Chart error:',e);}
+  }catch(e){console.warn('chart:',e);}
 }
 // ═══════════ DASHBOARD ═══════════
 function getPCPPrevias(){return PCP_ITEMS||[];}
@@ -6326,7 +6250,7 @@ function pedRow(r){
   const qtEst  = isM ? fm(r[10]): String(Math.round(r[10]||0));
   const produzir = Math.max(0,(r[11]||0));
   const qtProd = isM ? fm(produzir) : String(Math.round(produzir));
-  const rsv=RESERVAS.filter(x=>x.pedido===r[2]&&x.codigo===r[4]).reduce((a,x)=>a+(x.metros||0),0);
+  const rsv=RESERVAS.filter(x=>x.pedido===r[2]&&x.codigo===r[4]&&x.status!=='Estornado').reduce((a,x)=>a+(x.metros||0),0);
   const aProduzir = Math.max(0, produzir - rsv); // pendente - reservado
   const cobertura=r[9]>0?Math.round((r[10]||0)/r[9]*100)+'%':'—';
   const dtEm=r[6]?r[6].slice(0,10).split('-').reverse().join('/'):'';
@@ -6358,7 +6282,7 @@ function pedRow(r){
     <td class="num">${qtPend}</td>
     <td class="num" style="color:${(r[10]||0)>0?'var(--green)':'var(--text3)'}">${qtEst}</td>
     <td class="num" style="color:var(--blue)">${rsv>0?fm(rsv):'—'}</td>
-    <td class="num" style="color:${produzir>0?'var(--orange)':'var(--green)'};font-weight:600">${qtProd}</td>
+    <td class="num" style="color:${produzir>0?'var(--orange)':'var(--green)'};font-weight:700">${isM?fm(aProduzir):String(Math.round(aProduzir))}${rsv>0?`<div style='font-size:9px;color:#9333ea;font-weight:400'>-${fm(rsv)}rsv</div>`:''}</td>
     <td style="font-size:10px;text-align:center">${cobertura}</td>
     ${obsCell}
     <td>${statusChip(r[5])}</td>
