@@ -2104,6 +2104,7 @@ alter publication supabase_realtime add table pcp_sync;</div>
 
 
 
+
 // ═══════════ EMBEDDED DATA ═══════════
 // Fields: [id,cliente,pedido,produto,codigo,status,dt_emissao,dt_entrega,dt_fat,qt_m_pend,qt_m_est,qt_m_prod,grupo_prod,secao,fil_diam,fil_fios,is_imperium]
 const SEED_PEDIDOS = [];
@@ -8163,9 +8164,11 @@ function hcSub(){}
 let _usrEdit=null;
 function renderUsuarios(){
   const el=document.getElementById('usr-list');if(!el)return;
-  const cnt=document.getElementById('usr-cnt');if(cnt)cnt.textContent=USERS.length;
-  if(USERS.length===0){el.innerHTML='<p style="color:var(--text3);font-size:12px">Nenhum usuário cadastrado.</p>';return;}
-  el.innerHTML=USERS.map(u=>{
+  // Combina DEFAULT_USERS + USERS sem duplicar
+  const allU=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const cnt=document.getElementById('usr-cnt');if(cnt)cnt.textContent=allU.length;
+  if(allU.length===0){el.innerHTML='<p style="color:var(--text3);font-size:12px">Nenhum usuário cadastrado.</p>';return;}
+  el.innerHTML=allU.map(u=>{
     const def=PERFIS_DEF[u.perfil]||{icon:'👤',label:u.perfil,cor:'c-gray'};
     const isDefault=DEFAULT_USERS.find(d=>d.login===u.login);
     return`<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;display:flex;align-items:center;gap:10px">
@@ -8185,7 +8188,10 @@ function renderUsuarios(){
   }).join('');
 }
 function editarUsuario(login){
-  const u=USERS.find(x=>x.login===login);if(!u)return;
+  const allU=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const u=allU.find(x=>x.login===login);if(!u)return;
+  // Garante que o usuário existe em USERS para poder editar
+  if(!USERS.find(x=>x.login===login)) USERS.push({...u});
   _usrEdit=login;
   const ttl=document.getElementById('usr-form-ttl');if(ttl)ttl.textContent='Editar: '+u.nome;
   document.getElementById('uf-nome').value=u.nome||'';
@@ -9110,6 +9116,7 @@ function salvarNovaOP(){
   renderOrdens();
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
 }
+
 
 
 
