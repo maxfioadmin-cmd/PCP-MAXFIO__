@@ -570,7 +570,10 @@ if(typeof QRCode === 'undefined') {
     <button class="btn bpri" style="width:100%;justify-content:center;padding:8px" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="li-err"></div>
 <div style="text-align:center;margin-top:10px">
-  <button onclick="localStorage.removeItem('pcp_users');// reload removed" style="font-size:10px;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline">↺ Resetar usuários</button>
+  <button onclick="localStorage.removeItem('pcp_users');localStorage.removeItem('pcp_usuarios');localStorage.removeItem('pcp_pedidos');localStorage.removeItem('pcp_ordens');localStorage.removeItem('pcp_previas');localStorage.removeItem('pcp_lotes');localStorage.removeItem('pcp_torcedeira');alert('Base limpa! Faça login normalmente.');location.href=location.href;" 
+  style="font-size:11px;color:#dc2626;background:#fff0f0;border:1px solid #dc2626;border-radius:4px;cursor:pointer;padding:4px 10px;margin-top:4px">
+  🗑 Limpar base e recarregar
+</button>
 </div>
   </div>
 </div>
@@ -1082,7 +1085,8 @@ if(typeof QRCode === 'undefined') {
       📤 OPs Enviadas para Produção <span id="ord-env-cnt"
         style="background:#2563eb;color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;margin-left:4px">0</span>
     </button>
-  </div>
+  
+    <button class="btn bdng bsm" onclick="limparBaseDados()" style="margin-left:auto">🗑 Limpar Base (Pedidos+OPs)</button></div>
 
   <!-- ── OPs ENVIADAS (colapsado por padrão) ── -->
   <div id="enviadas-panel" style="display:none;margin-bottom:14px;
@@ -1955,20 +1959,12 @@ if(typeof QRCode === 'undefined') {
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
     <input id="com-q" placeholder="Buscar cliente..." oninput="renderComercial()"
       style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:220px">
-    <select id="com-fprio" onchange="renderComercial()" style="padding:7px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-      <option value="">Todas as prioridades</option>
-      <option value="CRITICO">🔴 Crítico</option>
-      <option value="ALTA">🟠 Alta</option>
-      <option value="NORMAL">🟢 Normal</option>
-      <option value="VIP">⭐ VIP</option>
-    </select>
-    <button class="btn bgho bsm" onclick="renderComercial()">🔄 Atualizar</button>
-  </div>
-  <div id="comercial-list"></div>
-</div>
+    <select id="com-fprio" onchange="renderComercial()" style=
+
+
+
 
 <script>
-
 
 
 
@@ -1999,10 +1995,10 @@ let editingUserId=null;
 
 // ═══════════ DEFAULTS ═══════════
 const DEFAULT_USERS=[
-  {id:1,nome:'Administrador',login:'admin',pwd:'admin123',perfil:'admin',turno:'',setor:'TI',must_change:false},
+{id:1,nome:'Administrador',login:'admin',pwd:'admin123',perfil:'admin',turno:'',setor:'TI',must_change:false},
   {id:2,nome:'Gestor PCP',login:'gestor',pwd:'gestor123',perfil:'gestor',turno:'',setor:'PCP',must_change:false},
   {id:4,nome:'SGQ Qualidade',login:'sgq',pwd:'sgq123',perfil:'producao',turno:'',setor:'Qualidade',must_change:true},
-  {id:'op_tiago',nome:'Tiago Anselmo',login:'tiago',pwd:'tiago123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Lider/Extrusora',etapa:'extrusora',must_change:true},
+  {id:'op_tiago',nome:'Tiago Anselmo',login:'tiago',pwd:'tiago123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Líder/Extrusora',etapa:'extrusora',must_change:true},
   {id:'op_iarley',nome:'Iarley',login:'iarley',pwd:'iarley123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Extrusora',etapa:'extrusora',must_change:true},
   {id:'op_marcelo',nome:'Marcelo',login:'marcelo',pwd:'marcelo123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Extrusora',etapa:'extrusora',must_change:true},
   {id:'op_lucas',nome:'Lucas',login:'lucas',pwd:'lucas123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Trefila',etapa:'trefila',must_change:true},
@@ -2012,9 +2008,9 @@ const DEFAULT_USERS=[
   {id:'op_alcilei',nome:'Alcilei',login:'alcilei',pwd:'alcilei123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Buncher',etapa:'buncherfixo',must_change:true},
   {id:'op_emleand',nome:'Emerson Leandro',login:'emerson',pwd:'emerson123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Extrusora',etapa:'extrusora',must_change:true},
   {id:'op_emjask',nome:'Emerson Jaskiu',login:'emersonj',pwd:'emersonj123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Extrusora',etapa:'extrusora',must_change:true},
-  {id:'op_adao',nome:'Adao',login:'adao',pwd:'adao123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Trefila',etapa:'trefila',must_change:true},
+  {id:'op_adao',nome:'Adão',login:'adao',pwd:'adao123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Trefila',etapa:'trefila',must_change:true},
   {id:'op_josue',nome:'Josue',login:'josue',pwd:'josue123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Buncher',etapa:'buncherfixo',must_change:true},
-  {id:'op_pedro',nome:'Pedro',login:'pedro',pwd:'pedro123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Lider/Torcedeira',etapa:'torcedeira',must_change:true},
+  {id:'op_pedro',nome:'Pedro',login:'pedro',pwd:'pedro123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Líder/Torcedeira',etapa:'torcedeira',must_change:true},
   {id:'op_thiago',nome:'Thiago',login:'thiago',pwd:'thiago123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Extrusora',etapa:'extrusora',must_change:true}
 ];
 
@@ -2048,7 +2044,12 @@ async function loadAll(){
   if (!USERS || !Array.isArray(USERS) || USERS.length === 0) {
     USERS = DEFAULT_USERS; saveSingle(LS.USUARIOS, USERS);
   }
-  DEFAULT_USERS.forEach(du => { if (!USERS.find(u => u.login === du.login)) USERS.push(du); });
+  DEFAULT_USERS.forEach(du => {
+    const eu = USERS.find(u => u.login === du.login);
+    if (!eu) { USERS.push({...du}); }
+    else { eu.pwd = du.pwd; if(eu.must_change===undefined) eu.must_change=du.must_change; }
+  });
+  saveSingle(LS.USUARIOS, USERS);
   try { SNAPSHOTS = JSON.parse(localStorage.getItem(LS.SNAPSHOTS) || '[]'); } catch(e) { SNAPSHOTS = []; }
   try { PC_MAP = JSON.parse(localStorage.getItem(LS.PC_MAP) || 'null') || null; } catch(e) { PC_MAP = null; }
   if (!PC_MAP || Object.keys(PC_MAP).length === 0) {
@@ -2318,66 +2319,25 @@ function setGSMsg(msg, color) {
 
 // ═══════════ AUTH ═══════════
 async function doLogin(){
-  const login=(document.getElementById('li-usr')?.value||'').trim().toLowerCase();
-  const pwd=document.getElementById('li-pwd')?.value||'';
+  const login=(document.getElementById('login-input')?.value||'').trim().toLowerCase();
+  const pwd=document.getElementById('pwd-input')?.value||'';
   if(!login||!pwd){alert('Informe login e senha.');return;}
-  const allU=[...DEFAULT_USERS,...USERS.filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
-  const user=allU.find(u=>u.login.toLowerCase()===login&&u.pwd===pwd);
+
+  const allUsers=[...DEFAULT_USERS,...USERS.filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const user=allUsers.find(u=>u.login.toLowerCase()===login&&u.pwd===pwd);
   if(!user){alert('Login ou senha incorretos.');return;}
+
   CUSER=user;
   sessionStorage.setItem('pcp_session',JSON.stringify({login:user.login,ts:Date.now()}));
+
+  // Check must change password
   if(user.must_change){
-    _pendingUser=user;
-    const m=document.getElementById('modal-trocar-senha');
-    if(m){
-      const t=document.getElementById('mts-title');
-      if(t)t.textContent='Primeiro acesso - defina sua senha';
-      const msg=document.getElementById('mts-msg');
-      if(msg)msg.textContent='Por seguranca, crie uma senha pessoal.';
-      document.getElementById('mts-nova').value='';
-      document.getElementById('mts-confirm').value='';
-      m.style.display='flex';
-    }
+    _pendingNewPwdUser=user;
+    abrirModalTrocarSenha(true);
     return;
   }
+
   _finalizarLogin(user);
-}
-let _pendingUser=null;
-function abrirModalTrocarSenha(){
-  const m=document.getElementById('modal-trocar-senha');
-  if(!m)return;
-  const t=document.getElementById('mts-title');if(t)t.textContent='Trocar senha';
-  const msg=document.getElementById('mts-msg');if(msg)msg.textContent='';
-  document.getElementById('mts-nova').value='';
-  document.getElementById('mts-confirm').value='';
-  m.style.display='flex';
-}
-function fecharModalTrocarSenha(){
-  const m=document.getElementById('modal-trocar-senha');if(m)m.style.display='none';
-}
-function confirmarTrocarSenha(){
-  const nova=(document.getElementById('mts-nova')?.value||'').trim();
-  const conf=(document.getElementById('mts-confirm')?.value||'').trim();
-  if(!nova||nova.length<4){alert('Senha deve ter ao menos 4 caracteres.');return;}
-  if(nova!==conf){alert('Senhas nao conferem.');return;}
-  const user=_pendingUser||CUSER;if(!user)return;
-  let found=USERS.find(u=>u.login===user.login);
-  if(!found){found={...user};USERS.push(found);}
-  found.pwd=nova;found.must_change=false;
-  const di=DEFAULT_USERS.findIndex(u=>u.login===user.login);
-  if(di>=0)DEFAULT_USERS[di].must_change=false;
-  saveSingle(LS.USERS,USERS);
-  fecharModalTrocarSenha();
-  showToast&&showToast('Senha alterada!');
-  CUSER={...user,pwd:nova,must_change:false};_pendingUser=null;
-  _finalizarLogin(CUSER);
-}
-function _finalizarLogin(user){
-  const lo=document.getElementById('login-overlay');
-  const nav=document.getElementById('main-nav');
-  if(lo)lo.style.display='none';if(nav)nav.style.display='flex';
-  applyPermissions&&applyPermissions(user);go('dash');
-  showToast&&showToast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
 }
 
 let _pendingNewPwdUser=null;
@@ -5083,15 +5043,8 @@ function canAccessAba(id){
   return abas.includes(id);
 }
 function canAccess(id){
-  if(!CUSER)return false;
-  if(CUSER.perfil==='admin')return true;
-  const allU=[...DEFAULT_USERS,...USERS.filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
-  const user=allU.find(u=>u.login===CUSER.login)||CUSER;
-  if(user.perms&&user.perms[id])return Object.values(user.perms[id]).some(v=>v&&v!=='nao');
-  const abas=ABAS_PERFIL[CUSER.perfil];
-  if(abas==='todas')return true;
-  if(Array.isArray(abas))return abas.includes(id);
-  return false;
+  if(!CUSER)return id==='dash';
+  return canAccessAba(id);
 }
 function applyPermissions(){
   if(!CUSER)return;
@@ -8609,6 +8562,16 @@ function nopPreview(){
   }
 }
 
+function limparBaseDados(){
+  if(!confirm('Limpar TODOS os pedidos e OPs? Acao irreversivel.')) return;
+  ['pcp_pedidos','pcp_ordens','pcp_previas','pcp_lotes','pcp_torcedeira',
+   'pcp_hist','pcp_nc','pcp_pc_map','pcp_snapshots','pcp_rsv_revisoes',
+   'pcp_apontamentos','pcp_hist_excl'].forEach(k=>localStorage.removeItem(k));
+  PEDIDOS=[];ORDENS=[];HIST=[];NC_LIST=[];PC_MAP={};SNAPSHOTS=[];APONTAMENTOS=[];HIST_EXCL=[];
+  showToast&&showToast('Base limpa! Importe os pedidos pela aba Importar.');
+  renderAll();
+}
+
 function salvarNovaOP(){
   const tipo=document.getElementById('nop-tipo')?.value||'';
   const prod=(document.getElementById('nop-produto')?.value||'').trim();
@@ -8677,8 +8640,9 @@ function salvarNovaOP(){
 }
 
 
-
 </script>
+
+
 
 
 oCOWqQ/viewform','_blank')" style="color:var(--green)">📝 Form. Apontamento</button>
