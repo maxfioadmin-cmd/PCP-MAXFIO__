@@ -2343,23 +2343,26 @@ function mostrarDetalhePV(pvId){
 
 // ═══════════ GERIR OPs EM LOTE ═══════════
 function excluirOPsEmLotePendentes(){
-  const ids=[...document.querySelectorAll('.ck-ord:checked')].map(c=>c.value);
-  if(ids.length===0){alert('Selecione OPs pendentes primeiro.');return;}
-  
-  // Only allow pending OPs
-  const ops=ORDENS.filter(o=>ids.includes(o.id));
-  const emProd=ops.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento'||o.status==='Concluída');
-  if(emProd.length>0){
-    alert(emProd.length+' OP(s) ja estao em producao e nao podem ser excluidas: '+emProd.map(o=>o.id).join(', ')+'. Desmarque-as e tente novamente.');
+  // Get all checked checkboxes
+  const cks=[...document.querySelectorAll('.ck-ord:checked')];
+  if(cks.length===0){
+    alert('Selecione ao menos uma OP marcando o checkbox antes de excluir.');
     return;
   }
-  
-  if(!verificarSenhaGestor('Excluir '+ids.length+' OP(s) em lote')) return;
-  if(!confirm(`Excluir ${ids.length} OP(s) pendentes?\n\n${ops.map(o=>o.id+' — '+shortProd(o.produto)).join('\n')}\n\nEsta ação não pode ser desfeita.`)) return;
-  
+  const ids=cks.map(c=>c.value).filter(Boolean);
+  const ops=ORDENS.filter(o=>ids.includes(String(o.id||'')));
+  if(ops.length===0){
+    alert('Nenhuma OP encontrada para os IDs selecionados. Tente atualizar a lista.');
+    return;
+  }
+  // Require admin password
+  if(!verificarSenhaGestor('Excluir '+ops.length+' OP(s)')) return;
+  // Simple confirm
+  if(!confirm('Confirmar exclusao de '+ops.length+' OP(s)? Esta acao nao pode ser desfeita.')) return;
+  // Execute exclusion for ALL selected (regardless of status)
   ops.forEach(op=>_executarExclusaoOP(op));
   renderOrdens();
-  showToast&&showToast(ops.length+' OP(s) excluidas e movidas para historico.');
+  showToast&&showToast(ops.length+' OP(s) excluidas e salvas no historico de exclusoes.');
 }
 
 function reverterOPsParaPreviaEmLote(){
@@ -4023,9 +4026,9 @@ function renderDashPedidos(){
 
 // ═══════════ ENVIAR OPs PARA PRODUÇÃO ═══════════
 function enviarOPsSelecionadasParaProducao(){
-  const checked=[...document.querySelectorAll('.ck-ord:checked')].map(c=>c.value);
+  const checked=[...document.querySelectorAll('.ck-ord:checked')].map(c=>String(c.value||''));
   const toSend=checked.length>0
-    ? ORDENS.filter(o=>checked.includes(o.id)&&o.status==='Pendente')
+    ? ORDENS.filter(o=>checked.includes(String(o.id||''))&&o.status==='Pendente')
     : ORDENS.filter(o=>o.status==='Pendente');
   if(toSend.length===0){
     alert('Selecione OPs pendentes ou verifique se ha OPs no painel inferior.');
@@ -6060,6 +6063,16 @@ function genAllExt(grupo,secao){
 // ═══════════ ORDENS ═══════════
 let _ordEdit=null;
 function renderOrdens(){
+  // Fix old OPs that have no id (from previous data format)
+  let needSave=false;
+  ORDENS.forEach((o,idx)=>{
+    if(!o.id){
+      o.id=gerarNumOP()+'_FX'+idx;
+      o.num_base=o.id;
+      needSave=true;
+    }
+  });
+  if(needSave) saveSingle(LS.ORDENS,ORDENS);
   // Populate operador select
   const operSel=document.getElementById('ord-oper-sel');
   if(operSel&&operSel.options.length<=1){
@@ -6250,12 +6263,11 @@ function editOrdem(id){
   const btn=document.getElementById('ord-save-btn');if(btn)btn.textContent='💾 Salvar';
 }
 function deleteOrdem(id){
-  const op=ORDENS.find(o=>o.id===id);
-  if(!op){alert('OP nao encontrada.');return;}
-  if(op.status==='EXCLUIDA'){alert('OP ja excluida.');return;}
-  // Require admin password always
+  const op=ORDENS.find(o=>String(o.id||'')===String(id));
+  if(!op){alert('OP nao encontrada (id: '+id+')');return;}
+  // Require admin password for ALL deletions
   if(!verificarSenhaGestor('Excluir OP '+id)) return;
-  if(!confirm('Confirmar exclusao da OP '+id+' — '+shortProd(op.produto)+'?\n\nEla sera marcada como EXCLUIDA e movida para o Historico de Exclusoes.')) return;
+  if(!confirm('Confirmar exclusao da OP '+id+'?')) return;
   _executarExclusaoOP(op);
   renderOrdens();
   showToast&&showToast('OP '+id+' excluida.');
