@@ -7,6 +7,321 @@
 <meta http-equiv="Expires" content="0">
 <meta name="version" content="5.1">
 <script>
+// ═══════════════════════════════════════════
+// ENGENHARIA — DADOS TÉCNICOS
+// ═══════════════════════════════════════════
+
+const ENG_PRODUTOS = [["CCN", "Cabo Elétrico Cobre Nu", "MONO", "Monofilamento", "", "", "N001B", "CABO ELETRICO DE COBRE NU 10,0MM METRO", "10", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MONO", "Monofilamento", "", "", "N002B", "CABO ELETRICO DE COBRE NU 16,0MM", "16", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MONO", "Monofilamento", "", "", "N003B", "CABO ELETRICO DE COBRE NU 25,0MM", "25", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MONO", "Monofilamento", "", "", "N004B", "CABO ELETRICO DE COBRE NU 35,0MM", "35", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MONO", "Monofilamento", "", "", "N005B", "CABO ELETRICO DE COBRE NU 50,0MM", "50", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MONO", "Monofilamento", "", "", "N010B", "CABO ELETRICO DE COBRE NU 95,0MM", "95", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MONO", "Monofilamento", "", "", "NC010B", "CABO ELETRICO DE COBRE NU 70,0MM", "70", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MULT", "Multifilamento", "", "", "N007B", "CABO ELETRICO DE COBRE NU 50,0MM 7 FIOS", "50/7f", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MULT", "Multifilamento", "", "", "N009B", "CABO ELETRICO DE COBRE NU 70,0MM 7 PERNAS", "70/7p", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MULT", "Multifilamento", "", "", "N011B", "CABO ELETRICO DE COBRE NU 10,0MM 7 PERNAS", "10/7p", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MULT", "Multifilamento", "", "", "N012B", "CABO ELETRICO DE COBRE NU 35,0MM 7 PERNAS", "35/7p", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MULT", "Multifilamento", "", "", "N015B", "CABO ELETRICO DE COBRE NU 150,0MM 19 FIOS", "150", "M"], ["CCN", "Cabo Elétrico Cobre Nu", "MULT", "Multifilamento", "", "", "N016B", "CABO ELETRICO DE COBRE NU 120,0MM 19 FIOS", "120", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F001B", "CABO ELETRICO FLEX 1,5MM PRETO 450/750V", "1,5", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F007B", "CABO ELETRICO FLEX 2,5MM PRETO 450/750V", "2,5", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F013B", "CABO ELETRICO FLEX 4,0MM PRETO 450/750V", "4", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F019B", "CABO ELETRICO FLEX 6,0MM PRETO 450/750V", "6", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F025B", "CABO ELETRICO FLEX 10,0MM PRETO 450/750V", "10", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F041B", "CABO ELETRICO FLEX 16,0MM PRETO", "16", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F042B", "CABO ELETRICO FLEX 25,0MM PRETO", "25", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F043B", "CABO ELETRICO FLEX 35,0MM PRETO", "35", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F175B", "CABO ELETRICO FLEX 50,0MM PRETO", "50", "M"], ["CEL1", "Cabo Elétrico Linha 1", "FNBR", "Flexível NBR 450/750V", "", "", "F072B", "CABO ELETRICO FLEX 95,0MM PRETO", "95", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K001", "CABO ELETRICO FLEX HEPR 10,0MM PRETO 1KV", "10", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K004", "CABO ELETRICO FLEX HEPR 16,0MM PRETO 1KV", "16", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K007", "CABO ELETRICO FLEX HEPR 25,0MM PRETO 1KV", "25", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K010", "CABO ELETRICO FLEX HEPR 35,0MM PRETO 1KV", "35", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K013", "CABO ELETRICO FLEX HEPR 50,0MM PRETO 1KV", "50", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K016", "CABO ELETRICO FLEX HEPR 70,0MM PRETO 1KV", "70", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K019", "CABO ELETRICO FLEX HEPR 95,0MM PRETO 1KV", "95", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K022", "CABO ELETRICO FLEX HEPR 120,0MM PRETO 1KV", "120", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K032", "CABO ELETRICO FLEX HEPR 150,0MM PRETO 1KV", "150", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K036", "CABO ELETRICO FLEX HEPR 185,0MM PRETO 1KV", "185", "M"], ["HEPR", "Cabo HEPR 1KV 90°", "FHPR", "Flex HEPR 1KV", "", "", "K048", "CABO ELETRICO FLEX HEPR 240,0MM PRETO 1KV", "240", "M"]];
+
+const ENG_FILAMENTOS = [["FLEXIVEL", "1", 0.28, 14, 0.7664], ["HEPR", "1,5", 0.28, 20, 1.0948], ["FLEXIVEL", "1,5", 0.28, 22, 1.2043], ["PP", "2x1,0", 0.28, 24, 1.3138], ["HEPR", "2,5", 0.28, 32, 1.7517], ["FLEXIVEL", "2,5", 0.28, 36, 1.9707], ["FLEXIVEL", "2,5 ATOX", 0.28, 36, 1.9707], ["PP", "3x1,0", 0.28, 36, 1.9707], ["PP", "2x1,5", 0.28, 40, 2.1896], ["PP", "4x1,0", 0.28, 48, 2.6275], ["HEPR", "4", 0.28, 54, 2.956], ["FLEXIVEL", "4", 0.28, 58, 3.1749], ["PP", "3x1,5", 0.28, 60, 3.2844], ["PP", "5x1,0", 0.28, 60, 3.2844], ["PP", "2x2,5", 0.28, 64, 3.5034], ["PP", "6x1,0", 0.28, 72, 3.9413], ["PP", "4x1,5", 0.28, 80, 4.3792], ["PP", "5x1,5", 0.28, 80, 4.3792], ["HEPR", "6", 0.28, 84, 4.5982], ["PP", "7x1,0", 0.28, 84, 4.5982], ["FLEXIVEL", "6", 0.28, 86, 4.7077], ["PP", "3x2,5", 0.28, 96, 5.2551], ["PP", "2x4,0", 0.28, 108, 5.912], ["PP", "6x1,5", 0.28, 120, 6.5688], ["PP", "4x2,5", 0.28, 128, 7.0068], ["PP", "7x1,5", 0.28, 140, 7.6636], ["PP", "5x2,5", 0.28, 160, 8.7585], ["PP", "2x6,0", 0.28, 168, 9.1964], ["PP", "3x4,0", 0.28, 168, 9.1964], ["PP", "6x2,5", 0.28, 192, 10.5101], ["PP", "4x4,0", 0.28, 216, 11.8239], ["PP", "7x2,5", 0.28, 224, 12.2618], ["PP", "3x6,0", 0.28, 252, 13.7946], ["PP", "4x6,0", 0.28, 336, 18.3928], ["HEPR", "10", 0.36, 84, 7.6011], ["HEPR", "10 ATOX", 0.36, 84, 7.6011], ["FLEXIVEL", "10", 0.36, 88, 7.963], ["FLEXIVEL", "16", 0.36, 128, 11.5826], ["HEPR", "16", 0.36, 128, 11.5826], ["PP", "2x10,0", 0.36, 168, 15.2022], ["FLEXIVEL", "25", 0.36, 192, 17.3739], ["HEPR", "25", 0.36, 192, 17.3739], ["PP", "3x10,0", 0.36, 252, 22.8033], ["PP", "2x16,0", 0.36, 256, 23.1652], ["FLEXIVEL", "35", 0.36, 260, 23.5272], ["HEPR", "35", 0.36, 260, 23.5272], ["PP", "4x10,0", 0.36, 336, 30.4044], ["FLEXIVEL", "50", 0.36, 368, 33.3], ["HEPR", "50", 0.36, 368, 33.3], ["PP", "2x25,0", 0.36, 384, 34.7478], ["PP", "3x16,0", 0.36, 384, 34.7478], ["PP", "4x16,0", 0.36, 512, 46.3304], ["FLEXIVEL", "70", 0.36, 536, 48.5022], ["HEPR", "70", 0.36, 536, 48.5022], ["PP", "3x25,0", 0.36, 576, 52.1218], ["FLEXIVEL", "95", 0.36, 710, 64.2473], ["HEPR", "95", 0.36, 710, 64.2473], ["PP", "4x25,0", 0.36, 760, 68.7718], ["FLEXIVEL", "120", 0.36, 924, 83.612], ["HEPR", "120", 0.36, 924, 83.612], ["FLEXIVEL", "150", 0.36, 1156, 104.6055], ["HEPR", "150", 0.36, 1156, 104.6055], ["FLEXIVEL", "185", 0.36, 1376, 124.5131], ["HEPR", "185", 0.36, 1376, 124.5131], ["FLEXIVEL", "240", 0.36, 1764, 159.6229], ["FLEXIVEL", "300", 0.36, 2260, 218.3664]];
+
+const ENG_TORCEDEIRA_BASE = [[16, 128, 4, 32, "", 0.36, 4.8, 5.1], [25, 192, 6, 32, "", 0.36, 5.72, 6.0], [35, 260, 3, 84, 8, 0.36, 6.32, 7.0], [50, 360, 4, 84, 24, 0.36, 8.07, 8.25], [70, 530, 6, 84, 26, 0.36, 9.65, 9.9], [95, 708, 8, 84, 36, 0.36, 11.22, 11.5], [120, 924, 10, 84, 84, 0.36, 12.64, 13.0], [150, 1156, 13, 84, 64, 0.36, 14.12, 14.5], [185, 1380, 16, 84, 36, 0.36, 15.54, 16.0], [240, 1764, 12, 84, 0, 0.36, 17.5, 18.0], [300, 2204, 10, 128, 0, 0.36, 19.6, 21.0]];
+
+// Hierarquia de grupos
+const ENG_GRUPOS = {
+  CCN: {label:'Cabo Elétrico Cobre Nu', color:'#6b7280', subgrupos:{
+    MONO:{label:'Monofilamento'}, MULT:{label:'Multifilamento'}
+  }},
+  CEL1: {label:'Cabo Elétrico Linha 1 (Maxfio)', color:'#2563eb', subgrupos:{
+    FNBR:{label:'Flexível NBR 450/750V'}, FATX:{label:'Flex HEPR Atox 1KV'},
+    FATV:{label:'Flexível Atox 450/750V'}, CCPP:{label:'Cabo Controle PP'}
+  }},
+  HEPR: {label:'Cabo HEPR 1KV 90°', color:'#ea580c', subgrupos:{
+    FHPR:{label:'Flex HEPR 1KV'}, EFLX:{label:'Eletreflex'},
+    CPPH:{label:'Controle PP HEPR 1KV'}
+  }},
+  CRS: {label:'Cabo Rígido (Sólido)', color:'#7c3aed', subgrupos:{
+    RIGS:{label:'Rígido Sólido'}
+  }},
+  CAM: {label:'Cabo de Alumínio Multiplexado', color:'#0891b2', subgrupos:{
+    DUPX:{label:'Duplex'}, TRPX:{label:'Triplex'},
+    QDRX:{label:'Quadruplex'}, SING:{label:'Singelo'}
+  }},
+};
+
+let _engSub='grupos';
+let _engExpanded={};
+
+function engSub(tab){
+  _engSub=tab;
+  ['grupos','filamentos','torcedeira','fluxo'].forEach(t=>{
+    const el=document.getElementById('eng-tab-'+t);
+    const st=document.getElementById('est-'+t);
+    if(el) el.style.display=t===tab?'block':'none';
+    if(st) st.classList.toggle('on',t===tab);
+  });
+  renderEngenharia();
+}
+
+function toggleEngHierarquia(){
+  const allGrupos=Object.keys(ENG_GRUPOS);
+  const anyOpen=allGrupos.some(g=>_engExpanded[g]);
+  allGrupos.forEach(g=>{
+    _engExpanded[g]=!anyOpen;
+    Object.keys(ENG_GRUPOS[g].subgrupos||{}).forEach(s=>{
+      _engExpanded[g+'|'+s]=!anyOpen;
+    });
+  });
+  renderEngenharia();
+}
+
+function renderEngenharia(){
+  if(_engSub==='grupos')    _renderEngGrupos();
+  if(_engSub==='filamentos') _renderEngFilamentos();
+  if(_engSub==='torcedeira') _renderEngTorcedeira();
+  if(_engSub==='fluxo')     _renderEngFluxo();
+}
+
+function _renderEngGrupos(){
+  const el=document.getElementById('eng-hierarquia');
+  if(!el) return;
+  const q=(document.getElementById('eng-q')?.value||'').toLowerCase();
+  const fGrupo=document.getElementById('eng-grupo')?.value||'';
+  const fSub=document.getElementById('eng-subgrupo')?.value||'';
+
+  let totalProd=0;
+  let html='';
+
+  Object.entries(ENG_GRUPOS).forEach(([gSig,gDef])=>{
+    if(fGrupo&&fGrupo!==gSig) return;
+    const gc=gDef.color||'#888';
+    const gProds=ENG_PRODUTOS.filter(p=>p[0]===gSig);
+    if(gProds.length===0&&!Object.keys(gDef.subgrupos||{}).length) return;
+
+    const gExpanded=_engExpanded[gSig];
+    html+=`<div style="margin-bottom:8px;border:1px solid ${gc}33;border-radius:8px;overflow:hidden">
+      <div onclick="_engToggle('${gSig}')" style="background:${gc}18;border-left:4px solid ${gc};
+        padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;
+        user-select:none">
+        <span style="font-size:16px">${gExpanded?'▼':'▶'}</span>
+        <span style="font-weight:800;font-size:14px;color:${gc}">${gSig}</span>
+        <span style="font-size:13px;font-weight:600;flex:1">${gDef.label}</span>
+        <span style="background:${gc};color:#fff;border-radius:99px;padding:2px 10px;font-size:11px">
+          ${gProds.length} produtos
+        </span>
+      </div>`;
+
+    if(gExpanded){
+      // Sub-groups
+      Object.entries(gDef.subgrupos||{}).forEach(([sSig,sDef])=>{
+        if(fSub&&fSub!==sSig) return;
+        const sProds=gProds.filter(p=>p[2]===sSig);
+        if(sProds.length===0) return;
+        const sExpanded=_engExpanded[gSig+'|'+sSig];
+
+        html+=`<div style="border-top:1px solid ${gc}22">
+          <div onclick="_engToggle('${gSig}|${sSig}')" style="background:${gc}08;
+            padding:8px 14px 8px 28px;display:flex;align-items:center;gap:8px;cursor:pointer">
+            <span style="font-size:12px">${sExpanded?'▼':'▶'}</span>
+            <span style="font-weight:700;color:${gc};font-size:12px">${sSig}</span>
+            <span style="font-size:12px;flex:1">${sDef.label}</span>
+            <span style="font-size:10px;color:var(--text2)">${sProds.length} SKUs</span>
+          </div>`;
+
+        if(sExpanded){
+          // Products table
+          const filtered=sProds.filter(p=>!q||
+            p[6].toLowerCase().includes(q)||p[7].toLowerCase().includes(q)||
+            String(p[8]).includes(q));
+          totalProd+=filtered.length;
+          html+=`<div style="overflow-x:auto">
+            <table style="width:100%;font-size:11px;border-collapse:collapse">
+              <thead><tr style="background:var(--bg2)">
+                <th style="padding:5px 10px;text-align:left">Código</th>
+                <th style="text-align:left">Descrição</th>
+                <th style="text-align:right">Bitola</th>
+                <th>Un.</th>
+              </tr></thead>
+              <tbody>
+                ${filtered.map((p,i)=>{
+                  const [sg,g,ss,s,sf,f,cod,nome,bit,un]=p;
+                  return`<tr style="border-bottom:1px solid var(--border);
+                    ${i%2?'background:var(--bg2)':''}">
+                    <td style="padding:5px 10px;font-family:monospace;font-size:10px;
+                      font-weight:700;color:${gc}">${cod}</td>
+                    <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;
+                      white-space:nowrap;font-size:11px">${nome}</td>
+                    <td style="text-align:right;font-family:monospace;font-size:11px;
+                      padding:5px 10px">${bit}</td>
+                    <td style="text-align:center;font-size:10px">${un}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>`;
+        }
+        html+='</div>'; // subgrupo
+      });
+    }
+    html+='</div>'; // grupo
+  });
+
+  el.innerHTML=html||'<p style="color:var(--text3);padding:16px">Nenhum produto encontrado.</p>';
+  const cnt=document.getElementById('eng-prod-cnt');
+  if(cnt) cnt.textContent=ENG_PRODUTOS.length+' produtos';
+}
+
+function _engToggle(key){
+  _engExpanded[key]=!_engExpanded[key];
+  _renderEngGrupos();
+}
+
+function _renderEngFilamentos(){
+  // Table 1: full list
+  const tb1=document.getElementById('eng-fil-tb');
+  const q=(document.getElementById('eng-q')?.value||'').toLowerCase();
+  if(tb1){
+    const rows=ENG_FILAMENTOS.filter(([p,c])=>!q||p.toLowerCase().includes(q)||String(c).includes(q));
+    const maqColors={FLEXIVEL:'#2563eb',HEPR:'#ea580c',PP:'#7c3aed',PARALELO:'#16a34a'};
+    tb1.innerHTML=rows.map(([prod,cabo,diam,fios,peso],i)=>{
+      const mc=maqColors[prod]||'#888';
+      const maq=diam===0.28?'Trefila Ø0,28':'Trefila Ø0,36';
+      return`<tr style="border-bottom:1px solid var(--border);${i%2?'background:var(--bg2)':''}">
+        <td style="padding:6px 10px;font-weight:600;color:${mc}">${prod}</td>
+        <td style="font-family:monospace;font-size:11px">${cabo}</td>
+        <td style="text-align:center;font-family:monospace">
+          <span style="background:${diam===0.28?'#dbeafe':'#dcfce7'};
+            color:${diam===0.28?'#1e40af':'#166534'};border-radius:4px;
+            padding:1px 6px;font-size:10px;font-weight:700">Ø${diam}</span>
+        </td>
+        <td style="text-align:right;font-weight:700;color:#ea580c;padding:0 10px">${fios}</td>
+        <td style="text-align:right;padding:0 10px;color:var(--text2)">${peso}</td>
+        <td style="font-size:10px;color:var(--text3)">${maq}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Table 2: agrupado por diam+fios
+  const tb2=document.getElementById('eng-diam-tb');
+  if(tb2){
+    // Group by diam+fios
+    const groups={};
+    ENG_FILAMENTOS.forEach(([prod,cabo,diam,fios,peso])=>{
+      const key=diam+'|'+fios;
+      if(!groups[key]) groups[key]={diam,fios,peso,items:[]};
+      groups[key].items.push({prod,cabo});
+    });
+    let html='';
+    let lastDiam=null;
+    Object.values(groups).sort((a,b)=>a.diam-b.diam||a.fios-b.fios).forEach(g=>{
+      if(g.diam!==lastDiam){
+        lastDiam=g.diam;
+        html+=`<tr style="background:${g.diam===0.28?'#dbeafe':'#dcfce7'}">
+          <td colspan="8" style="padding:6px 10px;font-weight:800;font-size:12px;
+            color:${g.diam===0.28?'#1e40af':'#166534'}">
+            Ø ${g.diam} mm ${g.diam===0.28?'→ bitolas 1–6 mm² (Trefila fina)':'→ bitolas 10–300 mm² (Trefila grossa)'}
+          </td></tr>`;
+      }
+      g.items.forEach((item,ii)=>{
+        const isFLEX=item.prod==='FLEXIVEL';
+        const isHEPR=item.prod==='HEPR';
+        const isPP=item.prod.startsWith('PP');
+        html+=`<tr style="border-bottom:1px solid var(--border)">
+          ${ii===0?`<td rowspan="${g.items.length}" style="padding:5px 8px;text-align:center;
+            font-family:monospace;font-weight:700;vertical-align:middle;
+            background:${g.diam===0.28?'#eff6ff':'#f0fdf4'};font-size:11px">Ø${g.diam}</td>
+          <td rowspan="${g.items.length}" style="text-align:right;padding:5px 8px;font-weight:700;
+            color:#ea580c;vertical-align:middle">${g.fios}</td>
+          <td rowspan="${g.items.length}" style="text-align:right;padding:5px 8px;
+            color:var(--text2);font-size:10px;vertical-align:middle">${g.peso}</td>`:''}
+          <td style="padding:4px 8px;font-weight:600;font-size:11px;
+            color:${item.prod==='FLEXIVEL'?'#2563eb':item.prod==='HEPR'?'#ea580c':'#7c3aed'}">
+            ${item.prod}</td>
+          <td style="font-family:monospace;font-size:11px;padding:4px 8px">${item.cabo}</td>
+          <td style="text-align:center;font-size:14px">${isFLEX?'✔':''}</td>
+          <td style="text-align:center;font-size:14px">${isHEPR?'✔':''}</td>
+          <td style="text-align:center;font-size:14px">${isPP?'✔':''}</td>
+        </tr>`;
+      });
+    });
+    tb2.innerHTML=html;
+  }
+}
+
+function _renderEngTorcedeira(){
+  const tb=document.getElementById('eng-torc-tb');
+  if(!tb) return;
+  tb.innerHTML=ENG_TORCEDEIRA_BASE.map(([bit,nfios,bob,cord,alma,dfio,dcabo,fieira],i)=>{
+    const color=bit>=150?'#dc2626':bit>=70?'#d97706':'#16a34a';
+    return`<tr style="border-bottom:1px solid var(--border);${i%2?'background:var(--bg2)':''}">
+      <td style="padding:8px 12px;font-weight:800;font-size:14px;color:${color}">${bit} mm²</td>
+      <td style="text-align:right;padding:8px;font-family:monospace;font-weight:700;color:#ea580c">${nfios}</td>
+      <td style="text-align:right;padding:8px;font-weight:600">${bob}</td>
+      <td style="text-align:right;padding:8px">${cord}</td>
+      <td style="text-align:center;padding:8px">${alma||'—'}</td>
+      <td style="text-align:center;padding:8px;font-family:monospace">
+        <span style="background:#dcfce7;color:#166534;border-radius:4px;padding:1px 6px;font-size:11px">
+          Ø${dfio}</span>
+      </td>
+      <td style="text-align:center;padding:8px;font-family:monospace;font-weight:600">${dcabo}</td>
+      <td style="text-align:center;padding:8px;font-family:monospace;color:#7c3aed">${fieira}</td>
+    </tr>`;
+  }).join('');
+}
+
+function _renderEngFluxo(){
+  // Already static HTML — nothing to render dynamically unless search
+}
+
+function engBuscaFluxo(){
+  const q=(document.getElementById('eng-busca-prod')?.value||'').toLowerCase().trim();
+  const el=document.getElementById('eng-fluxo-result');
+  if(!el||!q) return;
+
+  const results=ENG_PRODUTOS.filter(p=>
+    p[6].toLowerCase().includes(q)||p[7].toLowerCase().includes(q)||
+    String(p[8]).includes(q)
+  ).slice(0,10);
+
+  if(!results.length){
+    el.innerHTML='<p style="color:var(--text3);padding:12px">Nenhum produto encontrado.</p>';
+    return;
+  }
+
+  const grupColors={CCN:'#6b7280',CEL1:'#2563eb',HEPR:'#ea580c',CRS:'#7c3aed',CAM:'#0891b2'};
+  el.innerHTML=results.map(p=>{
+    const [sg,g,ss,s,sf,f,cod,nome,bit,un]=p;
+    const gc=grupColors[sg]||'#888';
+    // Determine fluxo based on grupo/subgrupo
+    const bitNum=parseFloat(String(bit).replace(',','.'));
+    let etapas=[];
+    if(sg==='CEL1'||sg==='HEPR'){
+      const diam=bitNum<=6?'Ø0,28':'Ø0,36';
+      const filRow=ENG_FILAMENTOS.find(([fp,fc])=>
+        fp===g.split(' ')[0]||fc===bit||fp==='FLEXIVEL'&&g.includes('FLEX'));
+      etapas=[
+        {maq:'🔧 Trefila',desc:'Produz filamentos '+diam,color:'#fb923c'},
+        {maq:'🔩 Buncher',desc:'Encordoa os filamentos',color:'#06b6d4'},
+        ...(bitNum>=16?[{maq:'🌀 Torcedeira',desc:'Torcimento do condutor',color:'#a855f7'}]:[]),
+        {maq:'🏭 Extrusora',desc:'Encapamento — isolamento+cor',color:'#22c55e'},
+      ];
+    } else {
+      etapas=[{maq:'Consulte ficha técnica',desc:g,color:'#888'}];
+    }
+    return`<div style="border:1px solid ${gc}33;border-radius:8px;margin-bottom:8px;overflow:hidden">
+      <div style="background:${gc}18;border-left:4px solid ${gc};padding:10px 14px">
+        <div style="font-family:monospace;font-weight:800;font-size:13px;color:${gc}">${cod}</div>
+        <div style="font-size:12px;font-weight:600;margin-top:2px">${nome}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${sg} · ${ss} · Bitola: ${bit}mm²</div>
+      </div>
+      <div style="padding:10px 14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">
+          FLUXO DE PRODUÇÃO:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          ${etapas.map((e,i)=>`
+            ${i>0?'<span style="font-size:18px;color:var(--text3)">→</span>':''}
+            <div style="background:${e.color}18;border:2px solid ${e.color};
+              border-radius:8px;padding:8px 12px;text-align:center">
+              <div style="font-size:14px">${e.maq}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">${e.desc}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
 // ── FORCE CACHE CLEAR ON EVERY LOAD ──
 (function(){
   // Clear all caches
@@ -29,7 +344,7 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>PCP MAXFIO v6</title>
+<title>PCP MAXFIO v7</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -3403,58 +3718,11 @@ function atribuirTodasRedirSel(){
 }
 // ═══════════ ENGENHARIA ═══════════
 function renderEngenharia(){
-  const q=(document.getElementById('eng-q')?.value||'').toLowerCase();
-
-  // ── TABLE 1: Full filaments ──
-  const fullTb=document.getElementById('eng-full-tb');
-  if(fullTb){
-    const pedMap={};
-    PEDIDOS.filter(r=>(r[11]||0)>0).forEach(r=>{
-      const k=r[12]+'|'+r[13];
-      if(!pedMap[k])pedMap[k]={n:0,m:0};
-      pedMap[k].n++;pedMap[k].m+=r[11]||0;
-    });
-    const rows=(typeof FILS!=='undefined'?FILS:[]).filter(([g,s])=>!q||g.toLowerCase().includes(q)||String(s).includes(q));
-    fullTb.innerHTML=rows.map(([g,s,d,f])=>{
-      const k=g+'|'+s;const pd=pedMap[k]||{n:0,m:0};
-      const secReal=(Math.PI*(d/2)*(d/2)*f).toFixed(2);
-      return`<tr><td>${g}</td><td class="mono">${s}</td><td class="mono">${d}</td>
-        <td class="num">${f}</td><td class="mono">${(d*Math.sqrt(f)).toFixed(2)}</td>
-        <td class="num">${secReal}</td>
-        <td class="num">${pd.n||'—'}</td>
-        <td class="num" style="color:${pd.m>0?'var(--orange)':'var(--text3)'}">${pd.m>0?fm(pd.m)+'m':'—'}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  // ── TABLE 2: Torcedeira config ──
-  const filsTb=document.getElementById('eng-fils-tb');
-  if(filsTb){
-    filsTb.innerHTML=(typeof FILS!=='undefined'?FILS:[]).slice(0,20).map(([g,s,d,f])=>`<tr>
-      <td>${g}</td><td class="mono">${s}</td>
-      <td class="mono">${d}</td><td class="num">${f}</td>
-      <td class="mono">${(d*f).toFixed(1)}</td>
-      <td style="font-size:10px">Ø${d}/${f}f</td>
-    </tr>`).join('');
-  }
-
-  // ── TABLE 3: Torcedeira summary ──
-  const buncherTb=document.getElementById('eng-buncher-tb');
-  if(buncherTb){
-    buncherTb.innerHTML=TORCEDEIRA.slice(0,20).map(b=>{
-      const prio=b.metros_produzir>5000?'<span class="chip c-red">Alta</span>':b.metros_produzir>1000?'<span class="chip c-orange">Média</span>':'<span class="chip c-gray">Normal</span>';
-      return`<tr><td class="mono">${b.diam}</td><td class="num">${b.fios}</td>
-        <td class="num">${b.n_pedidos||0}</td>
-        <td class="num" style="color:var(--orange);font-weight:600">${fm(b.metros_produzir)}m</td>
-        <td>${prio}</td></tr>`;
-    }).join('');
-  }
-
-  // ── MP CONSOLIDATION BY OP (OPs Em Andamento) ──
-  renderEngMP();
-
-  // ── WEEKLY FORECAST ──
-  renderEngSemanal();
+  if(!_engSub) _engSub='grupos';
+  if(_engSub==='grupos')     _renderEngGrupos();
+  if(_engSub==='filamentos') _renderEngFilamentos();
+  if(_engSub==='torcedeira') _renderEngTorcedeira();
+  if(_engSub==='fluxo')      _renderEngFluxo();
 }
 
 function renderEngMP(){
@@ -8513,6 +8781,215 @@ function salvarNovaOP(){
     </div>
   </div>
 </div>
+
+<!-- ══ ENGENHARIA ══ -->
+<div id="pg-engenharia" class="pg">
+  <div class="pg-hd">
+    <span class="pg-tt">⚙️ Engenharia — Composição de Produtos</span>
+    <button class="btn bgho bsm" onclick="renderEngenharia()">🔄 Atualizar</button>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div class="subtabs" id="eng-stabs" style="margin-bottom:14px">
+    <div class="stab on"  id="est-grupos"  onclick="engSub('grupos')">📦 Grupos/Produtos</div>
+    <div class="stab"     id="est-filamentos" onclick="engSub('filamentos')">🔩 Filamentos Buncher</div>
+    <div class="stab"     id="est-torcedeira" onclick="engSub('torcedeira')">🌀 Base Torcedeira</div>
+    <div class="stab"     id="est-fluxo"   onclick="engSub('fluxo')">🏭 Fluxo por Máquina</div>
+  </div>
+
+  <!-- Filtro global -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    padding:8px 12px;background:var(--bg2);border-radius:8px;margin-bottom:12px">
+    <input id="eng-q" placeholder="🔍 Buscar produto, código, grupo, bitola..."
+      oninput="renderEngenharia()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);
+        font-size:12px;flex:1;min-width:200px">
+    <select id="eng-grupo" onchange="renderEngenharia()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+      <option value="">Todos os grupos</option>
+      <option value="CEL1">CEL1 — Cabo Elétrico Linha 1</option>
+      <option value="HEPR">HEPR — Cabo HEPR 1KV 90°</option>
+      <option value="CCN">CCN — Cabo Cobre Nu</option>
+      <option value="CRS">CRS — Cabo Rígido</option>
+      <option value="CAM">CAM — Cabo Alumínio Multiplexado</option>
+    </select>
+    <select id="eng-subgrupo" onchange="renderEngenharia()"
+      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
+      <option value="">Todos subgrupos</option>
+      <option value="FNBR">FNBR — Flexível NBR</option>
+      <option value="FHPR">FHPR — Flex HEPR 1KV</option>
+      <option value="FATX">FATX — Flex HEPR Atox</option>
+      <option value="FATV">FATV — Flexível Atox 450V</option>
+      <option value="CPPH">CPPH — Controle PP HEPR</option>
+      <option value="CCPP">CCPP — Controle PP</option>
+      <option value="EFLX">EFLX — Eletreflex</option>
+    </select>
+    <button class="btn bgho bsm" onclick="document.getElementById('eng-q').value='';document.getElementById('eng-grupo').value='';document.getElementById('eng-subgrupo').value='';renderEngenharia()">✕ Limpar</button>
+  </div>
+
+  <!-- ── TAB: Grupos / Produtos ── -->
+  <div id="eng-tab-grupos">
+    <!-- Hierarquia em cascata -->
+    <div class="sec" style="margin-bottom:12px">
+      <div class="sec-hd">
+        <span class="sec-tt">📊 Hierarquia: Grupos → Subgrupos → Produtos</span>
+        <span id="eng-prod-cnt" class="chip c-blue" style="font-size:10px">0 produtos</span>
+        <button class="btn bgho bsm" onclick="toggleEngHierarquia()" style="margin-left:auto;font-size:10px">
+          🔽 Expandir/Colapsar
+        </button>
+      </div>
+      <div id="eng-hierarquia"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Filamentos Buncher ── -->
+  <div id="eng-tab-filamentos" style="display:none">
+    <div class="g2">
+      <!-- Tabela completa de filamentos -->
+      <div class="sec">
+        <div class="sec-hd">
+          <span class="sec-tt">🔩 Filamentos Buncher — Lista Completa</span>
+          <span class="chip c-blue" style="font-size:10px">81 combinações</span>
+        </div>
+        <div style="font-size:11px;color:var(--text2);padding:6px 0 8px">
+          🔧 <strong>Trefila</strong> produz filamentos Ø0,28mm (1–6mm²) e Ø0,36mm (10–300mm²) · 
+          🔩 <strong>Buncher</strong> une os filamentos conforme esta tabela
+        </div>
+        <div class="tw ts">
+          <table style="width:100%;font-size:11px">
+            <thead><tr style="background:#1a2e5a;color:#fff">
+              <th style="padding:6px 8px;text-align:left">Produto</th>
+              <th>Cabo (mm²)</th>
+              <th>Ø Fio (mm)</th>
+              <th class="num">Fios</th>
+              <th class="num">Peso 100m (kg)</th>
+              <th>Máquina</th>
+            </tr></thead>
+            <tbody id="eng-fil-tb"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Agrupado por diâmetro -->
+      <div class="sec">
+        <div class="sec-hd">
+          <span class="sec-tt">📐 Agrupado por Diâmetro + Nº de Fios</span>
+        </div>
+        <div style="font-size:11px;background:#fffbeb;border-left:3px solid #d97706;
+          padding:8px 12px;border-radius:4px;margin-bottom:10px">
+          <strong>Ø 0,28mm</strong> → bitolas 1 a 6mm² (Flexível, HEPR, PP, Paralelo) · 
+          <strong>Ø 0,36mm</strong> → bitolas 10 a 300mm²
+        </div>
+        <div class="tw ts">
+          <table style="width:100%;font-size:11px">
+            <thead><tr style="background:#374151;color:#fff">
+              <th style="padding:6px 8px">Ø Fio</th>
+              <th class="num">Fios</th>
+              <th class="num">Peso/100m</th>
+              <th>Produto</th>
+              <th>Cabo</th>
+              <th style="text-align:center">FLEX</th>
+              <th style="text-align:center">HEPR</th>
+              <th style="text-align:center">PP</th>
+            </tr></thead>
+            <tbody id="eng-diam-tb"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Base Torcedeira ── -->
+  <div id="eng-tab-torcedeira" style="display:none">
+    <div class="sec" style="margin-bottom:12px">
+      <div class="sec-hd">
+        <span class="sec-tt">🌀 Base Bobinas/Torção — Torcedeiras</span>
+      </div>
+      <div style="font-size:11px;background:#f0fdf4;border-left:3px solid #16a34a;
+        padding:8px 12px;border-radius:4px;margin-bottom:10px">
+        📐 Esta tabela define a configuração das <strong>Torcedeiras</strong>: 
+        quantas bobinas, cordas, presença de alma, diâmetro do fio, diâmetro do cabo e fieira.
+      </div>
+      <div class="tw ts">
+        <table style="width:100%;font-size:12px">
+          <thead><tr style="background:#16a34a;color:#fff">
+            <th style="padding:7px 10px">Bitola (mm²)</th>
+            <th class="num">Nº Fios</th>
+            <th class="num">Bobinas</th>
+            <th class="num">Cordas</th>
+            <th>Alma</th>
+            <th>Ø Fio (mm)</th>
+            <th>Ø Cabo (mm)</th>
+            <th>Fieira</th>
+          </tr></thead>
+          <tbody id="eng-torc-tb"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Fluxo por Máquina ── -->
+  <div id="eng-tab-fluxo" style="display:none">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:16px">
+
+      <div style="background:#fff7ed;border:2px solid #fb923c;border-radius:10px;padding:14px">
+        <div style="font-size:14px;font-weight:800;color:#ea580c;margin-bottom:8px">🔧 TREFILA</div>
+        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px">Produz filamentos de cobre:</div>
+        <div style="font-size:11px;line-height:1.8">
+          <div>• <strong>Ø 0,28 mm</strong> → para bitolas 1 a 6 mm²</div>
+          <div>• <strong>Ø 0,36 mm</strong> → para bitolas 10 a 300 mm²</div>
+          <div style="color:var(--text2);margin-top:6px">Cabos: Flexível, HEPR, PP, Paralelo</div>
+        </div>
+      </div>
+
+      <div style="background:#ecfeff;border:2px solid #06b6d4;border-radius:10px;padding:14px">
+        <div style="font-size:14px;font-weight:800;color:#0891b2;margin-bottom:8px">🔩 BUNCHER</div>
+        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px">Une filamentos da Trefila:</div>
+        <div style="font-size:11px;line-height:1.8">
+          <div>• Recebe filamentos Ø0,28 e Ø0,36</div>
+          <div>• Encordoa conforme nº de fios da tabela</div>
+          <div>• Produz <strong>condutor multifilamentar</strong></div>
+          <div style="color:var(--text2);margin-top:6px">Ex: 6mm² FLEXIVEL = 86 fios Ø0,28</div>
+        </div>
+      </div>
+
+      <div style="background:#faf5ff;border:2px solid #a855f7;border-radius:10px;padding:14px">
+        <div style="font-size:14px;font-weight:800;color:#7c3aed;margin-bottom:8px">🌀 TORCEDEIRA</div>
+        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px">Torce os condutores:</div>
+        <div style="font-size:11px;line-height:1.8">
+          <div>• Recebe condutor do Buncher</div>
+          <div>• Torce conforme tabela de bobinas</div>
+          <div>• Configura: bobinas, cordas, alma, fieira</div>
+          <div style="color:var(--text2);margin-top:6px">Para bitolas ≥ 16mm²</div>
+        </div>
+      </div>
+
+      <div style="background:#f0fdf4;border:2px solid #22c55e;border-radius:10px;padding:14px">
+        <div style="font-size:14px;font-weight:800;color:#16a34a;margin-bottom:8px">🏭 EXTRUSORA</div>
+        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px">Encapamento final:</div>
+        <div style="font-size:11px;line-height:1.8">
+          <div>• Recebe condutor torcido</div>
+          <div>• Aplica isolamento HEPR / PVC / PP</div>
+          <div>• Define <strong>cor final</strong> do cabo</div>
+          <div style="color:var(--text2);margin-top:6px">Última etapa — produto finalizado</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lookup: produto → fluxo ──  -->
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-tt">🔍 Consultar Fluxo de Produção por Produto</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <input id="eng-busca-prod" placeholder="Digite código ou descrição do produto..."
+          style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;min-width:200px">
+        <button class="btn bpri bsm" onclick="engBuscaFluxo()">🔍 Buscar</button>
+      </div>
+      <div id="eng-fluxo-result"></div>
+    </div>
+  </div>
+</div>
+
 
 <!-- MODALS (body level) -->
 <!-- ══ MODAL GERAR OPs ══ -->
