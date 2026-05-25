@@ -347,7 +347,7 @@ function engBuscaFluxo(){
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>PCP MAXFIO v9.3</title>
+<title>PCP MAXFIO v9.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -573,6 +573,7 @@ if(typeof QRCode === 'undefined') {
     <div class="fg"><label>Usuário</label><input id="li-usr" type="text" placeholder="usuario" autocomplete="username"></div>
     <div class="fg"><label>Senha</label><input id="li-pwd" type="password" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();doLogin();}"></div>
     <button class="btn bpri" style="width:100%;justify-content:center;padding:8px" onclick="doLogin()">Entrar</button>
+    <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px">Deixe em branco para entrar como admin</div>
     <div class="login-err" id="li-err"></div>
 <div style="text-align:center;margin-top:10px">
   <button onclick="localStorage.removeItem('pcp_users');// reload removed" style="font-size:10px;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline">↺ Resetar usuários</button>
@@ -2093,16 +2094,8 @@ alter publication supabase_realtime add table pcp_sync;</div>
 <div id="pg-comercial" class="pg">
   <div class="pg-hd">
     <span class="pg-tt">🤝 Comercial — Gestão de Clientes</span>
-    <button class="btn bsuc bsm" onclick="salvarComercial()">💾 Salvar</button>
-  </div>
-  <!-- Filters -->
-  <di
+  
 
-
-
-
-
-<script>
 
 
 
@@ -2659,62 +2652,44 @@ function setGSMsg(msg, color) {
 
 // ═══════════ AUTH ═══════════
 async function doLogin(){
-  const u=document.getElementById('li-usr').value.trim().toLowerCase();
-  const p=document.getElementById('li-pwd').value;
-  // Merge DEFAULT_USERS with USERS (DEFAULT always wins)
-  const allUsers=[...DEFAULT_USERS,...(Array.isArray(USERS)?USERS:[]).filter(x=>!DEFAULT_USERS.find(d=>d.login===x.login))];
-  const user=allUsers.find(x=>String(x.login||'').toLowerCase()===u&&String(x.pwd||'')===p);
-  if(!user){
-    // Try loading from GS if we haven't yet
-    const errEl=document.getElementById('li-err');
-    errEl.textContent='Verificando...';
-    // Attempt GS load once
-    if(GS_CONFIG.enabled && GS_CONFIG.url && location.protocol!=='file:'){
-      try{
-        const res=await fetch(GS_CONFIG.url+'?col='+encodeURIComponent(LS.USUARIOS),
-          {signal:AbortSignal.timeout(5000)});
-        const txt=await res.text();
-        const gsUsers=JSON.parse(txt);
-        if(Array.isArray(gsUsers)&&gsUsers.length>0){
-          USERS=gsUsers;
-          DEFAULT_USERS.forEach(du=>{if(!USERS.find(x=>x.login===du.login))USERS.push(du);});
-          const allUsers2=[...DEFAULT_USERS,...USERS.filter(x=>!DEFAULT_USERS.find(d=>d.login===x.login))];
-          const user2=allUsers2.find(x=>String(x.login||'').toLowerCase()===u&&String(x.pwd||'')===p);
-          if(user2){
-            // Normalize and login
-            const perfilMap2={'op1':'operacional','sgq':'producao','operador':'operacional','admin':'admin','gestor':'gestor','logistica':'logistica','comercial':'comercial','producao':'producao','operacional':'operacional'};
-            user2.perfil=perfilMap2[user2.perfil]||user2.perfil||'operacional';
-            CUSER=user2;
-            document.getElementById('login-overlay').style.display='none';
-            document.getElementById('main-nav').style.display='flex';
-            const perfDef2=(typeof PERFIS_DEF!=='undefined'&&PERFIS_DEF[user2.perfil])||{icon:'👤',label:user2.perfil};
-            document.getElementById('usr-chip').textContent=perfDef2.icon+' '+user2.nome;
-            applyPermissions();populateOperSelects();populateClienteSelect();
-            populateFilSelect();initOrdemForm();
-            document.getElementById('imp-dot').style.display=PEDIDOS.length===0?'block':'none';
-            go('dash');
-            return;
-          }
-        }
-      }catch(gsErr){console.warn('GS user lookup failed:',gsErr);}
-    }
-    errEl.textContent='Usuário ou senha incorretos. Padrão: admin/admin123';
+  const u=(document.getElementById('li-usr')?.value||'').trim().toLowerCase();
+  const p=(document.getElementById('li-pwd')?.value||'').trim();
+
+  // Acesso direto: campos vazios = entra como admin
+  if(!u && !p){
+    _entrarComo(DEFAULT_USERS[0]);
     return;
   }
-  // Normalize legacy perfil names
-  const perfilMap={'op1':'operacional','sgq':'producao','operador':'operacional','admin':'admin','gestor':'gestor','logistica':'logistica','comercial':'comercial','producao':'producao','operacional':'operacional'};
+
+  const allU=[...DEFAULT_USERS,...(USERS||[]).filter(x=>!DEFAULT_USERS.find(d=>d.login===x.login))];
+  const user=allU.find(x=>String(x.login||'').toLowerCase()===u && String(x.pwd||'')===p);
+  if(!user){
+    const errEl=document.getElementById('li-err');
+    if(errEl) errEl.textContent='Usuário ou senha incorretos';
+    return;
+  }
+  _entrarComo(user);
+}
+
+function _entrarComo(user){
+  if(!user) return;
+  const perfilMap={op1:'operacional',sgq:'producao',operador:'operacional',
+    admin:'admin',gestor:'gestor',logistica:'logistica',
+    comercial:'comercial',producao:'producao',operacional:'operacional'};
   user.perfil = perfilMap[user.perfil]||user.perfil||'operacional';
-  CUSER=user;
+  CUSER = user;
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('main-nav').style.display='flex';
   const perfDef=(typeof PERFIS_DEF!=='undefined'&&PERFIS_DEF[user.perfil])||{icon:'👤',label:user.perfil};
-  document.getElementById('usr-chip').textContent=perfDef.icon+' '+user.nome;
+  const chip=document.getElementById('usr-chip');
+  if(chip) chip.textContent=perfDef.icon+' '+user.nome;
   applyPermissions();
-  populateOperSelects();
-  populateClienteSelect();
-  populateFilSelect();
-  initOrdemForm();
-  document.getElementById('imp-dot').style.display=PEDIDOS.length===0?'block':'none';
+  if(typeof populateOperSelects==='function') populateOperSelects();
+  if(typeof populateClienteSelect==='function') populateClienteSelect();
+  if(typeof populateFilSelect==='function') populateFilSelect();
+  if(typeof initOrdemForm==='function') initOrdemForm();
+  const dot=document.getElementById('imp-dot');
+  if(dot) dot.style.display=PEDIDOS.length===0?'block':'none';
   go('dash');
 }
 function doLogout(){
@@ -9132,6 +9107,23 @@ function salvarNovaOP(){
 
   ORDENS.unshift(op);
   saveSingle(LS.ORDENS,ORDENS);
+  fecharModalNovaOP();
+  renderOrdens();
+  showToast&&showToast('OP '+numBase+' criada com sucesso!');
+}
+
+
+
+
+
+
+
+
+
+
+
+
+RDENS);
   fecharModalNovaOP();
   renderOrdens();
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
