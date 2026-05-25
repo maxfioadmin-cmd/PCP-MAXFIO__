@@ -748,8 +748,9 @@ if(typeof QRCode === 'undefined') {
   </div>
 
   <!-- ── OPs ENVIADAS (colapsado por padrão) ── -->
-  <div id="enviadas-panel" style="display:none;margin-bottom:14px">
-    <div style="background:var(--navy);color:#fff;border-radius:8px 8px 0 0;
+  <div id="enviadas-panel" style="display:none;margin-bottom:14px;
+    background:#eef6ff;border:2px solid #93c5fd;border-radius:10px;overflow:hidden">
+    <div style="background:#1e40af;color:#fff;
       padding:10px 16px;display:flex;align-items:center;gap:10px">
       <span style="font-size:13px;font-weight:700">📤 OPs já enviadas para Produção</span>
       <span style="font-size:11px;opacity:.7">Somente leitura — gerencie no Painel de OPs</span>
@@ -763,7 +764,7 @@ if(typeof QRCode === 'undefined') {
   <!-- ── FILTROS ── -->
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;
     padding:10px 14px;background:var(--bg2);border-radius:8px;margin-bottom:12px">
-    <select id="of-etapa" onchange="renderOrdens()"
+    <select id="of-etapa"
       style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
       <option value="">Todas as etapas</option>
       <option value="torcedeira">🌀 Torcedeira</option>
@@ -771,14 +772,14 @@ if(typeof QRCode === 'undefined') {
       <option value="trefila">🔧 Trefila</option>
       <option value="buncherfixo">🔩 Buncher</option>
     </select>
-    <select id="of-turno" onchange="renderOrdens()"
+    <select id="of-turno"
       style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
       <option value="">Todos os turnos</option>
       <option value="T1">T1 (06h–14h)</option>
       <option value="T2">T2 (14h–22h)</option>
       <option value="T3">T3 (22h–06h)</option>
     </select>
-    <select id="of-prio" onchange="renderOrdens()"
+    <select id="of-prio"
       style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
       <option value="">Todas as prioridades</option>
       <option value="Urgente">🔴 Urgente</option>
@@ -786,13 +787,14 @@ if(typeof QRCode === 'undefined') {
       <option value="Normal">⚪ Normal</option>
     </select>
     <input id="ord-q" placeholder="🔍 Buscar OP, pedido, produto..."
-      oninput="renderOrdens()"
       style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);
         font-size:12px;flex:1;min-width:180px;max-width:300px">
+    <button class="btn bpri bsm" onclick="aplicarFiltrosOrdens()" style="white-space:nowrap">🔍 Aplicar</button>
+    <button class="btn bgho bsm" onclick="limparFiltrosOrdens()" style="white-space:nowrap">✕ Limpar</button>
   </div>
 
   <!-- ── PAINEL ÚNICO DE GESTÃO ── -->
-  <div class="sec">
+  <div class="sec" style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px">
     <div class="sec-hd" style="flex-wrap:wrap;gap:8px">
       <span class="sec-tt" style="font-size:15px;font-weight:800;color:var(--navy)">
         📋 OPs para Gerir
@@ -1656,11 +1658,32 @@ let editingUserId=null;
 
 // ═══════════ DEFAULTS ═══════════
 const DEFAULT_USERS=[
-  {id:1,nome:'Administrador',login:'admin',    pwd:'admin123', perfil:'admin',      turno:'',  setor:'TI'},
-  {id:2,nome:'Gestor PCP',   login:'gestor',   pwd:'gestor123',perfil:'gestor',     turno:'',  setor:'PCP'},
-  {id:3,nome:'Operador T1',  login:'op1',      pwd:'op1234',   perfil:'operacional',turno:'T1',setor:'Produção'},
-  {id:4,nome:'SGQ Qualidade',login:'sgq',      pwd:'sgq2024',  perfil:'producao',   turno:'',  setor:'Qualidade'},
+  {id:1,nome:'Administrador',   login:'admin',  pwd:'admin123', perfil:'admin',    turno:'',setor:'TI'},
+  {id:2,nome:'Gestor PCP',      login:'gestor', pwd:'gestor123',perfil:'gestor',   turno:'',setor:'PCP'},
+  {id:4,nome:'SGQ Qualidade',   login:'sgq',    pwd:'sgq2024',  perfil:'producao', turno:'',setor:'Qualidade'},
+  // ── TURNO 1: MANHÃ (06:00–16:00) ──
+  {id:'op_tiago',nome:'Tiago Anselmo',login:'tia123',pwd:'tia123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Líder/Extrusora',etapa:'extrusora'},
+  {id:'op_iarley',nome:'Iarley',login:'iar123',pwd:'iar123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Extrusora',etapa:'extrusora'},
+  {id:'op_marcelo',nome:'Marcelo',login:'mar123',pwd:'mar123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Extrusora',etapa:'extrusora'},
+  {id:'op_lucas',nome:'Lucas',login:'luc123',pwd:'luc123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Trefila',etapa:'trefila'},
+  {id:'op_ronaldy',nome:'Ronaldy',login:'ron123',pwd:'ron123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Torcedeira',etapa:'torcedeira'},
+  {id:'op_tsuname',nome:'Tsuname',login:'tsu123',pwd:'tsu123',perfil:'operacional',turno:'T1',horario:'06:00-16:00',setor:'Buncher',etapa:'buncherfixo'},
+  {id:'op_adriano',nome:'Adriano',login:'adr123',pwd:'adr123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Trefila',etapa:'trefila'},
+  {id:'op_alcilei',nome:'Alcilei',login:'alc123',pwd:'alc123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Buncher',etapa:'buncherfixo'},
+  {id:'op_emleand',nome:'Emerson Leandro',login:'ele123',pwd:'ele123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Extrusora',etapa:'extrusora'},
+  {id:'op_emjask',nome:'Emerson Jaskiu',login:'emj123',pwd:'emj123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Extrusora',etapa:'extrusora'},
+  {id:'op_adao',nome:'Adão',login:'ada123',pwd:'ada123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Trefila',etapa:'trefila'},
+  {id:'op_josue',nome:'Josue',login:'jos123',pwd:'jos123',perfil:'operacional',turno:'T2',horario:'11:00-20:48',setor:'Buncher',etapa:'buncherfixo'},
+  {id:'op_pedro',nome:'Pedro',login:'ped123',pwd:'ped123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Líder/Torcedeira',etapa:'torcedeira'},
+  {id:'op_thiago',nome:'Thiago',login:'thi123',pwd:'thi123',perfil:'operacional',turno:'T3',horario:'21:00-06:00',setor:'Extrusora',etapa:'extrusora'}
 ];
+
+// Operadores por etapa e turno (para filtros/atribuição automática)
+const OPERADORES_TURNO = {
+  T1: [{"id": "op_tiago", "nome": "Tiago Anselmo", "login": "tia123", "pwd": "tia123", "perfil": "operacional", "turno": "T1", "horario": "06:00-16:00", "setor": "Líder/Extrusora", "etapa": "extrusora"}, {"id": "op_iarley", "nome": "Iarley", "login": "iar123", "pwd": "iar123", "perfil": "operacional", "turno": "T1", "horario": "06:00-16:00", "setor": "Extrusora", "etapa": "extrusora"}, {"id": "op_marcelo", "nome": "Marcelo", "login": "mar123", "pwd": "mar123", "perfil": "operacional", "turno": "T1", "horario": "06:00-16:00", "setor": "Extrusora", "etapa": "extrusora"}, {"id": "op_lucas", "nome": "Lucas", "login": "luc123", "pwd": "luc123", "perfil": "operacional", "turno": "T1", "horario": "06:00-16:00", "setor": "Trefila", "etapa": "trefila"}, {"id": "op_ronaldy", "nome": "Ronaldy", "login": "ron123", "pwd": "ron123", "perfil": "operacional", "turno": "T1", "horario": "06:00-16:00", "setor": "Torcedeira", "etapa": "torcedeira"}, {"id": "op_tsuname", "nome": "Tsuname", "login": "tsu123", "pwd": "tsu123", "perfil": "operacional", "turno": "T1", "horario": "06:00-16:00", "setor": "Buncher", "etapa": "buncherfixo"}],
+  T2: [{"id": "op_adriano", "nome": "Adriano", "login": "adr123", "pwd": "adr123", "perfil": "operacional", "turno": "T2", "horario": "11:00-20:48", "setor": "Trefila", "etapa": "trefila"}, {"id": "op_alcilei", "nome": "Alcilei", "login": "alc123", "pwd": "alc123", "perfil": "operacional", "turno": "T2", "horario": "11:00-20:48", "setor": "Buncher", "etapa": "buncherfixo"}, {"id": "op_emleand", "nome": "Emerson Leandro", "login": "ele123", "pwd": "ele123", "perfil": "operacional", "turno": "T2", "horario": "11:00-20:48", "setor": "Extrusora", "etapa": "extrusora"}, {"id": "op_emjask", "nome": "Emerson Jaskiu", "login": "emj123", "pwd": "emj123", "perfil": "operacional", "turno": "T2", "horario": "11:00-20:48", "setor": "Extrusora", "etapa": "extrusora"}, {"id": "op_adao", "nome": "Adão", "login": "ada123", "pwd": "ada123", "perfil": "operacional", "turno": "T2", "horario": "11:00-20:48", "setor": "Trefila", "etapa": "trefila"}, {"id": "op_josue", "nome": "Josue", "login": "jos123", "pwd": "jos123", "perfil": "operacional", "turno": "T2", "horario": "11:00-20:48", "setor": "Buncher", "etapa": "buncherfixo"}],
+  T3: [{"id": "op_pedro", "nome": "Pedro", "login": "ped123", "pwd": "ped123", "perfil": "operacional", "turno": "T3", "horario": "21:00-06:00", "setor": "Líder/Torcedeira", "etapa": "torcedeira"}, {"id": "op_thiago", "nome": "Thiago", "login": "thi123", "pwd": "thi123", "perfil": "operacional", "turno": "T3", "horario": "21:00-06:00", "setor": "Extrusora", "etapa": "extrusora"}]
+};
 const OPERADORES=['PEDRO KUROVISKI JUNIOR','EMERSON JASKIU DE OLIVEIRA','LUIZ ADRIANO TOMCZAK FERNANDES','JOSUE FERREIRA DE OLIVEIRA','IARLEY DA SILVA MARTINS','THIAGO TEIXEIRA GODINHO','TIAGO ANSELMO DE OLIVEIRA','CLAUDIO ADÃO DE OLIVEIRA'];
 const ALL_ABAS=['import','pedidos','pcp','ordens','buncher','extrusora','lotes','turnos','reserva','usuarios'];
 const ABA_LABELS={import:'📥 Importar',pedidos:'📋 Pedidos',pcp:'📋 Prévia PCP',ordens:'📝 Ordens',buncher:'🔩 Buncher',extrusora:'🏭 Extrusora',lotes:'✅ Lotes',turnos:'🕐 Turnos',reserva:()=>{rsvSub('ped');populateClienteSelect();},usuarios:'👥 Usuários'};
@@ -2751,6 +2774,41 @@ function renderPainel(){
       </div>
     </div>
 
+    <!-- ESCALA DE TURNOS (quick reference) -->
+    <div class="sec" style="margin-bottom:16px">
+      <div class="sec-hd" style="background:#374151;color:#fff;border-radius:var(--r) var(--r) 0 0;padding:10px 14px;margin:-12px -12px 12px">
+        <span style="font-size:13px;font-weight:700">👥 Escala de Turnos — Equipe de Produção</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        ${['T1','T2','T3'].map(t=>{
+          const tColors={T1:'#ea580c',T2:'#2563eb',T3:'#7c3aed'};
+          const tNames={T1:'Turno 1 — Manhã',T2:'Turno 2 — Intermediário',T3:'Turno 3 — Noturno'};
+          const tHoras={T1:'06:00–16:00',T2:'11:00–20:48',T3:'21:00–06:00'};
+          const tc=tColors[t];
+          const allUsers=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+          const ops=allUsers.filter(u=>u.perfil==='operacional'&&u.turno===t);
+          return`<div style="border:2px solid ${tc}33;border-top:4px solid ${tc};border-radius:8px;padding:12px">
+            <div style="font-size:12px;font-weight:700;color:${tc}">${tNames[t]}</div>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:8px">${tHoras[t]}</div>
+            ${ops.map(u=>{
+              const etapaIcons={extrusora:'🏭',trefila:'🔧',buncherfixo:'🔩',torcedeira:'🌀'};
+              const icon=etapaIcons[u.etapa]||'👤';
+              const isAtivo=andando.some(o=>o.operador===u.nome&&(o.turno===t||!o.turno));
+              return`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;
+                border-bottom:1px solid var(--border);font-size:11px">
+                <span style="font-size:14px">${icon}</span>
+                <div style="flex:1">
+                  <div style="font-weight:600">${u.nome}</div>
+                  <div style="font-size:10px;color:var(--text3)">${u.setor||''}</div>
+                </div>
+                ${isAtivo?'<span style="background:#22c55e;color:#fff;border-radius:99px;padding:1px 6px;font-size:9px">ativo</span>':''}
+              </div>`;
+            }).join('')}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
     <!-- OP TABLE (all active) -->
     <div class="sec">
       <div class="sec-hd">
@@ -2870,7 +2928,9 @@ function renderPainel(){
                 display:flex;align-items:center;gap:10px">
                 <span style="font-size:14px;font-weight:700">${turno}</span>
                 <span style="opacity:.8;font-size:12px">${ops.length} OPs · ${fm(ops.reduce((a,o)=>a+(o.metros||0),0))}m</span>
-                <span style="margin-left:auto;font-size:11px;opacity:.7">${[...new Set(ops.map(o=>o.operador).filter(Boolean))].join(' · ')||'— sem operador'}</span>
+                <span style="margin-left:auto;font-size:11px;opacity:.7">
+                ${[...new Set(ops.map(o=>o.operador).filter(Boolean))].join(' · ')||'— sem operador'}
+              </span>
               </div>
               <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;background:var(--bg2);padding:10px;border-radius:0 0 8px 8px">
                 ${ops.map(o=>{
@@ -4198,11 +4258,8 @@ function enviarOPsSelecionadasParaProducao(){
   saveSingle(LS.ORDENS,ORDENS);
   saveSingle(LS.PEDIDOS,PEDIDOS);
   showToast&&showToast(toSend.length+' OP(s) enviadas para producao!');
-  // Navigate to Painel and show the correct etapa sub-tab
-  const firstEtapa=toSend[0]?.tipo;
-  const etapaSubMap={trefila:'trefila',buncherfixo:'buncher',torcedeira:'torcedeira',
-    torcedeira_redir:'torcedeira',extrusora:'extrusora'};
-  window._painelSub = etapaSubMap[firstEtapa]||'geral';
+  // Navigate to Painel - show 'geral' overview with all etapas
+  window._painelSub='geral';
   setTimeout(()=>{
     go('painel');
     setTimeout(()=>{renderPainel&&renderPainel();},150);
@@ -6207,13 +6264,28 @@ function renderOrdens(){
   });
   if(needSave) saveSingle(LS.ORDENS,ORDENS);
 
-  // ── Populate operador select ──
+  // ── Populate operador select (grouped by turno) ──
   const operSel=document.getElementById('ord-oper-sel');
   if(operSel&&operSel.options.length<=1){
-    (USERS||[]).forEach(u=>{
-      const opt=document.createElement('option');
-      opt.value=u.login;opt.textContent=u.nome;
-      operSel.appendChild(opt);
+    // Add from DEFAULT_USERS (operators) grouped by turno
+    const allUsers=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+    const ops=allUsers.filter(u=>u.perfil==='operacional'&&u.turno);
+    const byTurno={T1:[],T2:[],T3:[]};
+    ops.forEach(u=>{if(byTurno[u.turno])byTurno[u.turno].push(u);});
+    ['T1','T2','T3'].forEach(t=>{
+      if(byTurno[t].length===0)return;
+      const grp=document.createElement('optgroup');
+      const horarios={T1:'06:00-16:00',T2:'11:00-20:48',T3:'21:00-06:00'};
+      grp.label=t+' ('+horarios[t]+')';
+      byTurno[t].forEach(u=>{
+        const opt=document.createElement('option');
+        opt.value=u.login;
+        opt.textContent=u.nome+(u.setor?' — '+u.setor:'');
+        opt.setAttribute('data-etapa',u.etapa||'');
+        opt.setAttribute('data-turno',t);
+        grp.appendChild(opt);
+      });
+      operSel.appendChild(grp);
     });
   }
 
@@ -6404,6 +6476,14 @@ function renderOrdens(){
   </table></div>`;
 }
 
+
+function aplicarFiltrosOrdens(){ renderOrdens(); }
+function limparFiltrosOrdens(){
+  const ids=['of-etapa','of-turno','of-prio','ord-q'];
+  ids.forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderOrdens();
+}
+
 function toggleEnviadas(){
   const p=document.getElementById('enviadas-panel');
   if(!p)return;
@@ -6415,22 +6495,25 @@ function toggleEnviadas(){
 }
 
 function atribuirOperadorSelecionados(){
-  const ids=[...document.querySelectorAll('.ck-ord:checked')].map(c=>c.value);
-  if(ids.length===0){alert('Selecione OPs primeiro.');return;}
-  const oper=document.getElementById('ord-oper-sel')?.value||'';
-  const turno=document.getElementById('ord-turno-sel')?.value||'';
-  if(!oper&&!turno){alert('Selecione operador ou turno.');return;}
-  ids.forEach(id=>{
-    const o=ORDENS.find(x=>x.id===id);
-    if(o){
-      if(oper)o.operador=oper;
-      if(turno)o.turno=turno;
-      if(o.status==='Pendente')o.status='Em andamento';
-    }
+  const ids=[...document.querySelectorAll('.ck-ord:checked')].map(c=>String(c.value||''));
+  if(ids.length===0){alert('Selecione ao menos uma OP para atribuir.');return;}
+  const operLogin=document.getElementById('ord-oper-sel')?.value||'';
+  const turnoSel=document.getElementById('ord-turno-sel')?.value||'';
+  if(!operLogin&&!turnoSel){alert('Selecione operador ou turno.');return;}
+  // Get operator info
+  const allUsers=[...DEFAULT_USERS,...(USERS||[]).filter(u=>!DEFAULT_USERS.find(d=>d.login===u.login))];
+  const operUser=allUsers.find(u=>u.login===operLogin);
+  const turnoFinal=turnoSel||operUser?.turno||'';
+  let count=0;
+  ORDENS.filter(o=>ids.includes(String(o.id||''))).forEach(o=>{
+    if(operLogin){o.operador=operUser?.nome||operLogin;}
+    if(turnoFinal){o.turno=turnoFinal;}
+    if(operUser?.etapa&&!o.etapa_preferida) o.etapa_preferida=operUser.etapa;
+    count++;
   });
   saveSingle(LS.ORDENS,ORDENS);
   renderOrdens();
-  alert('✅ '+ids.length+' OPs atribuídas para '+oper+' / '+turno);
+  showToast&&showToast(count+' OP(s) atribuídas: '+(operUser?.nome||operLogin)+' / '+(turnoFinal||'—'));
 }
 function initOrdemForm(){
   const el=document.getElementById('ord-form');if(!el)return;
