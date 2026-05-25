@@ -347,7 +347,7 @@ function engBuscaFluxo(){
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>PCP MAXFIO v9.2</title>
+<title>PCP MAXFIO v9.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -2103,6 +2103,7 @@ alter publication supabase_realtime add table pcp_sync;</div>
 
 
 <script>
+
 
 
 
@@ -5302,15 +5303,19 @@ window.addEventListener('DOMContentLoaded',()=>{
     return;
   }
   sessionStorage.setItem('pcp_app_ver',_APP_VER);
-  const _sbCfg=loadSupabaseConfig();
+  // ─── Supabase config embutida ───
+  const _SB_URL='https://gilemnyzgmdbraexfqtg.supabase.co';
+  const _SB_KEY='sb_publishable_GcM9NbyXVlKkkUI2qSCSmw_11yI7TvF';
+  localStorage.setItem('pcp_supabase_config',JSON.stringify({url:_SB_URL,key:_SB_KEY}));
+  const _sbCfg={url:_SB_URL,key:_SB_KEY};
   if(_sbCfg){
     initSupabase(_sbCfg.url,_sbCfg.key);
     // Pre-preenche campos
     setTimeout(function(){
       var u=document.getElementById('sb-url-input');
       var k=document.getElementById('sb-key-input');
-      if(u) u.value=_sbCfg.url;
-      if(k) k.value=_sbCfg.key;
+      if(u) u.value='https://gilemnyzgmdbraexfqtg.supabase.co';
+      if(k) k.value='sb_publishable_GcM9NbyXVlKkkUI2qSCSmw_11yI7TvF';
     },500);
   }
   // ─── Firebase: inicializa com config salva ───
@@ -9131,6 +9136,7 @@ function salvarNovaOP(){
   renderOrdens();
   showToast&&showToast('OP '+numBase+' criada com sucesso!');
 }
+
 
 
 
