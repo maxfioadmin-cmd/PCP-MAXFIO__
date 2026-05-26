@@ -618,12 +618,6 @@ if(typeof QRCode === 'undefined') {
   <div class="nt" id="nt-pcp"        onclick="go('pcp')">🗂 Prévia PCP</div>
   <div class="nt" id="nt-ordens"     onclick="go('ordens')">⚙️ Produção</div>
   <div class="nt" id="nt-painel"     onclick="go('painel')">🏭 Painel OPs</div>
-  <!-- ETAPAS submenu as dropdown under Painel OPs -->
-  <div class="nt-group" style="position:relative;display:inline-block">
-      <div class="nt" id="nt-buncherfixo" onclick="closeEtapasMenu();go('buncherfixo')" style="border-bottom:1px solid rgba(255,255,255,.1)">🔩 Buncher</div>
-      <div class="nt" id="nt-buncherredir" onclick="closeEtapasMenu();go('buncherredir')" style="border-bottom:1px solid rgba(255,255,255,.1)">🌀 Torcedeira</div>
-      <div class="nt" id="nt-extrusora"   onclick="closeEtapasMenu();go('extrusora')">🏭 Extrusora</div>
-    </div>
   </div>
   <div class="nt" id="nt-reserva"    onclick="go('reserva')">📦 Reserva</div>
   <div class="nt" id="nt-engenharia" onclick="go('engenharia')">⚙️ Engenharia</div>
@@ -644,6 +638,10 @@ if(typeof QRCode === 'undefined') {
 
 <!-- ══ DASHBOARD ══ -->
 <script>
+
+
+
+
 
 
 
@@ -2586,13 +2584,387 @@ function atribuirTodasRedirSel(){
   alert('✅ '+ops.length+' OPs atribuídas.');
 }
 // ═══════════ ENGENHARIA ═══════════
+
+// ══ DADOS ENGENHARIA — PRODUTOS MAXFIO (482 SKUs) ══
+const ENG_GRUPOS = [
+  {sig:'CEL1', nome:'Cabo Elétrico Linha 1 (Maxfio)', skus:267, cor:'#2563eb',
+   subgrupos:[
+    {sig:'FNBR', nome:'Flexível NBR 450/750V', skus:185},
+    {sig:'FATX', nome:'Flex HEPR Atox 1KV', skus:34},
+    {sig:'CCPP', nome:'Cabo Controle PP', skus:30},
+    {sig:'FATV', nome:'Flexível Atox 450/750V', skus:18},
+  ]},
+  {sig:'HEPR', nome:'Cabo HEPR 1KV 90°', skus:154, cor:'#7c3aed',
+   subgrupos:[
+    {sig:'FHPR', nome:'Flex HEPR 1KV', skus:99},
+    {sig:'CPPH', nome:'Cabo Controle PP HEPR 1KV', skus:41},
+    {sig:'EFLX', nome:'Eletreflex', skus:14},
+  ]},
+  {sig:'CAM', nome:'Cabo de Alumínio Multiplexado', skus:48, cor:'#0891b2',
+   subgrupos:[
+    {sig:'SING', nome:'Singelo XLPE 0,6/1KV', skus:17},
+    {sig:'QDRX', nome:'Quadruplex', skus:13},
+    {sig:'TRPX', nome:'Triplex', skus:10},
+    {sig:'DUPX', nome:'Duplex', skus:8},
+  ]},
+  {sig:'CCN', nome:'Cabo Elétrico Cobre Nu', skus:13, cor:'#d97706',
+   subgrupos:[
+    {sig:'MONO', nome:'Monofilamento', skus:7},
+    {sig:'MULT', nome:'Multifilamento', skus:6},
+  ]},
+  {sig:'CRS', nome:'Cabo Rígido (Sólido)', skus:7, cor:'#16a34a',
+   subgrupos:[
+    {sig:'RIGS', nome:'Rígido Sólido', skus:7},
+  ]},
+];
+
+// Filamentos Buncher completos
+const ENG_FIL = [
+  ['FLEXIVEL','1',0.28,14,0.7664],
+  ['HEPR','1,5',0.28,20,1.0948],['FLEXIVEL','1,5',0.28,22,1.2043],
+  ['PARALELO','2x1,0',0.28,24,1.3138],['PP','2x1,0',0.28,24,1.3138],
+  ['HEPR','2,5',0.28,32,1.7517],['FLEXIVEL','2,5',0.28,36,1.9707],
+  ['FLEXIVEL','2,5 ATOX',0.28,36,1.9707],['PP','3x1,0',0.28,36,1.9707],
+  ['PP','2x1,5',0.28,40,2.1896],['PARALELO','2x1,5',0.28,44,2.4086],
+  ['PP','4x1,0',0.28,48,2.6275],['HEPR','4',0.28,54,2.9560],
+  ['FLEXIVEL','4',0.28,58,3.1749],['PP','3x1,5',0.28,60,3.2844],
+  ['PP','5x1,0',0.28,60,3.2844],['PP','2x2,5',0.28,64,3.5034],
+  ['PARALELO','2x2,5',0.28,72,3.9413],['PP','6x1,0',0.28,72,3.9413],
+  ['PP','4x1,5',0.28,80,4.3792],['PP','5x1,5',0.28,80,4.3792],
+  ['HEPR','6',0.28,84,4.5982],['PP','7x1,0',0.28,84,4.5982],
+  ['FLEXIVEL','6',0.28,86,4.7077],['PP','3x2,5',0.28,96,5.2551],
+  ['PP','2x4,0',0.28,108,5.9120],['PARALELO','2x4,0',0.28,116,6.3499],
+  ['PP','6x1,5',0.28,120,6.5688],['PP','4x2,5',0.28,128,7.0068],
+  ['PP','7x1,5',0.28,140,7.6636],['PP','5x2,5',0.28,160,8.7585],
+  ['PP','2x6,0',0.28,168,9.1964],['PP','3x4,0',0.28,168,9.1964],
+  ['PP','6x2,5',0.28,192,10.5101],['PP','4x4,0',0.28,216,11.8239],
+  ['PP','7x2,5',0.28,224,12.2618],['PP','3x6,0',0.28,252,13.7946],
+  ['PP','4x6,0',0.28,336,18.3928],
+  ['HEPR','10',0.36,84,7.6011],['HEPR','10 ATOX',0.36,84,7.6011],
+  ['FLEXIVEL','10',0.36,88,7.9630],['FLEXIVEL','16',0.36,128,11.5826],
+  ['HEPR','16',0.36,128,11.5826],['HEPR','16 ATOX',0.36,128,11.5826],
+  ['PP','2x10,0',0.36,168,15.2022],['FLEXIVEL','25',0.36,192,17.3739],
+  ['HEPR','25',0.36,192,17.3739],['HEPR','25 ATOX',0.36,192,17.3739],
+  ['PP','3x10,0',0.36,252,22.8033],['PP','2x16,0',0.36,256,23.1652],
+  ['FLEXIVEL','35',0.36,260,23.5272],['HEPR','35',0.36,260,23.5272],
+  ['PP','4x10,0',0.36,336,30.4044],['FLEXIVEL','50',0.36,368,33.3000],
+  ['HEPR','50',0.36,368,33.3000],['HEPR','50 ATOX',0.36,368,33.3000],
+  ['PP','2x25,0',0.36,384,34.7478],['PP','3x16,0',0.36,384,34.7478],
+  ['PP','4x16,0',0.36,512,46.3304],['FLEXIVEL','70',0.36,536,48.5022],
+  ['HEPR','70',0.36,536,48.5022],['HEPR','70 ATOX',0.36,536,48.5022],
+  ['PP','3x25,0',0.36,576,52.1218],['FLEXIVEL','95',0.36,710,64.2473],
+  ['HEPR','95',0.36,710,64.2473],['PP','4x25,0',0.36,760,68.7718],
+  ['FLEXIVEL','120',0.36,924,83.6120],['HEPR','120',0.36,924,83.6120],
+  ['FLEXIVEL','150',0.36,1156,104.6055],['HEPR','150',0.36,1156,104.6055],
+  ['HEPR','150 ATOX',0.36,1156,104.6055],['FLEXIVEL','185',0.36,1376,124.5131],
+  ['HEPR','185',0.36,1376,124.5131],['FLEXIVEL','240',0.36,1764,159.6229],
+  ['FLEXIVEL','300',0.36,2260,218.3664],
+];
+
+// Base Bobinas Torcedeira
+const ENG_BOBINAS = [
+  {bit:16, fios:128, bobinas:4, cordas:32, alma:0, dFio:0.36, dCabo:4.8, fieira:5.1},
+  {bit:25, fios:192, bobinas:6, cordas:32, alma:0, dFio:0.36, dCabo:5.72, fieira:6},
+  {bit:35, fios:260, bobinas:3, cordas:84, alma:8, dFio:0.36, dCabo:6.32, fieira:7},
+  {bit:50, fios:360, bobinas:4, cordas:84, alma:24, dFio:0.36, dCabo:8.07, fieira:8.25},
+  {bit:70, fios:530, bobinas:6, cordas:84, alma:26, dFio:0.36, dCabo:9.65, fieira:9.9},
+  {bit:95, fios:708, bobinas:8, cordas:84, alma:36, dFio:0.36, dCabo:11.22, fieira:11.5},
+  {bit:120, fios:924, bobinas:10, cordas:84, alma:84, dFio:0.36, dCabo:12.64, fieira:13},
+  {bit:150, fios:1156, bobinas:13, cordas:84, alma:64, dFio:0.36, dCabo:14.12, fieira:14.5},
+  {bit:185, fios:1380, bobinas:16, cordas:84, alma:36, dFio:0.36, dCabo:15.54, fieira:16},
+  {bit:240, fios:1764, bobinas:12, cordas:84, alma:0, dFio:0.36, dCabo:17.5, fieira:18},
+  {bit:300, fios:2204, bobinas:10, cordas:128, alma:0, dFio:0.36, dCabo:19.6, fieira:21},
+];
+
+let _engSub = 'grupos';
+let _engGrupoOpen = {};
+
+function engSub(s){
+  _engSub = s;
+  ['grupos','filamentos','torcedeira','bobinas'].forEach(function(id){
+    var el=document.getElementById('eng-'+id);
+    if(el) el.style.display = (id===s)?'block':'none';
+    var btn=document.getElementById('est-'+id);
+    if(btn){ btn.classList.toggle('on', id===s); }
+  });
+  if(s==='bobinas') setTimeout(calcBobinasTipo,50);
+  renderEngenharia();
+}
+
+
+const ENG_BOB_MODELOS=['45/25','50/25','65/25','65/45','80/45','100/60'];
+const ENG_BOB_CORES=['#2563eb','#7c3aed','#0891b2','#d97706','#16a34a','#dc2626'];
+const ENG_BOB_CAP=[
+  ['flex','0,5 mm²',2.1,4857,6055,9613,17303,32057,63385],
+  ['flex','1,0 mm²',2.5,3427,4272,6782,12209,22619,44724],
+  ['flex','1,5 mm²',2.8,2732,3406,5407,9733,18032,35654],
+  ['flex','2,5 mm²',3.4,1852,2309,3667,6601,12229,24180],
+  ['flex','4,0 mm²',4.0,1338,1668,2649,4769,8835,17470],
+  ['flex','6,0 mm²',4.6,1012,1261,2003,3606,6681,13210],
+  ['flex','10 mm²',5.8,636,793,1260,2268,4202,8309],
+  ['hepr','16 mm²',9.5,237,295,469,845,1566,3097],
+  ['hepr','25 mm²',11.0,177,220,350,630,1168,2310],
+  ['hepr','35 mm²',12.2,143,179,284,512,949,1878],
+  ['hepr','50 mm²',13.8,112,140,222,400,742,1467],
+  ['hepr','70 mm²',15.6,88,109,174,313,580,1148],
+  ['hepr','95 mm²',17.8,67,84,133,240,446,882],
+  ['hepr','120 mm²',19.6,55,69,110,198,368,727],
+  ['hepr','150 mm²',21.8,45,56,89,160,297,588],
+  ['hepr','185 mm²',24.2,36,45,72,130,241,477],
+  ['hepr','240 mm²',27.4,28,35,56,101,188,372],
+  ['hepr','300 mm²',30.6,22,28,45,81,150,298],
+  ['pp','PP 3x1,5 mm²',8.5,296,369,586,1056,1956,3868],
+  ['pp','PP 3x2,5 mm²',9.8,223,278,441,794,1472,2910],
+  ['pp','PP 4x2,5 mm²',10.8,183,228,363,654,1212,2396],
+  ['pp','PP 4x4,0 mm²',12.6,134,168,267,480,890,1760],
+  ['pp','PP 4x6,0 mm²',14.5,101,127,201,362,672,1329],
+  ['pp','PP 4x10 mm²',18.0,66,82,130,235,436,862],
+  ['par','Paralelo 2x1,5 mm²',5.0,856,1068,1695,3052,5654,11181],
+  ['par','Paralelo 2x2,5 mm²',6.0,594,741,1177,2119,3926,7764],
+  ['par','Paralelo 2x4,0 mm²',7.2,413,515,817,1472,2727,5392],
+];
+
+function _getBobRow(tipo,bitola){
+  var tLow=String(tipo||'').toLowerCase();
+  var tKey='flex';
+  if(tLow.includes('hepr')||tLow.includes('90')||tLow.includes('hpr')) tKey='hepr';
+  else if(tLow.includes('pp')||tLow.includes('controle')||tLow.includes('ccpp')||tLow.includes('cpph')) tKey='pp';
+  else if(tLow.includes('paralelo')) tKey='par';
+  var bit=String(bitola||'').replace(/\s*mm²?/i,'').replace(/\s/g,'').toLowerCase();
+  return ENG_BOB_CAP.filter(function(r){
+    if(r[0]!==tKey) return false;
+    var rl=r[1].replace(/\s*mm²?/i,'').replace(/\s/g,'').toLowerCase();
+    return rl===bit||rl.includes(bit)||bit.includes(rl);
+  })[0]||null;
+}
+
+function sugerirBobina(tipo,bitola,metros,lanceObs){
+  var row=_getBobRow(tipo,bitola);
+  if(!row) return null;
+  var caps=[row[3],row[4],row[5],row[6],row[7],row[8]];
+  var lance=parseFloat(lanceObs)||0;
+  var metRef=lance>0?lance:metros;
+  var bestIdx=caps.findIndex(function(c){return c>=metRef;});
+  if(bestIdx<0) bestIdx=5;
+  var bestMod=ENG_BOB_MODELOS[bestIdx];
+  var bestCap=caps[bestIdx];
+  var nbob=lance>0?Math.ceil(metros/lance):Math.ceil(metros/bestCap);
+  return {modelo:bestMod,capPorBobina:bestCap,nbobinas:nbob,metros:metros,lance:lance};
+}
+
+function _renderEngBobinas(){
+  var el=document.getElementById('eng-bob-content');
+  if(!el)return;
+  var ftipo=(document.getElementById('eng-bob-tipo')||{}).value||'';
+  var busca=((document.getElementById('eng-busca')||{}).value||'').toLowerCase();
+  var rows=ENG_BOB_CAP;
+  if(ftipo) rows=rows.filter(function(r){return r[0]===ftipo;});
+  if(busca) rows=rows.filter(function(r){return r[1].toLowerCase().includes(busca);});
+  var tipoCor={flex:'#2563eb',hepr:'#7c3aed',pp:'#16a34a',par:'#d97706'};
+  var tipoNome={flex:'Flexível',hepr:'HEPR',pp:'PP',par:'Paralelo'};
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:11px">'
+    +'<thead><tr style="background:#f1f5f9">'
+    +'<th style="padding:7px 10px;text-align:left">Tipo</th>'
+    +'<th style="padding:7px 10px;text-align:left">Bitola</th>'
+    +'<th style="padding:7px 10px;text-align:center;color:var(--text2)">Ø mm</th>'
+    +ENG_BOB_MODELOS.map(function(m,i){return '<th style="padding:7px 8px;text-align:right;color:'+ENG_BOB_CORES[i]+'">'+m+'</th>';}).join('')
+    +'<th style="padding:7px 10px;color:#16a34a;white-space:nowrap">✅ Recomendada</th>'
+    +'</tr></thead><tbody>'
+    +rows.map(function(r,ri){
+      var cor=tipoCor[r[0]]||'#888';
+      var caps=[r[3],r[4],r[5],r[6],r[7],r[8]];
+      var recIdx=caps.findIndex(function(c){return c>=200&&c<=3000;});
+      if(recIdx<0) recIdx=3;
+      return '<tr style="border-bottom:1px solid var(--border);'+(ri%2===0?'background:var(--bg2)':'')+'">'
+        +'<td style="padding:5px 10px"><span style="background:'+cor+'22;color:'+cor+';border:1px solid '+cor+'44;border-radius:4px;font-size:9px;font-weight:700;padding:1px 5px">'+tipoNome[r[0]]+'</span></td>'
+        +'<td style="padding:5px 10px;font-weight:700">'+r[1]+'</td>'
+        +'<td style="padding:5px 10px;text-align:center;color:var(--text3);font-family:monospace">'+r[2]+'</td>'
+        +caps.map(function(c,ci){
+          var isRec=ci===recIdx;
+          return '<td style="padding:5px 8px;text-align:right;'+(isRec?'font-weight:800;color:'+ENG_BOB_CORES[ci]+';background:'+ENG_BOB_CORES[ci]+'11;':'color:var(--text2);')+'">'+c.toLocaleString('pt-BR')+'m</td>';
+        }).join('')
+        +'<td style="padding:5px 10px;font-size:10px;color:#16a34a;font-weight:700">'+ENG_BOB_MODELOS[recIdx]+' ('+caps[recIdx].toLocaleString('pt-BR')+'m)</td>'
+        +'</tr>';
+    }).join('')+'</tbody></table>'
+    +'<div style="padding:7px 10px;font-size:10px;color:var(--text3)">K=1,10 · Folga flange 50mm · Dimensionamento_Bobinas_Cabos_Eletricos.xlsx</div>';
+}
+
+function calcBobinasTipo(){
+  var tipo=(document.getElementById('calc-tipo')||{}).value||'flex';
+  var sel=document.getElementById('calc-bitola');
+  if(!sel)return;
+  var rows=ENG_BOB_CAP.filter(function(r){return r[0]===tipo;});
+  sel.innerHTML='<option value="">Selecione...</option>'+rows.map(function(r){return '<option value="'+r[1]+'">'+r[1]+'</option>';}).join('');
+  calcBobinas();
+}
+
+function calcBobinas(){
+  var tipo=(document.getElementById('calc-tipo')||{}).value||'flex';
+  var bitola=(document.getElementById('calc-bitola')||{}).value||'';
+  var metros=parseFloat((document.getElementById('calc-metros')||{}).value)||0;
+  var lance=parseFloat((document.getElementById('calc-lance')||{}).value)||0;
+  var el=document.getElementById('calc-resultado');
+  if(!el)return;
+  if(!bitola||!metros){el.innerHTML='';return;}
+  var rows=ENG_BOB_CAP.filter(function(r){return r[0]===tipo&&r[1]===bitola;});
+  if(!rows.length){el.innerHTML='<p style="color:var(--text3)">Bitola não encontrada.</p>';return;}
+  var row=rows[0];var caps=[row[3],row[4],row[5],row[6],row[7],row[8]];
+  var metRef=lance>0?lance:metros;
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:10px">'
+    +ENG_BOB_MODELOS.map(function(m,i){
+      var cap=caps[i];
+      var nbob=lance>0?Math.ceil(metros/lance):Math.ceil(metros/cap);
+      var mPorBob=lance>0?Math.min(lance,metros):Math.ceil(metros/nbob);
+      var ocup=Math.round(mPorBob/cap*100);
+      var isOtimo=ocup>=60&&ocup<=100;
+      var isBom=cap>=metRef;
+      var cor=isOtimo?'#16a34a':isBom?'#2563eb':'#9ca3af';
+      return '<div style="border:2px solid '+cor+';border-radius:var(--r);padding:8px;text-align:center;background:'+cor+'0d">'
+        +'<div style="font-size:12px;font-weight:800;color:'+cor+'">'+m+'</div>'
+        +'<div style="font-size:9px;color:var(--text3);margin:2px 0">'+cap.toLocaleString('pt-BR')+'m/bob</div>'
+        +'<div style="font-size:20px;font-weight:900;color:'+cor+'">'+nbob+'</div>'
+        +'<div style="font-size:9px;color:var(--text3)">bob'+(nbob>1?'inas':'ina')+'</div>'
+        +'<div style="font-size:10px;color:'+cor+';margin-top:3px">'+ocup+'% ocup.</div>'
+        +(lance>0?'<div style="font-size:9px;color:var(--text2)">'+lance.toLocaleString('pt-BR')+'m/lance</div>':'')
+        +(isOtimo&&isBom?'<div style="font-size:9px;color:#16a34a;font-weight:700;margin-top:2px">✅ Ótimo</div>':isBom?'<div style="font-size:9px;color:#2563eb">👍 Cabe</div>':'<div style="font-size:9px;color:#9ca3af">➗ Fraciona</div>')
+        +'</div>';
+    }).join('')+'</div>'
+    +'<div style="padding:8px 12px;background:#f0fdf4;border-radius:var(--r);font-size:11px;color:#166534;border:1px solid #bbf7d0">'
+    +'<strong>Recomendação:</strong> '+_recBobina(metros,caps,lance)+'</div>';
+}
+
+function _recBobina(metros,caps,lance){
+  var metRef=lance>0?lance:metros;
+  for(var i=0;i<caps.length;i++){
+    if(caps[i]>=metRef){
+      var nbob=lance>0?Math.ceil(metros/lance):1;
+      var ocup=Math.round(metRef/caps[i]*100);
+      return 'Use <strong>'+(nbob>1?nbob+'x ':'')+ENG_BOB_MODELOS[i]+'</strong> — '
+        +(lance>0?lance.toLocaleString('pt-BR')+'m/lance · ':'')+caps[i].toLocaleString('pt-BR')+'m cap · '+ocup+'% ocupação';
+    }
+  }
+  var nbob=Math.ceil(metros/caps[5]);
+  return 'Use <strong>'+nbob+'x 100/60</strong> — '+caps[5].toLocaleString('pt-BR')+'m/bobina';
+}
+
 function renderEngenharia(){
   if(!_engSub) _engSub='grupos';
   if(_engSub==='grupos')     _renderEngGrupos();
   if(_engSub==='filamentos') _renderEngFilamentos();
   if(_engSub==='torcedeira') _renderEngTorcedeira();
-  if(_engSub==='fluxo')      _renderEngFluxo();
+  if(_engSub==='bobinas')    _renderEngBobinas();
 }
+
+function _renderEngGrupos(){
+  const el=document.getElementById('eng-grupos-content');
+  if(!el)return;
+  const busca=((document.getElementById('eng-busca')||{}).value||'').toLowerCase();
+  const corBg={CEL1:'#eff6ff',HEPR:'#f5f3ff',CAM:'#ecfeff',CCN:'#fefce8',CRS:'#f0fdf4'};
+  const corBd={CEL1:'#2563eb',HEPR:'#7c3aed',CAM:'#0891b2',CCN:'#d97706',CRS:'#16a34a'};
+
+  el.innerHTML=ENG_GRUPOS.map(function(g){
+    const isOpen=_engGrupoOpen[g.sig]!==false;
+    const cor=corBd[g.sig]||'#888';
+    const bg=corBg[g.sig]||'#f8fafc';
+
+    const subHtml=g.subgrupos.map(function(s){
+      const pct=Math.round(s.skus/g.skus*100);
+      return '<div style="display:flex;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2)">'+
+        '<span style="font-size:10px;font-weight:700;color:'+cor+';background:'+bg+';border:1px solid '+cor+'33;padding:1px 6px;border-radius:4px;min-width:44px;text-align:center;margin-right:10px">'+s.sig+'</span>'+
+        '<span style="font-size:12px;font-weight:600;flex:1">'+s.nome+'</span>'+
+        '<span style="background:'+cor+'22;color:'+cor+';border:1px solid '+cor+'44;border-radius:4px;font-size:10px;padding:1px 6px">'+s.skus+' SKUs</span>'+
+        '<div style="width:80px;background:var(--border);border-radius:99px;height:5px;margin-left:10px;overflow:hidden">'+
+          '<div style="width:'+pct+'%;background:'+cor+';height:100%;border-radius:99px"></div></div>'+
+        '<span style="font-size:10px;color:var(--text3);margin-left:6px;min-width:30px">'+pct+'%</span>'+
+        '</div>';
+    }).join('');
+
+    return '<div class="sec" style="margin-bottom:10px;border-left:4px solid '+cor+'">'+
+      '<div class="sec-hd" style="cursor:pointer;background:'+bg+';user-select:none" '+
+        'data-sig="'+g.sig+'" onclick="var s=this.dataset.sig;_engGrupoOpen[s]=(_engGrupoOpen[s]===false?true:false);renderEngenharia()">'+
+        '<div style="display:flex;align-items:center;gap:10px;flex:1">'+
+          '<span style="font-size:13px;font-weight:900;color:'+cor+';min-width:50px">'+g.sig+'</span>'+
+          '<span style="font-size:13px;font-weight:700">'+g.nome+'</span>'+
+          '<span style="background:'+cor+';color:#fff;border-radius:4px;font-size:10px;padding:1px 6px;margin-left:auto">'+g.skus+' SKUs</span>'+
+          '<span style="font-size:14px;color:var(--text3);margin-left:8px">'+(isOpen?'▾':'▸')+'</span>'+
+        '</div>'+
+      '</div>'+
+      (isOpen?'<div>'+subHtml+'</div>':'')+
+    '</div>';
+  }).join('');
+}
+
+function _renderEngFilamentos(){
+  const el=document.getElementById('eng-fil-content');
+  if(!el)return;
+  const diam=(document.getElementById('eng-fil-diam')||{}).value||'';
+  const tipo=(document.getElementById('eng-fil-tipo')||{}).value||'';
+  const busca=((document.getElementById('eng-busca')||{}).value||'').toLowerCase();
+
+  let rows=ENG_FIL;
+  if(diam) rows=rows.filter(function(r){return String(r[2])===diam;});
+  if(tipo) rows=rows.filter(function(r){return r[0]===tipo;});
+  if(busca) rows=rows.filter(function(r){return r[0].toLowerCase().includes(busca)||String(r[1]).includes(busca);});
+
+  const tipoCor={FLEXIVEL:'#2563eb',HEPR:'#7c3aed',PP:'#16a34a',PARALELO:'#d97706'};
+
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+    '<thead><tr style="background:#f1f5f9;position:sticky;top:0">'+
+    '<th style="padding:8px 10px;text-align:left">Tipo</th>'+
+    '<th style="padding:8px 10px;text-align:left">Cabo (mm²)</th>'+
+    '<th style="padding:8px 10px;text-align:center">Ø Fio (mm)</th>'+
+    '<th style="padding:8px 10px;text-align:center">Qtd Fios</th>'+
+    '<th style="padding:8px 10px;text-align:right">Peso 100m (kg)</th>'+
+    '<th style="padding:8px 10px;text-align:center">Bobinas Buncher</th>'+
+    '</tr></thead><tbody>'+
+    rows.map(function(r,idx){
+      const cor=tipoCor[r[0]]||'#888';
+      const bobs=Math.round(r[3]/84*10)/10;
+      return '<tr style="border-bottom:1px solid var(--border);'+(idx%2===0?'background:var(--bg2)':'')+'">'
+        +'<td style="padding:6px 10px"><span style="background:'+cor+'22;color:'+cor+';border:1px solid '+cor+'44;border-radius:4px;font-size:10px;font-weight:700;padding:1px 6px">'+r[0]+'</span></td>'
+        +'<td style="padding:6px 10px;font-weight:600">'+r[1]+'</td>'
+        +'<td style="padding:6px 10px;text-align:center;font-family:monospace">Ø '+r[2]+'</td>'
+        +'<td style="padding:6px 10px;text-align:center;font-weight:700;color:'+cor+'">'+r[3].toLocaleString('pt-BR')+'</td>'
+        +'<td style="padding:6px 10px;text-align:right;font-family:monospace">'+r[4].toFixed(4)+'</td>'
+        +'<td style="padding:6px 10px;text-align:center;color:var(--text2);font-size:11px">'+
+          (r[2]===0.36&&r[3]>=84?'~'+bobs+' bobs':'-')+'</td>'
+        +'</tr>';
+    }).join('')+
+    '</tbody></table>'+
+    '<div style="font-size:11px;color:var(--text3);padding:8px 10px">'+rows.length+' registros · Dens. Cobre: 8,89 g/cm³ · Dens. Alum.: 2,69 g/cm³</div>';
+}
+
+function _renderEngTorcedeira(){
+  const el=document.getElementById('eng-torc-content');
+  if(!el)return;
+
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+    '<thead><tr style="background:#f1f5f9">'+
+    '<th style="padding:8px 12px;text-align:left">Bitola (mm²)</th>'+
+    '<th style="padding:8px 12px;text-align:center">Nº Fios</th>'+
+    '<th style="padding:8px 12px;text-align:center">Bobinas</th>'+
+    '<th style="padding:8px 12px;text-align:center">Cordas</th>'+
+    '<th style="padding:8px 12px;text-align:center">Alma</th>'+
+    '<th style="padding:8px 12px;text-align:center">Ø Fio (mm)</th>'+
+    '<th style="padding:8px 12px;text-align:center">Ø Cabo (mm)</th>'+
+    '<th style="padding:8px 12px;text-align:center">Fieira</th>'+
+    '</tr></thead><tbody>'+
+    ENG_BOBINAS.map(function(r,idx){
+      return '<tr style="border-bottom:1px solid var(--border);'+(idx%2===0?'background:var(--bg2)':'')+'">'
+        +'<td style="padding:8px 12px;font-weight:800;font-size:14px;color:var(--navy)">'+r.bit+' mm²</td>'
+        +'<td style="padding:8px 12px;text-align:center;font-weight:700">'+r.fios.toLocaleString('pt-BR')+'</td>'
+        +'<td style="padding:8px 12px;text-align:center"><span style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:4px;padding:2px 8px;font-weight:700">'+r.bobinas+'</span></td>'
+        +'<td style="padding:8px 12px;text-align:center;font-family:monospace">'+r.cordas+'</td>'
+        +'<td style="padding:8px 12px;text-align:center;color:var(--text2)">'+( r.alma||'—')+'</td>'
+        +'<td style="padding:8px 12px;text-align:center;font-family:monospace">Ø '+r.dFio+'</td>'
+        +'<td style="padding:8px 12px;text-align:center;font-family:monospace;color:#7c3aed;font-weight:700">Ø '+r.dCabo+'</td>'
+        +'<td style="padding:8px 12px;text-align:center;font-family:monospace">'+r.fieira+'</td>'
+        +'</tr>';
+    }).join('')+
+    '</tbody></table>'+
+    '<div style="padding:10px 12px;font-size:11px;color:var(--text3)">Ø Fio padrão: 0,36mm · Máquina IMPERIUM Nº 001</div>';
+}
+
 
 function renderEngMP(){
   const el=document.getElementById('eng-mp-tb');if(!el)return;
@@ -3518,213 +3890,151 @@ function salvarPreviaHistorico(opsGeradas){
 // ═══════════ DASHBOARD PRODUÇÃO ═══════════
 function renderDashProd(){
   const today=new Date().toISOString().slice(0,10);
-
-  // ── Categorize ──
-  const semProd=[],emAnd=[],parcial=[],noPrazo=[];
+  const semProd=[],emAnd=[],parcial=[],noPrazo=[],atrasados=[];
+  const statusEntrega={Atrasado:[],Parcial:[],Adiado:[],Atendido:[],Cancelado:[],Normal:[]};
 
   PEDIDOS.forEach(r=>{
-    if((r[11]||0)<=0) return;
-    const sp=getStatusProd(r);
+    const sp=getStatusProd&&getStatusProd(r);
+    const se=getStatusEntrega&&getStatusEntrega(r);
     const prio=getPrio(r);
     const dtRef=r[8]||r[7]||'';
     const atrasado=dtRef&&dtRef<today;
-    const dias=atrasado?Math.floor((new Date(today)-new Date(dtRef))/86400000):0;
-    const label=sp?sp.label:'';
-    const item={r,dias,prio,atrasado};
-    if(label.includes('Em Produ')||label.includes('OP Gerada')){
-      emAnd.push(item);
-    } else if(atrasado){
-      semProd.push(item);
+    const pend=r[9]||0;
+    const prod=r[11]||0;
+    const item={r,prio,atrasado,dtRef,pend,prod};
+
+    // Status de entrega
+    if(se){
+      const k=se.label;
+      if(statusEntrega[k]) statusEntrega[k].push(item);
     } else {
-      noPrazo.push(item);
+      statusEntrega.Normal.push(item);
+    }
+
+    // Em produção
+    const lbl=sp?sp.label:'';
+    if(lbl.includes('Em Produ')||lbl.includes('OP Gerada')||lbl.includes('Andamento')){
+      emAnd.push(item);
     }
   });
-
-  // Parcial: tem OP concluida E OP ainda aberta
-  const parcialIds=new Set();
-  emAnd.forEach(item=>{
-    const r=item.r;
-    const ops=ORDENS.filter(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(r[2])));
-    const concl=ops.filter(o=>o.status==='Concluída').length;
-    if(concl>0&&concl<ops.length){parcial.push(item);parcialIds.add(r[2]);}
-  });
-
-  const priOrd={P0:0,P1:1,P2:2,P3:3,P4:4};
-  semProd.sort((a,b)=>b.dias-a.dias||(priOrd[a.prio]||9)-(priOrd[b.prio]||9));
-
-  const setTxt=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
 
   // ── KPIs ──
   const kpiEl=document.getElementById('dp-kpis');
   if(kpiEl){
-    const kpis=[
-      {icon:'⚠️',label:'Atrasados sem Prod.',n:semProd.length,
-        m:semProd.reduce((a,x)=>a+(x.r[11]||0),0),bg:'#fff5f5',bo:'#dc2626',c:'#dc2626'},
-      {icon:'🔵',label:'Em Produção',n:emAnd.length,
-        m:emAnd.reduce((a,x)=>a+(x.r[11]||0),0),bg:'#eff6ff',bo:'#2563eb',c:'#2563eb'},
-      {icon:'🟡',label:'Parcial',n:parcial.length,
-        m:0,bg:'#fffbeb',bo:'#d97706',c:'#d97706'},
-      {icon:'🟢',label:'No Prazo',n:noPrazo.length,
-        m:noPrazo.reduce((a,x)=>a+(x.r[11]||0),0),bg:'#f0fdf4',bo:'#16a34a',c:'#16a34a'},
+    const total=PEDIDOS.filter(r=>(r[9]||0)>0).length;
+    const emProd=emAnd.length;
+    const atras=statusEntrega.Atrasado.length;
+    const atend=statusEntrega.Atendido.length;
+    const totM=PEDIDOS.reduce((a,r)=>a+(r[9]||0),0);
+    kpiEl.innerHTML=[
+      {label:'Total pedidos',val:total,color:'#2563eb'},
+      {label:'Em produção',val:emProd,color:'#7c3aed'},
+      {label:'Atrasados',val:atras,color:'#dc2626'},
+      {label:'Atendidos',val:atend,color:'#16a34a'},
+      {label:'Metros pendentes',val:fm(totM)+'m',color:'#ea580c'},
+    ].map(k=>`<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;min-width:130px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px">${k.label}</div>
+      <div style="font-size:22px;font-weight:800;color:${k.color}">${k.val}</div>
+    </div>`).join('');
+  }
+
+  // ── Quadrante 1: Resumo por Status de Entrega ──
+  const seEl=document.getElementById('dp-status-entrega');
+  if(seEl){
+    const rows=[
+      {label:'⚠️ Atrasados',key:'Atrasado',bg:'#fef9c3',fg:'#854d0e',border:'#eab308'},
+      {label:'🔸 Parcial',key:'Parcial',bg:'#fce7f3',fg:'#9d174d',border:'#ec4899'},
+      {label:'⏸️ Adiados',key:'Adiado',bg:'#ede9fe',fg:'#5b21b6',border:'#7c3aed'},
+      {label:'✅ Atendidos',key:'Atendido',bg:'#dbeafe',fg:'#1e3a5f',border:'#2563eb'},
+      {label:'🚫 Cancelados',key:'Cancelado',bg:'#f3f4f6',fg:'#6b7280',border:'#d1d5db'},
     ];
-    kpiEl.innerHTML=kpis.map(k=>
-      '<div style="background:'+k.bg+';border:2px solid '+k.bo+';border-radius:10px;'+
-      'padding:14px;text-align:center">'+
-      '<div style="font-size:24px">'+k.icon+'</div>'+
-      '<div style="font-size:11px;font-weight:700;color:'+k.c+';text-transform:uppercase;margin:4px 0">'+k.label+'</div>'+
-      '<div style="font-size:36px;font-weight:900;color:'+k.c+';line-height:1">'+k.n+'</div>'+
-      (k.m?'<div style="font-size:11px;color:#6b7280;margin-top:4px">'+fm(k.m)+'m</div>':'')+
-      '</div>'
-    ).join('');
+    seEl.innerHTML=rows.map(row=>{
+      const items=statusEntrega[row.key]||[];
+      const metros=items.reduce((a,it)=>a+(it.pend||0),0);
+      return`<div style="display:flex;align-items:center;justify-content:space-between;
+        padding:10px 14px;border-radius:var(--r);margin-bottom:6px;
+        background:${row.bg};border:1px solid ${row.border}">
+        <div style="font-size:13px;font-weight:700;color:${row.fg}">${row.label}</div>
+        <div style="display:flex;gap:16px;align-items:center">
+          <div style="text-align:center">
+            <div style="font-size:18px;font-weight:800;color:${row.fg}">${items.length}</div>
+            <div style="font-size:10px;color:${row.fg};opacity:.8">pedidos</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:14px;font-weight:700;color:${row.fg}">${fm(metros)}m</div>
+            <div style="font-size:10px;color:${row.fg};opacity:.8">pendente</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
   }
 
-  // ── Helpers ──
-  const priColors={P0:'#dc2626',P1:'#ea580c',P2:'#d97706',P3:'#2563eb',P4:'#6b7280'};
-  const badge=(p)=>'<span style="background:'+( priColors[p]||'#888')+'22;color:'+(priColors[p]||'#888')+';border:1px solid '+(priColors[p]||'#888')+';border-radius:3px;padding:0 5px;font-size:9px;font-weight:700">'+p+'</span>';
-  const atrBadge=(d)=>d>0?'<span style="background:#dc2626;color:#fff;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">'+d+'d</span>':'';
-
-  const row=(item,bc)=>{
-    const r=item.r;
-    const dt=(r[8]||r[7]||'').slice(0,10).split('-').reverse().join('/');
-    const rsv=RESERVAS.filter(x=>x.pedido===r[2]&&x.codigo===r[4]&&x.status!=='Estornado').reduce((a,x)=>a+(x.metros||0),0);
-    const aProd=Math.max(0,(r[11]||0)-rsv);
-    return '<div style="padding:8px 12px;border-bottom:1px solid var(--border);border-left:4px solid '+bc+'">'+
-      '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">'+
-      '<span style="font-family:monospace;font-weight:800;font-size:13px;background:'+getPedColor(r[2])+';padding:1px 7px;border-radius:4px">'+r[2]+'</span>'+
-      badge(item.prio)+atrBadge(item.dias)+
-      '<span style="flex:1;font-size:11px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[1]||'').split('(')[0].trim().slice(0,28)+'</span>'+
-      '<span style="color:'+bc+';font-weight:700;font-size:13px">'+fm(r[11]||0)+'m</span>'+
-      (rsv>0?'<span style="color:#9333ea;font-size:10px">−'+fm(rsv)+'rsv='+fm(aProd)+'m</span>':'')+
-      '</div>'+
-      '<div style="font-size:10px;color:var(--text2)">'+shortProd(r[3])+' · '+dt+'</div>'+
-      '</div>';
-  };
-
-  // ── Q1: Atrasados sem produção ──
-  const q1=document.getElementById('dp-list-atrasados');
-  setTxt('dp-cnt-atrasados', semProd.length);
-  if(q1){
-    if(!semProd.length){
-      q1.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">✅ Nenhum pedido atrasado sem produção</div>';
+  // ── Quadrante 2: Em Produção com previsão ──
+  const epEl=document.getElementById('dp-em-producao');
+  if(epEl){
+    if(emAnd.length===0){
+      epEl.innerHTML='<p style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Nenhum pedido em produção no momento.</p>';
     } else {
-      const byPrio={};
-      semProd.forEach(x=>{if(!byPrio[x.prio])byPrio[x.prio]=[];byPrio[x.prio].push(x);});
-      q1.innerHTML=Object.entries(byPrio)
-        .sort((a,b)=>(priOrd[a[0]]||9)-(priOrd[b[0]]||9))
-        .map(([p,items])=>{
-          const pc=priColors[p]||'#888';
-          return '<div style="background:'+pc+'11;padding:5px 10px;font-size:11px;font-weight:700;color:'+pc+';border-bottom:2px solid '+pc+'33">'+
-            p+' — '+items.length+' pedido(s) · '+items.reduce((a,x)=>a+(x.r[11]||0),0).toFixed(0)+'m</div>'+
-            items.map(x=>row(x,pc)).join('');
-        }).join('');
-    }
-  }
-
-  // ── Q2: Parcial ──
-  const q2=document.getElementById('dp-list-producao');
-  setTxt('dp-cnt-producao', parcial.length);
-  if(q2){
-    if(!parcial.length){
-      q2.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">Nenhum pedido parcialmente finalizado</div>';
-    } else {
-      q2.innerHTML=parcial.map(item=>{
-        const r=item.r;
-        const ops=ORDENS.filter(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(r[2])));
-        const concl=ops.filter(o=>o.status==='Concluída').length;
-        const total=ops.length;
-        const pct=Math.round(concl/total*100);
-        const bc='#d97706';
-        return '<div style="padding:9px 12px;border-bottom:1px solid var(--border);border-left:4px solid '+bc+'">'+
-          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'+
-          '<span style="font-family:monospace;font-weight:800;font-size:13px;background:'+getPedColor(r[2])+';padding:1px 7px;border-radius:4px">'+r[2]+'</span>'+
-          badge(item.prio)+
-          '<span style="flex:1;font-size:11px;font-weight:600;color:var(--navy)">'+String(r[1]||'').split('(')[0].trim().slice(0,28)+'</span>'+
-          '<span style="color:'+bc+';font-weight:700">'+concl+'/'+total+' OPs</span>'+
-          '</div>'+
-          '<div style="background:#e5e7eb;border-radius:99px;height:5px;overflow:hidden;margin-bottom:3px">'+
-          '<div style="width:'+pct+'%;height:100%;background:'+bc+'"></div></div>'+
-          '<div style="font-size:10px;color:var(--text2)">'+shortProd(r[3])+' · faltam '+(total-concl)+' etapas</div>'+
-          '</div>';
-      }).join('');
-    }
-  }
-
-  // ── Q3: Em produção com previsão ──
-  const q3=document.getElementById('dp-list-iniciada');
-  setTxt('dp-cnt-iniciada', emAnd.length);
-  if(q3){
-    if(!emAnd.length){
-      q3.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">Nenhuma produção em andamento</div>';
-    } else {
-      q3.innerHTML=emAnd.map(item=>{
-        const r=item.r;
-        const ops=ORDENS.filter(o=>(o.pedidos||[o.pedido]).some(p=>String(p)===String(r[2]))&&(o.status==='Em andamento'||o.status==='Em Andamento'));
-        const op=ops[0];
-        const dtRef=op?op.dt_envio:'';
-        let prev=op?((op.dt_entrega||'').slice(0,10).split('-').reverse().join('/')):'—';
-        const bc='#2563eb';
-        return '<div style="padding:9px 12px;border-bottom:1px solid var(--border);border-left:4px solid '+bc+'">'+
-          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'+
-          '<span style="font-family:monospace;font-weight:800;font-size:13px;background:'+getPedColor(r[2])+';padding:1px 7px;border-radius:4px">'+r[2]+'</span>'+
-          badge(item.prio)+atrBadge(item.dias)+
-          '<span style="flex:1;font-size:11px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[1]||'').split('(')[0].trim().slice(0,28)+'</span>'+
-          '<span style="color:'+bc+';font-weight:700;font-size:13px">'+fm(r[11]||0)+'m</span>'+
-          '</div>'+
-          '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2)">'+
-          '<span>'+shortProd(r[3])+'</span>'+
-          '<span>⏱ Prev. '+prev+(op?' · OP: '+op.id:'')+'</span>'+
-          '</div>'+
-          '</div>';
-      }).join('');
-    }
-  }
-
-  // ── Q4: No prazo ──
-  const q4=document.getElementById('dp-list-finalizado');
-  setTxt('dp-cnt-finalizado', noPrazo.length);
-  if(q4){
-    if(!noPrazo.length){
-      q4.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">Nenhum pedido no prazo sem produção</div>';
-    } else {
-      q4.innerHTML=noPrazo.map(x=>row(x,'#16a34a')).join('');
-    }
-  }
-
-  // ── Q5: OPs resumo ──
-  const q5=document.getElementById('dp-ops-resumo');
-  if(q5){
-    const st={Pendente:0,'Em andamento':0,'Concluída':0,Reaberta:0};
-    ORDENS.forEach(o=>{const s=o.status||'Pendente';if(st[s]!==undefined)st[s]++;});
-    const cols={Pendente:'#d97706','Em andamento':'#2563eb','Concluída':'#16a34a',Reaberta:'#7c3aed'};
-    const icns={Pendente:'⏳','Em andamento':'🔵','Concluída':'✅',Reaberta:'🔄'};
-    q5.innerHTML=Object.entries(st).map(([s,n])=>
-      '<div onclick="go(\'painel\')" style="cursor:pointer;background:'+cols[s]+'11;border:2px solid '+cols[s]+'44;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px">'+
-      '<span style="font-size:22px">'+icns[s]+'</span>'+
-      '<div style="flex:1"><div style="font-size:11px;font-weight:700;color:'+cols[s]+'">'+s+'</div>'+
-      '<div style="font-size:26px;font-weight:900;color:'+cols[s]+';line-height:1">'+n+'</div></div>'+
-      '<span style="font-size:18px;color:'+cols[s]+';opacity:.5">→</span></div>'
-    ).join('');
-  }
-
-  // ── Charts ──
-  try{
-    ['dp-ch-status','dp-ch-etapa'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el&&el._chart){el._chart.destroy();el._chart=null;}
-    });
-    const s1=document.getElementById('dp-ch-status');
-    if(s1&&s1.getContext){
-      s1._chart=new Chart(s1.getContext('2d'),{
-        type:'doughnut',
-        data:{labels:['Sem Prod.','Em Prod.','No Prazo'],
-          datasets:[{data:[semProd.length,emAnd.length,noPrazo.length],
-            backgroundColor:['#dc2626','#2563eb','#16a34a'],borderWidth:2,borderColor:'#fff'}]},
-        options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
-          plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}
+      // Agrupar OPs por pedido
+      const opsPorPed={};
+      ORDENS.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento'||o.status==='Pendente').forEach(o=>{
+        (o.pedidos||[o.pedido||'']).forEach(ped=>{
+          if(!opsPorPed[ped]) opsPorPed[ped]={ops:[],metros:0};
+          opsPorPed[ped].ops.push(o);
+          opsPorPed[ped].metros+=(o.metros||0);
+        });
       });
+
+      epEl.innerHTML=emAnd.slice(0,15).map(({r,dtRef,atrasado})=>{
+        const ped=r[2];
+        const cli=r[1].split('(')[0].trim();
+        const prod=r[3];
+        const pend=r[9]||0;
+        const prodM=r[11]||0;
+        const perc=pend>0?Math.min(100,Math.round(prodM/pend*100)):0;
+        const ops=opsPorPed[ped];
+        const nOps=ops?ops.ops.length:0;
+        const mOps=ops?ops.metros:0;
+
+        // Previsão: baseada em metros/dia histórico
+        const diasRestantes=mOps>0&&pend>prodM?Math.ceil((pend-prodM)/Math.max(mOps,1)):null;
+        const dtPrev=diasRestantes?new Date(Date.now()+diasRestantes*86400000).toLocaleDateString('pt-BR'):null;
+
+        const corPrio={P0:'#dc2626',P1:'#dc2626',P2:'#ea580c',P3:'#16a34a',P4:'#38bdf8'}[getPrio(r)]||'#888';
+        const atrasadoStyle=atrasado?'border-left:3px solid #dc2626':'border-left:3px solid #16a34a';
+
+        return`<div style="padding:10px 12px;border-radius:var(--r);background:var(--bg2);
+          margin-bottom:8px;${atrasadoStyle}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:10px;font-weight:700;background:${corPrio};color:#fff;
+              padding:1px 6px;border-radius:4px">${getPrio(r)}</span>
+            <span style="font-size:12px;font-weight:700;color:var(--navy)">${cli}</span>
+            <span style="font-size:11px;color:var(--text2)">· ${ped}</span>
+            ${atrasado?'<span style="font-size:10px;color:#dc2626;font-weight:700">⚠️ Atrasado</span>':''}
+            <span style="margin-left:auto;font-size:10px;color:var(--text3)">${dtRef?new Date(dtRef+'T00:00:00').toLocaleDateString('pt-BR'):''}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${prod}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;background:var(--border);border-radius:99px;height:6px;overflow:hidden">
+              <div style="width:${perc}%;background:${perc>=100?'#16a34a':perc>50?'#7c3aed':'#ea580c'};height:100%;border-radius:99px;transition:width .3s"></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;min-width:36px;text-align:right">${perc}%</span>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--text3)">
+            <span>${fm(prodM)}m produzido de ${fm(pend)}m</span>
+            ${nOps>0?`<span>· ${nOps} OP${nOps>1?'s':''} ativas (${fm(mOps)}m)</span>`:''}
+            ${dtPrev?`<span style="color:#7c3aed;font-weight:600">· Prev. conclusão: ${dtPrev}</span>`:''}
+          </div>
+        </div>`;
+      }).join('');
     }
+  }
+
+  // ── Gráfico OPs por etapa ──
+  try{
     const s2=document.getElementById('dp-ch-etapa');
     if(s2&&s2.getContext){
+      if(s2._chart){try{s2._chart.destroy();}catch(e){}}
       const et={};
       ORDENS.filter(o=>o.status==='Em andamento'||o.status==='Em Andamento').forEach(o=>{
         const e=(o.etapa||o.tipo||'OP').toUpperCase().slice(0,8);
@@ -7680,6 +7990,10 @@ function salvarNovaOP(){
 
 
 
+
+
+
+
 </script>
 
 <div id="pg-dash" class="pg on">
@@ -8241,55 +8555,7 @@ alter publication supabase_realtime add table pcp_sync;</div>
     </button>
   
     <button class="btn bdng bsm" onclick="limparBaseDados()" style="margin-left:auto">🗑 Limpar Base (Pedidos + OPs)</button></div>
-  <!-- ══ SUPABASE CONFIG ══ -->
-  <div class="sec" style="border-left:4px solid #3ECF8E;margin-bottom:16px">
-    <div class="sec-hd">
-      <span class="sec-tt">⚡ Supabase — Sincronização em tempo real</span>
-      <span id="fb-status-imp" style="font-size:11px;color:var(--text2)">⚫ Não conectado</span>
-    </div>
-    <div class="sec-bd">
-      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">
-        Cole a <strong>URL</strong> e <strong>chave anon</strong> do projeto Supabase.<br>
-        <span style="font-size:11px;color:var(--text3)">Gratuito: 500MB · Realtime incluso · <a href="https://supabase.com" target="_blank" style="color:var(--navy)">supabase.com</a></span>
-      </p>
-      <details style="margin-bottom:10px">
-        <summary style="font-size:11px;font-weight:700;color:var(--navy);cursor:pointer">▶ Como configurar (5 passos)</summary>
-        <ol style="font-size:11px;color:var(--text2);margin:8px 0 0 16px;line-height:1.9">
-          <li>Acesse <strong>supabase.com</strong> → "Start your project" → login com GitHub</li>
-          <li>"New project" → nome <strong>pcp-maxfio</strong> → região <strong>South America (São Paulo)</strong> → Create</li>
-          <li><strong>SQL Editor</strong> → "New query" → cole o SQL abaixo → Run</li>
-          <li><strong>Settings → API</strong> → copie <em>Project URL</em> e <em>anon public key</em></li>
-          <li>Cole abaixo → Salvar e Conectar → Subir dados</li>
-        </ol>
-        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;margin-top:8px;font-family:monospace;font-size:10px;color:var(--text2);white-space:pre">create table pcp_sync (
-  chave text primary key,
-  dados text,
-  atualizado_em timestamptz default now()
-);
-alter table pcp_sync enable row level security;
-create policy "Acesso total" on pcp_sync for all using (true) with check (true);
-alter publication supabase_realtime add table pcp_sync;</div>
-      </details>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-        <div class="fg">
-          <label>Project URL</label>
-          <input id="sb-url-input" placeholder="https://xxxx.supabase.co"
-            style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-        </div>
-        <div class="fg">
-          <label>Chave anon (public)</label>
-          <input id="sb-key-input" type="password" placeholder="eyJhbGciOiJIUzI1NiIs..."
-            style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bpri" onclick="salvarSupabaseConfig()" style="font-weight:700">💾 Salvar e Conectar</button>
-        <button class="btn bgho" onclick="sbUploadAll()">⬆️ Subir dados locais → Supabase</button>
-        <button class="btn bgho" onclick="sbLoad().then(function(){if(typeof renderAll==='function')renderAll()})">⬇️ Baixar do Supabase</button>
-      </div>
-      <div id="sb-config-msg" style="margin-top:8px;font-size:11px"></div>
-    </div>
-  </div>
+  
 
 
   <!-- ── OPs ENVIADAS (colapsado por padrão) ── -->
@@ -9390,6 +9656,23 @@ alter publication supabase_realtime add table pcp_sync;</div>
   <!-- KPI Cards -->
   <div id="dp-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px"></div>
 
+  <!-- Status Entrega + Em Produção -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="sec">
+      <div class="sec-hd"><span class="sec-tt">🚦 Resumo por Status de Entrega</span></div>
+      <div class="sec-bd" id="dp-status-entrega" style="padding:10px"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-tt">⚙️ Em Produção — Previsão de Conclusão</span>
+        <span style="font-size:11px;color:var(--text2)" id="dp-em-prod-cnt"></span>
+      </div>
+      <div class="sec-bd" id="dp-em-producao" style="padding:10px;max-height:420px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+
+
   <!-- 4 quadrants -->
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px">
 
@@ -9453,213 +9736,100 @@ alter publication supabase_realtime add table pcp_sync;</div>
 <!-- ══ ENGENHARIA ══ -->
 <div id="pg-engenharia" class="pg">
   <div class="pg-hd">
-    <span class="pg-tt">⚙️ Engenharia — Composição de Produtos</span>
-    <button class="btn bgho bsm" onclick="renderEngenharia()">🔄 Atualizar</button>
+    <span class="pg-tt">⚙️ Engenharia — Produtos e Composição Técnica</span>
+    <input type="text" id="eng-busca" placeholder="🔍 Buscar produto, código, bitola..." 
+      style="padding:5px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;width:280px"
+      oninput="renderEngenharia()">
   </div>
-
   <!-- Sub-tabs -->
-  <div class="subtabs" id="eng-stabs" style="margin-bottom:14px">
-    <div class="stab on"  id="est-grupos"  onclick="engSub('grupos')">📦 Grupos/Produtos</div>
-    <div class="stab"     id="est-filamentos" onclick="engSub('filamentos')">🔩 Filamentos Buncher</div>
-    <div class="stab"     id="est-torcedeira" onclick="engSub('torcedeira')">🌀 Base Torcedeira</div>
-    <div class="stab"     id="est-fluxo"   onclick="engSub('fluxo')">🏭 Fluxo por Máquina</div>
+  <div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:0">
+    <button class="stab on" id="est-grupos"     onclick="engSub('grupos')">📦 Grupos / Produtos</button>
+    <button class="stab"    id="est-filamentos" onclick="engSub('filamentos')">🔩 Filamentos Buncher</button>
+    <button class="stab"    id="est-torcedeira" onclick="engSub('torcedeira')">🌀 Base Bobinas / Torção</button>
+    <button class="stab" id="est-bobinas" onclick="engSub('bobinas')">📦 Dimensionamento Bobinas</button>
   </div>
-
-  <!-- Filtro global -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;
-    padding:8px 12px;background:var(--bg2);border-radius:8px;margin-bottom:12px">
-    <input id="eng-q" placeholder="🔍 Buscar produto, código, grupo, bitola..."
-      oninput="renderEngenharia()"
-      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);
-        font-size:12px;flex:1;min-width:200px">
-    <select id="eng-grupo" onchange="renderEngenharia()"
-      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-      <option value="">Todos os grupos</option>
-      <option value="CEL1">CEL1 — Cabo Elétrico Linha 1</option>
-      <option value="HEPR">HEPR — Cabo HEPR 1KV 90°</option>
-      <option value="CCN">CCN — Cabo Cobre Nu</option>
-      <option value="CRS">CRS — Cabo Rígido</option>
-      <option value="CAM">CAM — Cabo Alumínio Multiplexado</option>
-    </select>
-    <select id="eng-subgrupo" onchange="renderEngenharia()"
-      style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px">
-      <option value="">Todos subgrupos</option>
-      <option value="FNBR">FNBR — Flexível NBR</option>
-      <option value="FHPR">FHPR — Flex HEPR 1KV</option>
-      <option value="FATX">FATX — Flex HEPR Atox</option>
-      <option value="FATV">FATV — Flexível Atox 450V</option>
-      <option value="CPPH">CPPH — Controle PP HEPR</option>
-      <option value="CCPP">CCPP — Controle PP</option>
-      <option value="EFLX">EFLX — Eletreflex</option>
-    </select>
-    <button class="btn bgho bsm" onclick="document.getElementById('eng-q').value='';document.getElementById('eng-grupo').value='';document.getElementById('eng-subgrupo').value='';renderEngenharia()">✕ Limpar</button>
+  <!-- GRUPOS/PRODUTOS -->
+  <div id="eng-grupos" style="display:block">
+    <div id="eng-grupos-content"></div>
   </div>
-
-  <!-- ── TAB: Grupos / Produtos ── -->
-  <div id="eng-tab-grupos">
-    <!-- Hierarquia em cascata -->
-    <div class="sec" style="margin-bottom:12px">
+  <!-- FILAMENTOS BUNCHER -->
+  <div id="eng-filamentos" style="display:none">
+    <div class="sec" style="margin-bottom:10px">
       <div class="sec-hd">
-        <span class="sec-tt">📊 Hierarquia: Grupos → Subgrupos → Produtos</span>
-        <span id="eng-prod-cnt" class="chip c-blue" style="font-size:10px">0 produtos</span>
-        <button class="btn bgho bsm" onclick="toggleEngHierarquia()" style="margin-left:auto;font-size:10px">
-          🔽 Expandir/Colapsar
-        </button>
+        <span class="sec-tt">🔩 Filamentos Buncher — Composição por Bitola</span>
+        <div style="display:flex;gap:6px;margin-left:auto">
+          <select id="eng-fil-diam" onchange="renderEngenharia()" style="padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+            <option value="">Todos Ø</option>
+            <option value="0.28">Ø 0,28mm (1–6mm²)</option>
+            <option value="0.36">Ø 0,36mm (10–300mm²)</option>
+          </select>
+          <select id="eng-fil-tipo" onchange="renderEngenharia()" style="padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+            <option value="">Todos os tipos</option>
+            <option value="FLEXIVEL">Flexível</option>
+            <option value="HEPR">HEPR</option>
+            <option value="PP">PP (Controle)</option>
+            <option value="PARALELO">Paralelo</option>
+          </select>
+        </div>
       </div>
-      <div id="eng-hierarquia"></div>
+      <div class="sec-bd" id="eng-fil-content" style="overflow-x:auto"></div>
     </div>
   </div>
-
-  <!-- ── TAB: Filamentos Buncher ── -->
-  <div id="eng-tab-filamentos" style="display:none">
-    <div class="g2">
-      <!-- Tabela completa de filamentos -->
-      <div class="sec">
-        <div class="sec-hd">
-          <span class="sec-tt">🔩 Filamentos Buncher — Lista Completa</span>
-          <span class="chip c-blue" style="font-size:10px">81 combinações</span>
-        </div>
-        <div style="font-size:11px;color:var(--text2);padding:6px 0 8px">
-          🔧 <strong>Trefila</strong> produz filamentos Ø0,28mm (1–6mm²) e Ø0,36mm (10–300mm²) · 
-          🔩 <strong>Buncher</strong> une os filamentos conforme esta tabela
-        </div>
-        <div class="tw ts">
-          <table style="width:100%;font-size:11px">
-            <thead><tr style="background:#1a2e5a;color:#fff">
-              <th style="padding:6px 8px;text-align:left">Produto</th>
-              <th>Cabo (mm²)</th>
-              <th>Ø Fio (mm)</th>
-              <th class="num">Fios</th>
-              <th class="num">Peso 100m (kg)</th>
-              <th>Máquina</th>
-            </tr></thead>
-            <tbody id="eng-fil-tb"></tbody>
-          </table>
-        </div>
-      </div>
-      <!-- Agrupado por diâmetro -->
-      <div class="sec">
-        <div class="sec-hd">
-          <span class="sec-tt">📐 Agrupado por Diâmetro + Nº de Fios</span>
-        </div>
-        <div style="font-size:11px;background:#fffbeb;border-left:3px solid #d97706;
-          padding:8px 12px;border-radius:4px;margin-bottom:10px">
-          <strong>Ø 0,28mm</strong> → bitolas 1 a 6mm² (Flexível, HEPR, PP, Paralelo) · 
-          <strong>Ø 0,36mm</strong> → bitolas 10 a 300mm²
-        </div>
-        <div class="tw ts">
-          <table style="width:100%;font-size:11px">
-            <thead><tr style="background:#374151;color:#fff">
-              <th style="padding:6px 8px">Ø Fio</th>
-              <th class="num">Fios</th>
-              <th class="num">Peso/100m</th>
-              <th>Produto</th>
-              <th>Cabo</th>
-              <th style="text-align:center">FLEX</th>
-              <th style="text-align:center">HEPR</th>
-              <th style="text-align:center">PP</th>
-            </tr></thead>
-            <tbody id="eng-diam-tb"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── TAB: Base Torcedeira ── -->
-  <div id="eng-tab-torcedeira" style="display:none">
-    <div class="sec" style="margin-bottom:12px">
-      <div class="sec-hd">
-        <span class="sec-tt">🌀 Base Bobinas/Torção — Torcedeiras</span>
-      </div>
-      <div style="font-size:11px;background:#f0fdf4;border-left:3px solid #16a34a;
-        padding:8px 12px;border-radius:4px;margin-bottom:10px">
-        📐 Esta tabela define a configuração das <strong>Torcedeiras</strong>: 
-        quantas bobinas, cordas, presença de alma, diâmetro do fio, diâmetro do cabo e fieira.
-      </div>
-      <div class="tw ts">
-        <table style="width:100%;font-size:12px">
-          <thead><tr style="background:#16a34a;color:#fff">
-            <th style="padding:7px 10px">Bitola (mm²)</th>
-            <th class="num">Nº Fios</th>
-            <th class="num">Bobinas</th>
-            <th class="num">Cordas</th>
-            <th>Alma</th>
-            <th>Ø Fio (mm)</th>
-            <th>Ø Cabo (mm)</th>
-            <th>Fieira</th>
-          </tr></thead>
-          <tbody id="eng-torc-tb"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── TAB: Fluxo por Máquina ── -->
-  <div id="eng-tab-fluxo" style="display:none">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:16px">
-
-      <div style="background:#fff7ed;border:2px solid #fb923c;border-radius:10px;padding:14px">
-        <div style="font-size:14px;font-weight:800;color:#ea580c;margin-bottom:8px">🔧 TREFILA</div>
-        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px">Produz filamentos de cobre:</div>
-        <div style="font-size:11px;line-height:1.8">
-          <div>• <strong>Ø 0,28 mm</strong> → para bitolas 1 a 6 mm²</div>
-          <div>• <strong>Ø 0,36 mm</strong> → para bitolas 10 a 300 mm²</div>
-          <div style="color:var(--text2);margin-top:6px">Cabos: Flexível, HEPR, PP, Paralelo</div>
-        </div>
-      </div>
-
-      <div style="background:#ecfeff;border:2px solid #06b6d4;border-radius:10px;padding:14px">
-        <div style="font-size:14px;font-weight:800;color:#0891b2;margin-bottom:8px">🔩 BUNCHER</div>
-        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px">Une filamentos da Trefila:</div>
-        <div style="font-size:11px;line-height:1.8">
-          <div>• Recebe filamentos Ø0,28 e Ø0,36</div>
-          <div>• Encordoa conforme nº de fios da tabela</div>
-          <div>• Produz <strong>condutor multifilamentar</strong></div>
-          <div style="color:var(--text2);margin-top:6px">Ex: 6mm² FLEXIVEL = 86 fios Ø0,28</div>
-        </div>
-      </div>
-
-      <div style="background:#faf5ff;border:2px solid #a855f7;border-radius:10px;padding:14px">
-        <div style="font-size:14px;font-weight:800;color:#7c3aed;margin-bottom:8px">🌀 TORCEDEIRA</div>
-        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px">Torce os condutores:</div>
-        <div style="font-size:11px;line-height:1.8">
-          <div>• Recebe condutor do Buncher</div>
-          <div>• Torce conforme tabela de bobinas</div>
-          <div>• Configura: bobinas, cordas, alma, fieira</div>
-          <div style="color:var(--text2);margin-top:6px">Para bitolas ≥ 16mm²</div>
-        </div>
-      </div>
-
-      <div style="background:#f0fdf4;border:2px solid #22c55e;border-radius:10px;padding:14px">
-        <div style="font-size:14px;font-weight:800;color:#16a34a;margin-bottom:8px">🏭 EXTRUSORA</div>
-        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px">Encapamento final:</div>
-        <div style="font-size:11px;line-height:1.8">
-          <div>• Recebe condutor torcido</div>
-          <div>• Aplica isolamento HEPR / PVC / PP</div>
-          <div>• Define <strong>cor final</strong> do cabo</div>
-          <div style="color:var(--text2);margin-top:6px">Última etapa — produto finalizado</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lookup: produto → fluxo ──  -->
+  <!-- TORCEDEIRA/BOBINAS -->
+  <div id="eng-torcedeira" style="display:none">
     <div class="sec">
+      <div class="sec-hd"><span class="sec-tt">🌀 Base Bobinas — Torcedeira</span>
+  <!-- DIMENSIONAMENTO BOBINAS -->
+  <div id="eng-bobinas" style="display:none">
+    <div class="sec" style="margin-bottom:10px">
       <div class="sec-hd">
-        <span class="sec-tt">🔍 Consultar Fluxo de Produção por Produto</span>
+        <span class="sec-tt">📦 Dimensionamento de Bobinas — Capacidade por Bitola</span>
+        <select id="eng-bob-tipo" onchange="renderEngenharia()" style="margin-left:auto;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px">
+          <option value="">Todos os tipos</option>
+          <option value="flex">Flexível</option>
+          <option value="hepr">HEPR</option>
+          <option value="pp">PP Multipolar</option>
+          <option value="par">Paralelo</option>
+        </select>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-        <input id="eng-busca-prod" placeholder="Digite código ou descrição do produto..."
-          style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;min-width:200px">
-        <button class="btn bpri bsm" onclick="engBuscaFluxo()">🔍 Buscar</button>
+      <div class="sec-bd" style="padding:0">
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:10px;background:#f8fafc;border-bottom:1px solid var(--border)">
+          <div style="text-align:center;padding:6px;background:#fff;border-radius:var(--r);border:1px solid #bfdbfe"><div style="font-size:11px;font-weight:700;color:#2563eb">45/25</div><div style="font-size:9px;color:var(--text3)">Ø450·L250</div></div>
+          <div style="text-align:center;padding:6px;background:#fff;border-radius:var(--r);border:1px solid #ddd6fe"><div style="font-size:11px;font-weight:700;color:#7c3aed">50/25</div><div style="font-size:9px;color:var(--text3)">Ø500·L250</div></div>
+          <div style="text-align:center;padding:6px;background:#fff;border-radius:var(--r);border:1px solid #a5f3fc"><div style="font-size:11px;font-weight:700;color:#0891b2">65/25</div><div style="font-size:9px;color:var(--text3)">Ø650·L250</div></div>
+          <div style="text-align:center;padding:6px;background:#fff;border-radius:var(--r);border:1px solid #fde68a"><div style="font-size:11px;font-weight:700;color:#d97706">65/45</div><div style="font-size:9px;color:var(--text3)">Ø650·L450</div></div>
+          <div style="text-align:center;padding:6px;background:#fff;border-radius:var(--r);border:1px solid #bbf7d0"><div style="font-size:11px;font-weight:700;color:#16a34a">80/45</div><div style="font-size:9px;color:var(--text3)">Ø800·L450</div></div>
+          <div style="text-align:center;padding:6px;background:#fff;border-radius:var(--r);border:1px solid #fecaca"><div style="font-size:11px;font-weight:700;color:#dc2626">100/60</div><div style="font-size:9px;color:var(--text3)">Ø1000·L600</div></div>
+        </div>
+        <div id="eng-bob-content" style="overflow-x:auto;max-height:380px;overflow-y:auto"></div>
       </div>
-      <div id="eng-fluxo-result"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-hd"><span class="sec-tt">🧮 Calculadora de Bobinas</span></div>
+      <div class="sec-bd" style="padding:12px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+          <div class="fg" style="flex:1;min-width:130px"><label>Tipo de cabo</label>
+            <select id="calc-tipo" onchange="calcBobinasTipo()" style="width:100%">
+              <option value="flex">Flexível</option><option value="hepr">HEPR</option>
+              <option value="pp">PP Multipolar</option><option value="par">Paralelo</option>
+            </select></div>
+          <div class="fg" style="flex:1;min-width:130px"><label>Bitola / Config.</label>
+            <select id="calc-bitola" onchange="calcBobinas()" style="width:100%"><option value="">Selecione...</option></select></div>
+          <div class="fg" style="flex:1;min-width:110px"><label>Metragem total (m)</label>
+            <input type="number" id="calc-metros" placeholder="ex: 500" oninput="calcBobinas()" style="width:100%"></div>
+          <div class="fg" style="flex:1;min-width:110px"><label>Lance do pedido (m)</label>
+            <input type="number" id="calc-lance" placeholder="da observação" oninput="calcBobinas()" style="width:100%"></div>
+        </div>
+        <div id="calc-resultado"></div>
+      </div>
     </div>
   </div>
+
 </div>
+      <div class="sec-bd" id="eng-torc-content" style="overflow-x:auto"></div>
+    </div>
+  </div>
 
-
-<!-- MODALS (body level) -->
 <!-- ══ MODAL GERAR OPs ══ -->
 <div id="modal-gerar-ops" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
   <div style="background:var(--bg);border-radius:10px;padding:24px;width:420px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">
